@@ -1,0 +1,26 @@
+{
+  "name": "tralalerocontracts-app",
+  "version": "1.0.0",
+  "description": "Create magic contracts like a kid's game",
+  "main": "server.js",
+  "scripts": {
+    "start": "node server.js",
+    "test-stellar": "node test-stellar.js"
+  },
+  "keywords": [
+    "stellar",
+    "blockly",
+    "smart-contract",
+    "kids",
+    "learning"
+  ],
+  "author": "Gemini",
+  "license": "ISC",
+  "dependencies": {
+    "@stellar/stellar-sdk": "^11.3.0",
+    "body-parser": "^1.20.2",
+    "dotenv": "^16.4.5",
+    "express": "^4.19.2",
+    "handlebars": "^4.7.8"
+  }
+}
