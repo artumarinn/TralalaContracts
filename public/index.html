@@ -1,0 +1,1064 @@
+<!DOCTYPE html>
+<html lang="es">
+
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Tralalero Contracts - Crea tu Token paso a paso</title>
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link
+        href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&family=Schabo+Condensed:wght@400&display=swap"
+        rel="stylesheet">
+    <link rel="stylesheet" href="style.css">
+</head>
+
+<body>
+    <div class="main-container">
+        <!-- Grid Pattern Background -->
+        <div id="gridBackground" class="grid-background"></div>
+
+        <!-- Header -->
+        <div class="header">
+            <div class="logo-container">
+                <img src="IMG_2036.PNG" alt="Tralalero Contracts Logo" class="logo">
+                <h1 class="title">
+                    <span class="title-line1">TRALALA</span>
+                    <span class="title-line2">CONTRACTS</span>
+                </h1>
+            </div>
+        </div>
+
+        <!-- Stepper Container -->
+        <div class="stepper-container">
+            <!-- Stepper Progress -->
+            <div class="stepper">
+                <div class="stepper-line" id="stepperLine"></div>
+                <div class="step active" data-step="1">
+                    <div class="step-number">1</div>
+                    <div class="step-label">Conectar Wallet</div>
+                </div>
+                <div class="step" data-step="2">
+                    <div class="step-number">2</div>
+                    <div class="step-label">Configurar Token</div>
+                </div>
+                <div class="step" data-step="3">
+                    <div class="step-number">3</div>
+                    <div class="step-label">Crear Token</div>
+                </div>
+            </div>
+
+            <!-- Step Content -->
+            <div class="step-content active" id="step1">
+                <div class="wallets-container">
+                    <h2 class="wallets-title">Conecta tu wallet</h2>
+                    <div class="wallet-options">
+                        <div class="wallet-option" id="connectFreighter">
+                            <div class="wallet-icon">🦊</div>
+                            <div class="wallet-label">Freighter</div>
+                        </div>
+                        <div class="wallet-option" id="connectXbull">
+                            <div class="wallet-icon">🐂</div>
+                            <div class="wallet-label">xBull</div>
+                        </div>
+                        <div class="wallet-option" id="connectAlbedo">
+                            <div class="wallet-icon">🌅</div>
+                            <div class="wallet-label">Albedo</div>
+                        </div>
+                        <div class="wallet-option" id="connectRabet">
+                            <div class="wallet-icon">🐰</div>
+                            <div class="wallet-label">Rabet</div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+
+            <!-- Step 2: Token Configuration -->
+            <div class="step-content" id="step2">
+                <div class="blockly-container">
+                    <h2 class="step-title">Configura tu token</h2>
+                    <div class="blockly-info">
+                        <h3>🎨 ¡Arrastra y conecta los bloques!</h3>
+                        <p>Usa los bloques de la izquierda para configurar tu token. Arrastra el bloque "🔮 Mi Contrato
+                            Mágico" y conecta los bloques de propiedades debajo.</p>
+                    </div>
+                    <div id="blocklyDiv"></div>
+                </div>
+            </div>
+
+            <!-- Step 3: Create Token -->
+            <div class="step-content" id="step3">
+                <div class="create-token-container">
+                    <h2 class="step-title">Revisa y crea tu token</h2>
+                    <div class="token-summary" id="tokenSummary">
+                        <div class="summary-item">
+                            <strong>Tipo:</strong> <span id="summaryType">-</span>
+                        </div>
+                        <div class="summary-item">
+                            <strong>Nombre:</strong> <span id="summaryName">-</span>
+                        </div>
+                        <div class="summary-item">
+                            <strong>Símbolo:</strong> <span id="summarySymbol">-</span>
+                        </div>
+                        <div class="summary-item">
+                            <strong>Cantidad Inicial:</strong> <span id="summarySupply">-</span>
+                        </div>
+                        <div class="summary-item">
+                            <strong>Características:</strong> <span id="summaryFeatures">-</span>
+                        </div>
+                        <div class="summary-item">
+                            <strong>Licencia:</strong> <span id="summaryLicense">-</span>
+                        </div>
+                        <div class="summary-item">
+                            <strong>Administrador:</strong> <span id="summaryAdmin">-</span>
+                        </div>
+                    </div>
+                    <div class="deployment-status hidden" id="deploymentStatus">
+                        <div class="deployment-message" id="deploymentMessage">Creando tu token...</div>
+                        <div class="deployment-progress">
+                            <div class="progress-bar"></div>
+                        </div>
+                    </div>
+                    <div class="deployment-result hidden" id="deploymentResult">
+                        <div class="result-content" id="resultContent"></div>
+                    </div>
+                </div>
+            </div>
+
+            <!-- Navigation Buttons -->
+            <div class="stepper-navigation">
+                <button class="btn btn-secondary" id="prevBtn" disabled>Anterior</button>
+                <button class="btn btn-primary" id="nextBtn">Siguiente</button>
+            </div>
+        </div>
+
+    </div>
+
+    <!-- Scripts -->
+    <script src="https://unpkg.com/blockly/blockly.min.js"></script>
+    <script src="https://cdn.jsdelivr.net/npm/@stellar/stellar-sdk@11.3.0/dist/stellar-sdk.min.js"></script>
+    <script src="https://cdn.jsdelivr.net/npm/@stellar/freighter-api@1.7.0/build/index.min.js"></script>
+    <script src="https://unpkg.com/albedo-sdk@^0.10.4/dist/albedo.min.js"></script>
+    <script>
+        // Estado global de la aplicación
+        const appState = {
+            currentStep: 1,
+            totalSteps: 3,
+            walletConnected: false,
+            walletAddress: null,
+            walletType: null,
+            tokenData: {
+                // Configuración básica
+                tokenType: 'FUNGIBLE',
+                name: '',
+                symbol: '',
+                supply: 0,
+                decimals: 2,
+                adminAddress: '',
+
+                // Características
+                features: {
+                    mintable: false,
+                    burnable: false,
+                    pausable: false,
+                    upgradeable: false,
+                    accessControl: false
+                },
+
+                // Información
+                securityContact: '',
+                license: 'MIT',
+
+                // Backward compatibility
+                initialSupply: 0
+            }
+        };
+
+        // Variable global para el workspace de Blockly
+        let blocklyWorkspace = null;
+
+        // Elementos del DOM
+        const elements = {
+            stepper: document.querySelector('.stepper'),
+            stepperLine: document.getElementById('stepperLine'),
+            steps: document.querySelectorAll('.step'),
+            stepContents: document.querySelectorAll('.step-content'),
+            prevBtn: document.getElementById('prevBtn'),
+            nextBtn: document.getElementById('nextBtn'),
+
+            // Summary elements
+            tokenSummary: document.getElementById('tokenSummary'),
+            summaryType: document.getElementById('summaryType'),
+            summaryName: document.getElementById('summaryName'),
+            summarySymbol: document.getElementById('summarySymbol'),
+            summarySupply: document.getElementById('summarySupply'),
+            summaryFeatures: document.getElementById('summaryFeatures'),
+            summaryLicense: document.getElementById('summaryLicense'),
+            summaryAdmin: document.getElementById('summaryAdmin'),
+
+            // Deployment elements
+            deploymentStatus: document.getElementById('deploymentStatus'),
+            deploymentMessage: document.getElementById('deploymentMessage'),
+            deploymentResult: document.getElementById('deploymentResult'),
+            resultContent: document.getElementById('resultContent')
+        };
+
+        // Funciones del stepper
+        function updateStepper() {
+            // Actualizar pasos
+            elements.steps.forEach((step, index) => {
+                const stepNumber = index + 1;
+                step.classList.remove('active', 'completed');
+
+                if (stepNumber === appState.currentStep) {
+                    step.classList.add('active');
+                } else if (stepNumber < appState.currentStep) {
+                    step.classList.add('completed');
+                }
+            });
+
+            // Actualizar contenido de pasos con transición suave
+            elements.stepContents.forEach((content, index) => {
+                content.classList.remove('active');
+                if (index + 1 === appState.currentStep) {
+                    // Pequeño delay para permitir que la transición anterior termine
+                    setTimeout(() => {
+                        content.classList.add('active');
+                    }, 50);
+                }
+            });
+
+            // Actualizar línea de progreso con transición suave
+            const progress = ((appState.currentStep - 1) / (appState.totalSteps - 1)) * 100;
+            elements.stepperLine.style.transition = 'width 0.6s cubic-bezier(0.4, 0, 0.2, 1)';
+            elements.stepperLine.style.width = `${progress}%`;
+
+            // Actualizar botones
+            elements.prevBtn.disabled = appState.currentStep === 1;
+
+            if (appState.currentStep === appState.totalSteps) {
+                elements.nextBtn.textContent = 'Crear Token';
+            } else {
+                elements.nextBtn.textContent = 'Siguiente';
+            }
+
+            // Actualizar contenido dinámico según el paso
+            updateStepContent();
+        }
+
+        function goToStep(stepNumber) {
+            if (stepNumber >= 1 && stepNumber <= appState.totalSteps) {
+                appState.currentStep = stepNumber;
+                updateStepper();
+            }
+        }
+
+        function nextStep() {
+            if (validateCurrentStep()) {
+                if (appState.currentStep < appState.totalSteps) {
+                    goToStep(appState.currentStep + 1);
+                } else {
+                    deployToken();
+                }
+            }
+        }
+
+        function prevStep() {
+            if (appState.currentStep > 1) {
+                goToStep(appState.currentStep - 1);
+            }
+        }
+
+        function updateStepContent() {
+            switch (appState.currentStep) {
+                case 2:
+                    // Inicializar Blockly cuando se llega al paso 2
+                    if (!blocklyWorkspace) {
+                        initializeBlockly();
+                    }
+                    break;
+                case 3:
+                    updateTokenSummary();
+                    break;
+            }
+        }
+
+        // Funciones de Blockly
+        function initializeBlockly() {
+            if (typeof Blockly === 'undefined') {
+                console.error('Blockly no está cargado');
+                return;
+            }
+
+            // Definir bloques personalizados
+            Blockly.Blocks['contract_settings'] = {
+                init: function () {
+                    this.appendDummyInput()
+                        .appendField("🔮 Mi Contrato Mágico");
+                    this.appendStatementInput("SETTINGS")
+                        .setCheck(null);
+                    this.setColour(290);
+                    this.setTooltip("Bloque principal del contrato");
+                }
+            };
+
+            Blockly.Blocks['token_name'] = {
+                init: function () {
+                    this.appendDummyInput()
+                        .appendField("Nombre de la moneda")
+                        .appendField(new Blockly.FieldTextInput("Mi Tesoro"), "NAME");
+                    this.setPreviousStatement(true, null);
+                    this.setNextStatement(true, null);
+                    this.setColour(190);
+                    this.setTooltip("Define el nombre de tu token");
+                }
+            };
+
+            Blockly.Blocks['token_symbol'] = {
+                init: function () {
+                    this.appendDummyInput()
+                        .appendField("Símbolo (dibujito)")
+                        .appendField(new Blockly.FieldTextInput("ORO"), "SYMBOL");
+                    this.setPreviousStatement(true, null);
+                    this.setNextStatement(true, null);
+                    this.setColour(190);
+                    this.setTooltip("Define el símbolo corto de tu token");
+                }
+            };
+
+            Blockly.Blocks['initial_supply'] = {
+                init: function () {
+                    this.appendDummyInput()
+                        .appendField("💰 Cantidad inicial de monedas")
+                        .appendField(new Blockly.FieldNumber(1000, 1), "SUPPLY");
+                    this.setPreviousStatement(true, null);
+                    this.setNextStatement(true, null);
+                    this.setColour(230);
+                    this.setTooltip("Define cuántas monedas se crearán inicialmente");
+                }
+            };
+
+            // Bloques de tipo de token
+            Blockly.Blocks['token_type'] = {
+                init: function () {
+                    this.appendDummyInput()
+                        .appendField("🎯 Tipo de token")
+                        .appendField(new Blockly.FieldDropdown([
+                            ["Fungible", "FUNGIBLE"],
+                            ["NonFungible", "NON_FUNGIBLE"],
+                            ["Stablecoin", "STABLECOIN"]
+                        ]), "TYPE");
+                    this.setPreviousStatement(true, null);
+                    this.setNextStatement(true, null);
+                    this.setColour(160);
+                    this.setTooltip("Selecciona el tipo de token que quieres crear");
+                }
+            };
+
+            // Bloques de características (Features)
+            Blockly.Blocks['feature_mintable'] = {
+                init: function () {
+                    this.appendDummyInput()
+                        .appendField("⚡ Mintable")
+                        .appendField(new Blockly.FieldCheckbox("FALSE"), "ENABLED");
+                    this.setPreviousStatement(true, null);
+                    this.setNextStatement(true, null);
+                    this.setColour(120);
+                    this.setTooltip("Permite crear más tokens después del despliegue");
+                }
+            };
+
+            Blockly.Blocks['feature_burnable'] = {
+                init: function () {
+                    this.appendDummyInput()
+                        .appendField("🔥 Burnable")
+                        .appendField(new Blockly.FieldCheckbox("FALSE"), "ENABLED");
+                    this.setPreviousStatement(true, null);
+                    this.setNextStatement(true, null);
+                    this.setColour(120);
+                    this.setTooltip("Permite quemar tokens para reducir el suministro");
+                }
+            };
+
+            Blockly.Blocks['feature_pausable'] = {
+                init: function () {
+                    this.appendDummyInput()
+                        .appendField("⏸️ Pausable")
+                        .appendField(new Blockly.FieldCheckbox("FALSE"), "ENABLED");
+                    this.setPreviousStatement(true, null);
+                    this.setNextStatement(true, null);
+                    this.setColour(120);
+                    this.setTooltip("Permite pausar todas las transferencias del token");
+                }
+            };
+
+            Blockly.Blocks['feature_upgradeable'] = {
+                init: function () {
+                    this.appendDummyInput()
+                        .appendField("🔄 Upgradeable")
+                        .appendField(new Blockly.FieldCheckbox("FALSE"), "ENABLED");
+                    this.setPreviousStatement(true, null);
+                    this.setNextStatement(true, null);
+                    this.setColour(120);
+                    this.setTooltip("Permite actualizar el contrato en el futuro");
+                }
+            };
+
+            // Bloque de control de acceso
+            Blockly.Blocks['access_control'] = {
+                init: function () {
+                    this.appendDummyInput()
+                        .appendField("🔐 Control de Acceso")
+                        .appendField(new Blockly.FieldCheckbox("FALSE"), "ENABLED");
+                    this.setPreviousStatement(true, null);
+                    this.setNextStatement(true, null);
+                    this.setColour(80);
+                    this.setTooltip("Habilita sistema de roles y permisos");
+                }
+            };
+
+            // Bloques de información
+            Blockly.Blocks['security_contact'] = {
+                init: function () {
+                    this.appendDummyInput()
+                        .appendField("📧 Contacto de Seguridad")
+                        .appendField(new Blockly.FieldTextInput("security@example.com"), "EMAIL");
+                    this.setPreviousStatement(true, null);
+                    this.setNextStatement(true, null);
+                    this.setColour(300);
+                    this.setTooltip("Email de contacto para reportar problemas de seguridad");
+                }
+            };
+
+            Blockly.Blocks['license'] = {
+                init: function () {
+                    this.appendDummyInput()
+                        .appendField("📄 Licencia")
+                        .appendField(new Blockly.FieldDropdown([
+                            ["MIT", "MIT"],
+                            ["GPL-3.0", "GPL-3.0"],
+                            ["Apache-2.0", "Apache-2.0"],
+                            ["BSD-3-Clause", "BSD-3-Clause"],
+                            ["Unlicense", "Unlicense"]
+                        ]), "LICENSE");
+                    this.setPreviousStatement(true, null);
+                    this.setNextStatement(true, null);
+                    this.setColour(300);
+                    this.setTooltip("Tipo de licencia para tu contrato");
+                }
+            };
+
+            // Crear workspace de Blockly
+            blocklyWorkspace = Blockly.inject('blocklyDiv', {
+                toolbox: `
+                    <xml>
+                        <category name="🚀 Empezar">
+                            <block type="contract_settings"></block>
+                        </category>
+                        <category name="⚙️ Configuración">
+                            <block type="token_type"></block>
+                            <block type="token_name"></block>
+                            <block type="token_symbol"></block>
+                            <block type="initial_supply"></block>
+                        </category>
+                        <category name="✨ Características">
+                            <block type="feature_mintable"></block>
+                            <block type="feature_burnable"></block>
+                            <block type="feature_pausable"></block>
+                            <block type="feature_upgradeable"></block>
+                        </category>
+                        <category name="🔐 Seguridad">
+                            <block type="access_control"></block>
+                        </category>
+                        <category name="📋 Información">
+                            <block type="security_contact"></block>
+                            <block type="license"></block>
+                        </category>
+                    </xml>
+                `,
+                scrollbars: true,
+                trashcan: true,
+                zoom: {
+                    controls: true,
+                    wheel: true,
+                    startScale: 1.0,
+                    maxScale: 3,
+                    minScale: 0.3,
+                    scaleSpeed: 1.2
+                }
+            });
+
+            // Crear bloques por defecto
+            createDefaultBlocks();
+        }
+
+        function createDefaultBlocks() {
+            if (!blocklyWorkspace) return;
+
+            // Limpiar workspace
+            blocklyWorkspace.clear();
+
+            // Crear bloque principal
+            const contractBlock = blocklyWorkspace.newBlock('contract_settings');
+            contractBlock.moveBy(50, 50);
+
+            // Crear bloques de configuración básica
+            const tokenTypeBlock = blocklyWorkspace.newBlock('token_type');
+            tokenTypeBlock.setFieldValue('FUNGIBLE', 'TYPE');
+            tokenTypeBlock.moveBy(50, 120);
+
+            const nameBlock = blocklyWorkspace.newBlock('token_name');
+            nameBlock.setFieldValue('MyToken', 'NAME');
+            nameBlock.moveBy(50, 180);
+
+            const symbolBlock = blocklyWorkspace.newBlock('token_symbol');
+            symbolBlock.setFieldValue('MTK', 'SYMBOL');
+            symbolBlock.moveBy(50, 240);
+
+            const supplyBlock = blocklyWorkspace.newBlock('initial_supply');
+            supplyBlock.setFieldValue('0', 'SUPPLY');
+            supplyBlock.moveBy(50, 300);
+
+            // Crear bloques de características
+            const mintableBlock = blocklyWorkspace.newBlock('feature_mintable');
+            mintableBlock.setFieldValue('TRUE', 'ENABLED');
+            mintableBlock.moveBy(50, 360);
+
+            const burnableBlock = blocklyWorkspace.newBlock('feature_burnable');
+            burnableBlock.setFieldValue('TRUE', 'ENABLED');
+            burnableBlock.moveBy(50, 420);
+
+            const pausableBlock = blocklyWorkspace.newBlock('feature_pausable');
+            pausableBlock.setFieldValue('TRUE', 'ENABLED');
+            pausableBlock.moveBy(50, 480);
+
+            const upgradeableBlock = blocklyWorkspace.newBlock('feature_upgradeable');
+            upgradeableBlock.setFieldValue('TRUE', 'ENABLED');
+            upgradeableBlock.moveBy(50, 540);
+
+            // Crear bloques de información
+            const securityBlock = blocklyWorkspace.newBlock('security_contact');
+            securityBlock.setFieldValue('security@example.com', 'EMAIL');
+            securityBlock.moveBy(50, 600);
+
+            const licenseBlock = blocklyWorkspace.newBlock('license');
+            licenseBlock.setFieldValue('MIT', 'LICENSE');
+            licenseBlock.moveBy(50, 660);
+
+            // Conectar bloques automáticamente
+            try {
+                // Inicializar todos los bloques antes de conectar
+                contractBlock.initSvg();
+                tokenTypeBlock.initSvg();
+                nameBlock.initSvg();
+                symbolBlock.initSvg();
+                supplyBlock.initSvg();
+                mintableBlock.initSvg();
+                burnableBlock.initSvg();
+                pausableBlock.initSvg();
+                upgradeableBlock.initSvg();
+                securityBlock.initSvg();
+                licenseBlock.initSvg();
+
+                // Conectar en cadena todos los bloques
+                const settingsInput = contractBlock.getInput('SETTINGS');
+                if (settingsInput && settingsInput.connection) {
+                    settingsInput.connection.connect(tokenTypeBlock.previousConnection);
+                }
+
+                // Cadena de conexiones
+                const blocks = [tokenTypeBlock, nameBlock, symbolBlock, supplyBlock,
+                    mintableBlock, burnableBlock, pausableBlock, upgradeableBlock,
+                    securityBlock, licenseBlock];
+
+                for (let i = 0; i < blocks.length - 1; i++) {
+                    if (blocks[i].nextConnection && blocks[i + 1].previousConnection) {
+                        blocks[i].nextConnection.connect(blocks[i + 1].previousConnection);
+                    }
+                }
+
+                blocklyWorkspace.render();
+            } catch (error) {
+                console.error('Error conectando bloques:', error);
+            }
+        }
+
+        function readBlocklyData() {
+            if (!blocklyWorkspace) {
+                console.error('Blockly workspace no está inicializado');
+                return null;
+            }
+
+            const contractBlock = blocklyWorkspace.getBlocksByType('contract_settings', false)[0];
+            if (!contractBlock) {
+                console.error('No se encontró bloque de contrato');
+                return null;
+            }
+
+            const data = {
+                // Configuración básica
+                tokenType: 'FUNGIBLE',
+                name: '',
+                symbol: '',
+                supply: 0,
+                decimals: 2, // Valor por defecto
+                adminAddress: appState.walletAddress || '',
+
+                // Características
+                features: {
+                    mintable: false,
+                    burnable: false,
+                    pausable: false,
+                    upgradeable: false,
+                    accessControl: false
+                },
+
+                // Información
+                securityContact: '',
+                license: 'MIT'
+            };
+
+            let currentBlock = contractBlock.getInputTargetBlock('SETTINGS');
+
+            while (currentBlock) {
+                switch (currentBlock.type) {
+                    case 'token_type':
+                        data.tokenType = currentBlock.getFieldValue('TYPE');
+                        break;
+                    case 'token_name':
+                        data.name = currentBlock.getFieldValue('NAME');
+                        break;
+                    case 'token_symbol':
+                        data.symbol = currentBlock.getFieldValue('SYMBOL');
+                        break;
+                    case 'initial_supply':
+                        data.supply = parseInt(currentBlock.getFieldValue('SUPPLY')) || 0;
+                        break;
+                    case 'feature_mintable':
+                        data.features.mintable = currentBlock.getFieldValue('ENABLED') === 'TRUE';
+                        break;
+                    case 'feature_burnable':
+                        data.features.burnable = currentBlock.getFieldValue('ENABLED') === 'TRUE';
+                        break;
+                    case 'feature_pausable':
+                        data.features.pausable = currentBlock.getFieldValue('ENABLED') === 'TRUE';
+                        break;
+                    case 'feature_upgradeable':
+                        data.features.upgradeable = currentBlock.getFieldValue('ENABLED') === 'TRUE';
+                        break;
+                    case 'access_control':
+                        data.features.accessControl = currentBlock.getFieldValue('ENABLED') === 'TRUE';
+                        break;
+                    case 'security_contact':
+                        data.securityContact = currentBlock.getFieldValue('EMAIL');
+                        break;
+                    case 'license':
+                        data.license = currentBlock.getFieldValue('LICENSE');
+                        break;
+                }
+                currentBlock = currentBlock.getNextBlock();
+            }
+
+            return data;
+        }
+
+        // Validación de pasos
+        function validateCurrentStep() {
+            switch (appState.currentStep) {
+                case 1:
+                    return validateWalletConnection();
+                case 2:
+                    return validateTokenData();
+                case 3:
+                    return true; // El paso 3 no requiere validación adicional
+                default:
+                    return true;
+            }
+        }
+
+        function validateWalletConnection() {
+            if (!appState.walletConnected) {
+                showToast('Por favor, conecta tu wallet primero', 'error');
+                return false;
+            }
+            return true;
+        }
+
+        function validateTokenData() {
+            // Leer datos de Blockly
+            const blocklyData = readBlocklyData();
+            if (!blocklyData) {
+                showToast('Por favor, configura tu token usando los bloques', 'error');
+                return false;
+            }
+
+            let isValid = true;
+
+            // Validar nombre del token
+            const tokenName = blocklyData.name.trim();
+            if (!tokenName) {
+                showToast('El nombre del token es requerido', 'error');
+                isValid = false;
+            } else if (tokenName.length < 3) {
+                showToast('El nombre debe tener al menos 3 caracteres', 'error');
+                isValid = false;
+            } else {
+                appState.tokenData.name = tokenName;
+            }
+
+            // Validar símbolo del token
+            const tokenSymbol = blocklyData.symbol.trim().toUpperCase();
+            if (!tokenSymbol) {
+                showToast('El símbolo del token es requerido', 'error');
+                isValid = false;
+            } else if (tokenSymbol.length > 12) {
+                showToast('El símbolo no puede tener más de 12 caracteres', 'error');
+                isValid = false;
+            } else if (!/^[A-Z0-9]+$/.test(tokenSymbol)) {
+                showToast('El símbolo solo puede contener letras mayúsculas y números', 'error');
+                isValid = false;
+            } else {
+                appState.tokenData.symbol = tokenSymbol;
+            }
+
+            // Validar cantidad inicial
+            const initialSupply = blocklyData.supply;
+            if (!initialSupply || initialSupply <= 0) {
+                showToast('La cantidad inicial debe ser mayor a 0', 'error');
+                isValid = false;
+            } else {
+                appState.tokenData.initialSupply = initialSupply;
+            }
+
+            // Actualizar todos los datos de Blockly en appState
+            if (isValid) {
+                appState.tokenData = { ...appState.tokenData, ...blocklyData };
+                appState.tokenData.adminAddress = appState.walletAddress;
+            }
+
+            return isValid;
+        }
+
+        function updateTokenSummary() {
+            // Leer datos actuales de Blockly
+            const blocklyData = readBlocklyData();
+            if (!blocklyData) return;
+
+            // Actualizar el appState con los datos de Blockly
+            appState.tokenData = { ...appState.tokenData, ...blocklyData };
+
+            // Actualizar elementos del resumen
+            if (elements.summaryType) {
+                const typeLabels = { 'FUNGIBLE': 'Fungible', 'NON_FUNGIBLE': 'No Fungible', 'STABLECOIN': 'Stablecoin' };
+                elements.summaryType.textContent = typeLabels[blocklyData.tokenType] || blocklyData.tokenType;
+            }
+            if (elements.summaryName) elements.summaryName.textContent = blocklyData.name || '-';
+            if (elements.summarySymbol) elements.summarySymbol.textContent = blocklyData.symbol || '-';
+            if (elements.summarySupply) elements.summarySupply.textContent = blocklyData.supply ? blocklyData.supply.toLocaleString() : '-';
+
+            // Mostrar características habilitadas
+            if (elements.summaryFeatures) {
+                const enabledFeatures = [];
+                if (blocklyData.features.mintable) enabledFeatures.push('Mintable');
+                if (blocklyData.features.burnable) enabledFeatures.push('Burnable');
+                if (blocklyData.features.pausable) enabledFeatures.push('Pausable');
+                if (blocklyData.features.upgradeable) enabledFeatures.push('Upgradeable');
+                if (blocklyData.features.accessControl) enabledFeatures.push('Control de Acceso');
+
+                elements.summaryFeatures.textContent = enabledFeatures.length > 0 ? enabledFeatures.join(', ') : 'Ninguna';
+            }
+
+            if (elements.summaryLicense) elements.summaryLicense.textContent = blocklyData.license || '-';
+            if (elements.summaryAdmin) elements.summaryAdmin.textContent = appState.walletAddress ? appState.walletAddress.substring(0, 8) + '...' + appState.walletAddress.substring(appState.walletAddress.length - 8) : '-';
+        }
+
+        // Funciones de utilidad
+        function showError(elementId, message) {
+            const errorElement = document.getElementById(elementId);
+            if (errorElement) {
+                errorElement.textContent = message;
+                errorElement.style.display = 'block';
+            }
+        }
+
+        function hideError(elementId) {
+            const errorElement = document.getElementById(elementId);
+            if (errorElement) {
+                errorElement.textContent = '';
+                errorElement.style.display = 'none';
+            }
+        }
+
+        function showToast(message, type = 'info') {
+            const existingToast = document.querySelector('.toast');
+            if (existingToast) {
+                existingToast.remove();
+            }
+
+            const toast = document.createElement('div');
+            toast.className = `toast ${type}`;
+            toast.textContent = message;
+            toast.style.cssText = `
+                position: fixed;
+                top: 20px;
+                right: 20px;
+                padding: 1rem 1.5rem;
+                border-radius: 0.5rem;
+                color: white;
+                font-weight: 500;
+                z-index: 1000;
+                animation: slideIn 0.3s ease;
+            `;
+
+            if (type === 'success') {
+                toast.style.background = '#10b981';
+            } else if (type === 'error') {
+                toast.style.background = '#dc2626';
+            } else {
+                toast.style.background = '#6366f1';
+            }
+
+            document.body.appendChild(toast);
+
+            setTimeout(() => {
+                if (toast.parentNode) {
+                    toast.remove();
+                }
+            }, 3000);
+        }
+
+        // Funciones de conexión de wallet
+        async function connectWallet(walletType) {
+            try {
+                showToast('Conectando wallet...', 'info');
+
+                let address;
+
+                if (walletType === 'Freighter') {
+                    if (!window.freighterApi) {
+                        // Redirigir a la página de instalación de Freighter
+                        window.open('https://freighter.app/', '_blank');
+                        showToast('Freighter no está instalado. Abriendo página de instalación...', 'info');
+                        return;
+                    }
+
+                    address = await window.freighterApi.getPublicKey();
+                    appState.walletType = 'Freighter';
+                } else if (walletType === 'Albedo') {
+                    if (!(window.albedo && window.albedo.publicKey)) {
+                        window.open('https://albedo.link/', '_blank');
+                        showToast('Albedo no está instalado/disponible. Abriendo página...', 'info');
+                        return;
+                    }
+                    const res = await window.albedo.publicKey({
+                        // Albedo funciona sin extensión, solicitar clave pública
+                        intent: 'public_key'
+                    });
+                    address = res.pubkey;
+                    appState.walletType = 'Albedo';
+                } else if (walletType === 'xBull') {
+                    if (!window.xBullApi) {
+                        // Redirigir a la página de instalación de xBull
+                        window.open('https://xbull.app/', '_blank');
+                        showToast('xBull no está instalado. Abriendo página de instalación...', 'info');
+                        return;
+                    }
+                    // Implementar conexión con xBull cuando esté disponible
+                    throw new Error('xBull wallet no está disponible en este momento');
+                } else if (walletType === 'Rabet') {
+                    if (!window.rabetApi) {
+                        // Redirigir a la página de instalación de Rabet
+                        window.open('https://rabet.io/', '_blank');
+                        showToast('Rabet no está instalado. Abriendo página de instalación...', 'info');
+                        return;
+                    }
+                    // Implementar conexión con Rabet cuando esté disponible
+                    throw new Error('Rabet wallet no está disponible en este momento');
+                } else {
+                    throw new Error(`${walletType} wallet no está disponible en este momento`);
+                }
+
+                appState.walletConnected = true;
+                appState.walletAddress = address;
+
+                showToast('Wallet conectado exitosamente', 'success');
+
+                // Navegar automáticamente al siguiente paso con transición suave
+                setTimeout(() => {
+                    nextStep();
+                }, 800);
+
+            } catch (error) {
+                console.error('Error conectando wallet:', error);
+                showToast(`Error conectando wallet: ${error.message}`, 'error');
+            }
+        }
+
+        // Función de despliegue
+        async function deployToken() {
+            try {
+                // Mostrar estado de despliegue
+                elements.tokenSummary.style.display = 'none';
+                elements.deploymentStatus.classList.remove('hidden');
+                elements.nextBtn.disabled = true;
+                elements.prevBtn.disabled = true;
+
+                elements.deploymentMessage.textContent = 'Creando tu token en la red Stellar...';
+
+                // Paso 1: Construir la transacción en el servidor
+                elements.deploymentMessage.textContent = 'Construyendo transacción...';
+
+                console.log('🚀 Datos a enviar al servidor:');
+                console.log('   code:', appState.tokenData.symbol);
+                console.log('   amount:', appState.tokenData.initialSupply);
+                console.log('   userAddress:', appState.walletAddress);
+                console.log('   tokenData completo:', appState.tokenData);
+
+                const response = await fetch('/api/build-transaction', {
+                    method: 'POST',
+                    headers: { 'Content-Type': 'application/json' },
+                    body: JSON.stringify({
+                        code: appState.tokenData.symbol,
+                        amount: appState.tokenData.initialSupply,
+                        userAddress: appState.walletAddress,
+                        tokenData: appState.tokenData
+                    }),
+                });
+
+                if (!response.ok) {
+                    const errorText = await response.text();
+                    throw new Error(`Error del servidor: ${errorText}`);
+                }
+
+                const result = await response.json();
+
+                if (!result.success) {
+                    throw new Error(result.details || 'Error desconocido del servidor');
+                }
+
+                // Paso 2: Firmar la transacción con las wallets necesarias
+                elements.deploymentMessage.textContent = 'Firmando transacción...';
+
+                // Reconstruir la transacción desde XDR
+                const transaction = StellarSdk.TransactionBuilder.fromXDR(
+                    result.transactionXDR,
+                    StellarSdk.Networks.TESTNET
+                );
+
+                // Firmar con la wallet del usuario según selección
+                let userSignedXDR;
+                if (appState.walletType === 'Freighter') {
+                    if (!window.freighterApi) {
+                        throw new Error('Freighter no está disponible para firmar la transacción');
+                    }
+                    userSignedXDR = await window.freighterApi.signTransaction(
+                        transaction.toXDR(),
+                        {
+                            network: 'TESTNET',
+                            accountToSign: appState.walletAddress
+                        }
+                    );
+                } else if (appState.walletType === 'Albedo') {
+                    if (!(window.albedo && window.albedo.tx)) {
+                        throw new Error('Albedo no está disponible para firmar la transacción');
+                    }
+                    const signRes = await window.albedo.tx({
+                        xdr: transaction.toXDR(),
+                        network: 'testnet'
+                    });
+                    userSignedXDR = signRes.signed_envelope_xdr || signRes.tx_envelope_xdr;
+                } else {
+                    throw new Error(`Firma no soportada aún para ${appState.walletType || 'wallet seleccionada'}`);
+                }
+
+                // Recrear transacción con la firma del usuario
+                const userSignedTransaction = StellarSdk.TransactionBuilder.fromXDR(
+                    userSignedXDR,
+                    StellarSdk.Networks.TESTNET
+                );
+
+                // Firmar con las claves adicionales necesarias
+                const issuingKeypair = StellarSdk.Keypair.fromSecret(result.signingKeys.issuingSecret);
+                const distributionKeypair = StellarSdk.Keypair.fromSecret(result.signingKeys.distributionSecret);
+
+                userSignedTransaction.sign(distributionKeypair);
+                userSignedTransaction.sign(issuingKeypair);
+
+                // Paso 3: Enviar la transacción firmada a Horizon
+                elements.deploymentMessage.textContent = 'Enviando transacción a Stellar...';
+
+                const server = new StellarSdk.Horizon.Server('https://horizon-testnet.stellar.org');
+                const submitResult = await server.submitTransaction(userSignedTransaction);
+
+                console.log('✅ Transacción enviada exitosamente:', submitResult.hash);
+
+                // Mostrar resultado exitoso
+                elements.deploymentStatus.classList.add('hidden');
+                elements.deploymentResult.classList.remove('hidden');
+
+                elements.resultContent.innerHTML = `
+                    <div style="text-align: left; max-width: 500px; margin: 0 auto;">
+                        <div style="background: #f1f5f9; padding: 1rem; border-radius: 0.5rem; margin-bottom: 1rem;">
+                            <div><strong>Token:</strong> ${result.assetCode}</div>
+                            <div><strong>Emisor:</strong> ${result.assetIssuer}</div>
+                            <div><strong>Hash:</strong> ${submitResult.hash}</div>
+                        </div>
+                        <div style="display: flex; gap: 1rem; justify-content: center; flex-wrap: wrap;">
+                            <a href="https://stellar.expert/explorer/testnet/tx/${submitResult.hash}" 
+                               target="_blank" 
+                               style="display: inline-block; background: #6366f1; color: white; padding: 0.75rem 1.5rem; text-decoration: none; border-radius: 0.5rem; font-weight: 600;">
+                                🔍 Ver en Stellar Explorer
+                            </a>
+                            <a href="https://laboratory.stellar.org/#explorer?resource=transactions&endpoint=single&network=testnet&request=+${submitResult.hash}" 
+                               target="_blank" 
+                               style="display: inline-block; background: #10b981; color: white; padding: 0.75rem 1.5rem; text-decoration: none; border-radius: 0.5rem; font-weight: 600;">
+                                🧪 Ver en Laboratory
+                            </a>
+                        </div>
+                    </div>
+                `;
+
+                showToast('¡Token creado exitosamente!', 'success');
+
+            } catch (error) {
+                console.error('Error desplegando token:', error);
+                elements.deploymentMessage.textContent = `Error: ${error.message}`;
+                showToast(`Error creando token: ${error.message}`, 'error');
+
+                // Re-habilitar botones
+                elements.nextBtn.disabled = false;
+                elements.prevBtn.disabled = false;
+            }
+        }
+
+        // Event listeners
+        document.addEventListener('DOMContentLoaded', () => {
+            // Botones de navegación
+            elements.nextBtn.addEventListener('click', nextStep);
+            elements.prevBtn.addEventListener('click', prevStep);
+
+            // Botones de conexión de wallet
+            document.getElementById('connectFreighter').addEventListener('click', () => connectWallet('Freighter'));
+            document.getElementById('connectXbull').addEventListener('click', () => connectWallet('xBull'));
+            document.getElementById('connectAlbedo').addEventListener('click', () => connectWallet('Albedo'));
+            document.getElementById('connectRabet').addEventListener('click', () => connectWallet('Rabet'));
+
+            // Efectos de hover para las opciones de wallet
+            document.querySelectorAll('.wallet-option').forEach(option => {
+                option.addEventListener('mouseenter', function () {
+                    this.style.transform = 'translateY(-6px) scale(1.05)';
+                });
+
+                option.addEventListener('mouseleave', function () {
+                    this.style.transform = 'translateY(0) scale(1)';
+                });
+            });
+
+            // Inicializar stepper
+            updateStepper();
+        });
+
+    </script>
+</body>
+
+</html>
