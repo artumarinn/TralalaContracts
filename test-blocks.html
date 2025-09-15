@@ -121,9 +121,15 @@
 
             // Conectar bloques
             try {
+                // Inicializar los bloques antes de conectar
+                contractBlock.initSvg();
+                nameBlock.initSvg();
+                symbolBlock.initSvg();
+                supplyBlock.initSvg();
+
                 const settingsInput = contractBlock.getInput('SETTINGS');
                 if (settingsInput && settingsInput.connection) {
-                    settingsInput.connection.connect(nameBlock.outputConnection);
+                    settingsInput.connection.connect(nameBlock.previousConnection);
                 }
 
                 if (nameBlock.nextConnection && symbolBlock.previousConnection) {
