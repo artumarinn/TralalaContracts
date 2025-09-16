@@ -10,6 +10,9 @@ RUN apk add --no-cache \
     openssl-dev \
     pkgconfig \
     git \
+    dbus-dev \
+    eudev-dev \
+    linux-headers \
     && rm -rf /var/cache/apk/*
 
 # Instalar Rust con configuración optimizada
@@ -23,9 +26,11 @@ ENV PATH="/root/.cargo/bin:${PATH}"
 # Instalar soroban-cli con configuraciones optimizadas para Alpine
 RUN source ~/.cargo/env \
     && export RUSTFLAGS="-C target-feature=-crt-static" \
-    && cargo install soroban-cli --version 21.5.0 --locked \
-    || cargo install soroban-cli --version 20.3.4 --locked \
-    || (echo "Fallback: installing without version lock" && cargo install soroban-cli)
+    && export PKG_CONFIG_ALLOW_CROSS=1 \
+    && export PKG_CONFIG_ALL_STATIC=1 \
+    && cargo install soroban-cli --version 21.5.0 --locked --no-default-features \
+    || cargo install soroban-cli --version 20.3.4 --locked --no-default-features \
+    || (echo "Fallback: installing without version lock and features" && cargo install soroban-cli --no-default-features)
 
 # Configurar PATH para Rust
 ENV PATH="/root/.cargo/bin:${PATH}"

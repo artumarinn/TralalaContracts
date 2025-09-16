@@ -6,7 +6,7 @@
   "scripts": {
     "start": "node server.js",
     "dev": "nodemon server.js",
-    "build": "echo 'Build completed - static files ready'",
+    "build": "node pre-deploy-check.js && echo 'Build completed - all systems ready'",
     "test-stellar": "node test-stellar.js",
     "setup": "npm install && echo 'Setup completed. Note: Rust/Cargo required for smart contract compilation'",
     "clean": "bash cleanup-for-git.sh",
