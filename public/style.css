@@ -235,7 +235,6 @@ body {
     align-items: center;
     position: relative;
     z-index: 2;
-    background: white;
     padding: 0 1rem;
 }
 
@@ -254,7 +253,6 @@ body {
 }
 
 .step.active .step-number {
-    background: var(--primary-pink);
     color: white;
 }
 
@@ -481,7 +479,6 @@ body {
     align-items: center;
     position: relative;
     z-index: 2;
-    background: white;
     padding: 0 1rem;
 }
 
