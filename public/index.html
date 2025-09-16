@@ -13,24 +13,25 @@
     <link rel="stylesheet" href="style.css">
 </head>
 
-<body>
+<body style="">
     <div class="main-container">
         <!-- Grid Pattern Background -->
         <div id="gridBackground" class="grid-background"></div>
 
         <!-- Header -->
-        <div class="header">
+        <div class="header" style="margin-bottom: 50px;">
             <div class="logo-container">
-                <video src="/tralala.mp4" alt="Tralalero Contracts Video Logo" class="logo" autoplay muted loop
+                <video style="z-index: 999;
+    border-radius: 100%; margin-right: 30px;" src="/tralala.mp4" alt="Tralalero Contracts Video Logo" class="logo" autoplay muted loop
                     playsinline></video>
-                <h1 class="title">
+                <h1 class="title" style="z-index: 999;">
                     <span class="title-line1">TRALALA</span>
-                    <span class="title-line2">CONTRACTS</span>
+                    <span class="title-line2">CONTRACT</span>
                 </h1>
             </div>
         </div>
         <!-- Stepper Container -->
-        <div class="stepper-container">
+        <div class="stepper-container" style="background-color: white; box-shadow: 0 0 10px 0 rgba(0, 0, 0, 0.5); padding: 50px; border-radius: 10px;">
             <!-- Stepper Progress -->
             <div class="stepper">
                 <div class="stepper-line" id="stepperLine"></div>
@@ -40,15 +41,15 @@
                 </div>
                 <div class="step" data-step="2">
                     <div class="step-number">2</div>
-                    <div class="step-label">Configurar con Bloques</div>
+                    <div class="step-label">Code</div>
                 </div>
                 <div class="step" data-step="3">
                     <div class="step-number">3</div>
-                    <div class="step-label">Configurar Smart Contract</div>
+                    <div class="step-label">Preview</div>
                 </div>
                 <div class="step" data-step="4">
                     <div class="step-number">4</div>
-                    <div class="step-label">Revisar y Desplegar</div>
+                    <div class="step-label">Review</div>
                 </div>
             </div>
 
@@ -97,15 +98,11 @@
                     <div class="code-preview-section">
                         <div class="preview-header">
                             <h3>📋 Vista Previa del Código</h3>
-                            <div class="preview-actions">
-                                <button class="btn btn-secondary" id="refreshPreview">🔄 Actualizar</button>
-                                <button class="btn btn-secondary" id="validateContract">✅ Validar</button>
-                                <button class="btn btn-secondary" id="viewFullCode">👁️ Ver Código Completo</button>
-                            </div>
+
                         </div>
                         <div class="code-preview" id="codePreview">
                             <pre
-                                id="contractPreview">// El código se generará automáticamente cuando configures los bloques...</pre>
+                                id="contractPreview"style="text-align: left;" >// El código se generará automáticamente cuando configures los bloques...</pre>
                         </div>
                         <div class="validation-result hidden" id="validationResult">
                             <div id="validationMessage"></div>
@@ -113,7 +110,7 @@
                     </div>
 
                     <!-- Interfaz de Blockly Expandida -->
-                    <div class="blockly-advanced-container">
+                    <div style="display: none;" class="blockly-advanced-container">
                         <div id="blocklyDiv"></div>
                     </div>
                 </div>
@@ -351,7 +348,7 @@
             elements.prevBtn.disabled = appState.currentStep === 1;
 
             if (appState.currentStep === appState.totalSteps) {
-                elements.nextBtn.textContent = 'Crear Token';
+                elements.nextBtn.textContent = 'Crear Smart Contract';
             } else {
                 elements.nextBtn.textContent = 'Siguiente';
             }
@@ -424,14 +421,17 @@
         function generateAdvancedRustCode(data) {
             const features = [];
 
-            if (data.features.mintable) features.push('Mintable');
-            if (data.features.burnable) features.push('Burnable');
-            if (data.features.pausable) features.push('Pausable');
-            if (data.features.upgradeable) features.push('Upgradeable');
-            if (data.features.governance) features.push('Governance');
-            if (data.features.stakeable) features.push('Stakeable');
-            if (data.features.timeLock) features.push('TimeLock');
-            if (data.features.accessControl) features.push('AccessControl');
+            // Verificar que data.features exista antes de acceder a sus propiedades
+            if (data.features) {
+                if (data.features.mintable) features.push('Mintable');
+                if (data.features.burnable) features.push('Burnable');
+                if (data.features.pausable) features.push('Pausable');
+                if (data.features.upgradeable) features.push('Upgradeable');
+                if (data.features.governance) features.push('Governance');
+                if (data.features.stakeable) features.push('Stakeable');
+                if (data.features.timeLock) features.push('TimeLock');
+                if (data.features.accessControl) features.push('AccessControl');
+            }
 
             return `// Smart Contract: ${data.name || 'Mi Token'}
 // Generado automáticamente por Tralalero Contracts
@@ -441,8 +441,8 @@ use soroban_sdk::{
     contract, contractimpl, Address, Env, String, Symbol, Map,
     token::{self, Interface as TokenInterface},
     auth::{Context, CustomAccountInterface},
-    ${data.features.governance ? 'governance::GovernanceInterface,' : ''}
-    ${data.features.stakeable ? 'staking::StakingInterface,' : ''}
+    ${data.features && data.features.governance ? 'governance::GovernanceInterface,' : ''}
+    ${data.features && data.features.stakeable ? 'staking::StakingInterface,' : ''}
 };
 
 // Constantes del contrato
@@ -455,8 +455,8 @@ const INITIAL_SUPPLY: i128 = ${data.supply || 1000};
 const ADMIN: Symbol = symbol_short!("ADMIN");
 const PAUSED: Symbol = symbol_short!("PAUSED");
 const TOTAL_SUPPLY: Symbol = symbol_short!("TOTAL_SUP");
-${data.security.transferLimit ? `const TRANSFER_LIMIT: Symbol = symbol_short!("TRANS_LIM");` : ''}
-${data.features.stakeable ? `const STAKING_POOL: Symbol = symbol_short!("STAKING");` : ''}
+${data.security && data.security.transferLimit ? `const TRANSFER_LIMIT: Symbol = symbol_short!("TRANS_LIM");` : ''}
+${data.features && data.features.stakeable ? `const STAKING_POOL: Symbol = symbol_short!("STAKING");` : ''}
 
 #[contract]
 pub struct TokenContract;
@@ -472,8 +472,8 @@ impl TokenContract {
         
         env.storage().instance().set(&ADMIN, &admin);
         env.storage().instance().set(&TOTAL_SUPPLY, &INITIAL_SUPPLY);
-        ${data.features.pausable ? 'env.storage().instance().set(&PAUSED, &false);' : ''}
-        ${data.security.transferLimit ? `env.storage().instance().set(&TRANSFER_LIMIT, &${data.security.transferLimit});` : ''}
+        ${data.features && data.features.pausable ? 'env.storage().instance().set(&PAUSED, &false);' : ''}
+        ${data.security && data.security.transferLimit ? `env.storage().instance().set(&TRANSFER_LIMIT, &${data.security.transferLimit});` : ''}
         
         // Mint inicial al admin
         if INITIAL_SUPPLY > 0 {
@@ -495,27 +495,27 @@ impl TokenContract {
         DECIMALS
     }
 
-    ${data.features.mintable ? `
+    ${data.features && data.features.mintable ? `
     /// Mint nuevos tokens (solo admin)
     pub fn mint(env: Env, to: Address, amount: i128) {
         Self::check_admin(&env);
-        ${data.features.pausable ? 'Self::check_not_paused(&env);' : ''}
+        ${data.features && data.features.pausable ? 'Self::check_not_paused(&env);' : ''}
         
         token::Client::new(&env, &env.current_contract_address())
             .mint(&to, &amount);
     }` : ''}
 
-    ${data.features.burnable ? `
+    ${data.features && data.features.burnable ? `
     /// Burn tokens
     pub fn burn(env: Env, from: Address, amount: i128) {
         from.require_auth();
-        ${data.features.pausable ? 'Self::check_not_paused(&env);' : ''}
+        ${data.features && data.features.pausable ? 'Self::check_not_paused(&env);' : ''}
         
         token::Client::new(&env, &env.current_contract_address())
             .burn(&from, &amount);
     }` : ''}
 
-    ${data.features.pausable ? `
+    ${data.features && data.features.pausable ? `
     /// Pausar el contrato (solo admin)
     pub fn pause(env: Env) {
         Self::check_admin(&env);
@@ -528,7 +528,7 @@ impl TokenContract {
         env.storage().instance().set(&PAUSED, &false);
     }` : ''}
 
-    ${data.features.stakeable ? `
+    ${data.features && data.features.stakeable ? `
     /// Hacer staking de tokens
     pub fn stake(env: Env, from: Address, amount: i128) {
         from.require_auth();
@@ -544,7 +544,7 @@ impl TokenContract {
         admin.require_auth();
     }
 
-    ${data.features.pausable ? `
+    ${data.features && data.features.pausable ? `
     fn check_not_paused(env: &Env) {
         let paused: bool = env.storage().instance().get(&PAUSED).unwrap_or(false);
         if paused {
@@ -554,10 +554,10 @@ impl TokenContract {
 }
 
 // Características habilitadas: ${features.join(', ') || 'Ninguna'}
-// Límite de transferencia: ${data.security.transferLimit || 'Sin límite'}
-// Recompensa de staking: ${data.economics.stakingReward || 0}% anual
-// Fee de transacción: ${data.economics.transactionFee || 0}%
-// Burn rate: ${data.economics.burnRate || 0}%`;
+// Límite de transferencia: ${data.security && data.security.transferLimit || 'Sin límite'}
+// Recompensa de staking: ${data.economics && data.economics.stakingReward || 0}% anual
+// Fee de transacción: ${data.economics && data.economics.transactionFee || 0}%
+// Burn rate: ${data.economics && data.economics.burnRate || 0}%`;
         }
 
         // Función para validar el contrato
@@ -780,6 +780,44 @@ impl TokenContract {
                 }
             };
 
+            // Bloques de características del contrato
+            Blockly.Blocks['feature_toggle'] = {
+                init: function () {
+                    this.appendDummyInput()
+                        .appendField("🔥 Característica")
+                        .appendField(new Blockly.FieldDropdown([
+                            ["Mintable", "mintable"],
+                            ["Burnable", "burnable"],
+                            ["Pausable", "pausable"],
+                            ["Upgradeable", "upgradeable"],
+                            ["Governance", "governance"],
+                            ["Stakeable", "stakeable"],
+                            ["Time Lock", "timeLock"],
+                            ["Control de Acceso", "accessControl"]
+                        ]), "FEATURE")
+                        .appendField(new Blockly.FieldCheckbox("FALSE"), "ENABLED");
+                    this.setPreviousStatement(true, null);
+                    this.setNextStatement(true, null);
+                    this.setColour(290);
+                    this.setTooltip("Habilita o deshabilita características del contrato");
+                }
+            };
+
+            Blockly.Blocks['token_config'] = {
+                init: function () {
+                    this.appendDummyInput()
+                        .appendField("🪙 Token Config")
+                        .appendField("símbolo:")
+                        .appendField(new Blockly.FieldTextInput("TKN"), "SYMBOL")
+                        .appendField("suministro:")
+                        .appendField(new Blockly.FieldNumber(1000, 0), "SUPPLY");
+                    this.setPreviousStatement(true, null);
+                    this.setNextStatement(true, null);
+                    this.setColour(260);
+                    this.setTooltip("Configura el token asociado al contrato");
+                }
+            };
+
             // Crear workspace de Blockly
             blocklyWorkspace = Blockly.inject('blocklyDiv', {
                 toolbox: `
@@ -791,12 +829,16 @@ impl TokenContract {
                             <block type="contract_name"></block>
                             <block type="contract_version"></block>
                             <block type="admin_address"></block>
+                            <block type="token_config"></block>
                         </category>
                         <category name="📦 Estado">
                             <block type="state_var"></block>
                         </category>
                         <category name="⚙️ Funciones">
                             <block type="function_def"></block>
+                        </category>
+                        <category name="🔥 Características">
+                            <block type="feature_toggle"></block>
                         </category>
                     </xml>
                 `,
@@ -859,6 +901,15 @@ impl TokenContract {
                     adminBlock.render();
                     adminBlock.setFieldValue('G...', 'ADDRESS');
                     blocks.push(adminBlock);
+                }
+
+                const tokenConfigBlock = blocklyWorkspace.newBlock('token_config');
+                if (tokenConfigBlock) {
+                    tokenConfigBlock.initSvg();
+                    tokenConfigBlock.render();
+                    tokenConfigBlock.setFieldValue('TKN', 'SYMBOL');
+                    tokenConfigBlock.setFieldValue(1000, 'SUPPLY');
+                    blocks.push(tokenConfigBlock);
                 }
 
                 const stateVarBlock = blocklyWorkspace.newBlock('state_var');
@@ -932,7 +983,43 @@ impl TokenContract {
                 version: '0.1.0',
                 admin: appState.walletAddress || '',
                 state: [],
-                functions: []
+                functions: [],
+                // Características por defecto para smart contracts
+                features: {
+                    mintable: false,
+                    burnable: false,
+                    pausable: false,
+                    upgradeable: false,
+                    governance: false,
+                    stakeable: false,
+                    timeLock: false,
+                    accessControl: false
+                },
+                // Configuración adicional
+                security: {
+                    transferLimit: 0,
+                    dailyLimit: 0,
+                    whitelistEnabled: false,
+                    freezeable: false,
+                    recoverableKeys: false
+                },
+                economics: {
+                    transactionFee: 0,
+                    burnRate: 0,
+                    stakingReward: 0,
+                    inflationRate: 0
+                },
+                metadata: {
+                    license: 'MIT',
+                    description: '',
+                    website: '',
+                    logoUrl: ''
+                },
+                // Propiedades de token para compatibilidad
+                symbol: '',
+                supply: 0,
+                decimals: 2,
+                tokenType: 'SMART_CONTRACT'
             };
 
             let currentBlock = contractBlock.getInputTargetBlock('SETTINGS');
@@ -948,6 +1035,15 @@ impl TokenContract {
                         break;
                     case 'admin_address':
                         data.admin = currentBlock.getFieldValue('ADDRESS');
+                        break;
+                    case 'token_config':
+                        data.symbol = currentBlock.getFieldValue('SYMBOL');
+                        data.supply = currentBlock.getFieldValue('SUPPLY');
+                        break;
+                    case 'feature_toggle':
+                        const featureName = currentBlock.getFieldValue('FEATURE');
+                        const isEnabled = currentBlock.getFieldValue('ENABLED') === 'TRUE';
+                        data.features[featureName] = isEnabled;
                         break;
                     case 'state_var':
                         data.state = data.state || [];
@@ -1049,13 +1145,16 @@ impl TokenContract {
             // Mostrar características habilitadas
             if (elements.summaryFeatures) {
                 const enabledFeatures = [];
-                if (blocklyData.features.mintable) enabledFeatures.push('Mintable');
-                if (blocklyData.features.burnable) enabledFeatures.push('Burnable');
-                if (blocklyData.features.pausable) enabledFeatures.push('Pausable');
-                if (blocklyData.features.upgradeable) enabledFeatures.push('Upgradeable');
-                if (blocklyData.features.accessControl) enabledFeatures.push('Control de Acceso');
+                if (blocklyData.features && blocklyData.features.mintable) enabledFeatures.push('Mintable');
+                if (blocklyData.features && blocklyData.features.burnable) enabledFeatures.push('Burnable');
+                if (blocklyData.features && blocklyData.features.pausable) enabledFeatures.push('Pausable');
+                if (blocklyData.features && blocklyData.features.upgradeable) enabledFeatures.push('Upgradeable');
+                if (blocklyData.features && blocklyData.features.accessControl) enabledFeatures.push('Control de Acceso');
+                if (blocklyData.features && blocklyData.features.governance) enabledFeatures.push('Governance');
+                if (blocklyData.features && blocklyData.features.stakeable) enabledFeatures.push('Stakeable');
+                if (blocklyData.features && blocklyData.features.timeLock) enabledFeatures.push('Time Lock');
 
-                elements.summaryFeatures.textContent = enabledFeatures.length > 0 ? enabledFeatures.join(', ') : 'Ninguna';
+                elements.summaryFeatures.textContent = enabledFeatures.length > 0 ? enabledFeatures.join(', ') : 'Smart Contract Básico';
             }
 
             if (elements.summaryLicense) elements.summaryLicense.textContent = blocklyData.license || '-';

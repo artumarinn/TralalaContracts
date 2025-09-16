@@ -38,7 +38,7 @@ body {
     padding-top: 4rem;
 }
 
-/* Grid Pattern de fondo */
+/* Fondo con imagen */
 .grid-background {
     position: absolute;
     top: 0;
@@ -46,23 +46,14 @@ body {
     width: 100%;
     height: 100%;
     z-index: 1;
-    background-image:
-        linear-gradient(rgba(0, 0, 0, 0.1) 1px, transparent 1px),
-        linear-gradient(90deg, rgba(0, 0, 0, 0.1) 1px, transparent 1px);
-    background-size: 40px 40px;
-    opacity: 0.3;
-    animation: gridMove 20s linear infinite;
+    background-image: url('IMG_2065.PNG');
+    background-size: cover;
+    background-position: center;
+    background-repeat: no-repeat;
+    opacity: 0.8;
 }
 
-@keyframes gridMove {
-    0% {
-        transform: translate(0, 0);
-    }
-
-    100% {
-        transform: translate(40px, 40px);
-    }
-}
+/* Animación removida - ya no es necesaria para el fondo de imagen */
 
 .header {
     display: flex;
