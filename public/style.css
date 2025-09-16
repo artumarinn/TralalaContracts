@@ -1,7 +1,7 @@
 /* Variables CSS */
 :root {
-    --primary-pink: #ed749d;
-    --primary-blue: #4A90E2;
+    --primary-pink: #0047AB;
+    --primary-blue: #E9D758;
     --primary-orange: #FF6B35;
     --white: #FFFFFF;
     --gray-light: #F8F9FA;
@@ -64,39 +64,27 @@ body {
     }
 }
 
-/* Header con logo y título */
 .header {
-    text-align: left;
-    margin-bottom: 4rem;
-    z-index: 2;
-    align-self: flex-start;
-    width: 100%;
-    max-width: 1200px;
+    display: flex;
+    justify-content: center; 
+    align-items: center;
 }
 
 .logo-container {
-    display: flex;
-    align-items: center;
-    justify-content: flex-start;
-    margin-bottom: 1rem;
+    display: flex; 
+    flex-direction: row;
+    align-items: center; 
+    gap: 10px; 
 }
 
 .logo {
-    width: 60px;
-    height: 60px;
-    margin-right: 1rem;
-    border-radius: 12px;
-    object-fit: cover;
-    aspect-ratio: 1/1;
+    width: 300px;
+    height: 300px; 
+    object-fit: contain;
 }
 
 .title {
-    font-family: 'Schabo Condensed', sans-serif;
-    font-weight: 900;
-    font-size: 3.5rem;
-    color: #000000;
-    line-height: 0.8;
-    text-align: left;
+    text-align: center; 
 }
 
 .title-line1 {
@@ -105,20 +93,29 @@ body {
 
 .title-line2 {
     display: block;
+     background-color: #0047AB; 
+    padding: 2px 5px; 
+    border-radius: 4px; 
+    color: white; 
 }
 
-/* Contenedor de wallets centrado */
 .wallets-container {
     position: relative;
     z-index: 2;
     text-align: center;
 }
-
+.description-box {
+    background-color: #f8f9fa; 
+    border: 2px solid #e0e0e0; 
+    border-radius: 12px; 
+    padding: 1.5rem; 
+    margin-bottom: 2rem; 
+    text-align: center; 
+}
 .wallets-title {
     font-size: 1.1rem;
-    color: #000000;
-    margin-bottom: 2rem;
-    font-weight: 600;
+    color: gray;
+    font-weight: normal;
 }
 
 .wallet-options {
@@ -420,7 +417,7 @@ body {
 }
 
 .btn-primary:hover:not(:disabled) {
-    background: #e55a8a;
+    background: #17183B;
     transform: translateY(-2px);
 }
 
@@ -698,7 +695,7 @@ body {
 }
 
 .btn-primary:hover:not(:disabled) {
-    background: #E55A8A;
+    background: #17183B;
     transform: translateY(-2px);
 }
 
@@ -716,19 +713,15 @@ body {
 #blocklyDiv {
     height: 500px;
     width: 100%;
-    border: 2px solid #e0e0e0;
-    border-radius: 12px;
-    margin-top: 1rem;
     background: #fafafa;
 }
-
-.blockly-container {
-    background: white;
-    border-radius: 12px;
-    padding: 1.5rem;
-    box-shadow: 0 4px 12px rgba(0, 0, 0, 0.1);
+.blocklySvg {
+  background: #1e1e2f !important; /* Fondo oscuro */
+  border-radius: 10px;
 }
-
+.blocklyMainBackground {
+  fill: #033860 !important;
+}
 .blockly-info {
     background: linear-gradient(135deg, #ff6b9d, #c44569);
     color: white;
@@ -737,10 +730,22 @@ body {
     margin-bottom: 1rem;
     font-size: 0.9rem;
 }
-
+.blocklyToolbox {
+  background: #004385 !important;
+  padding-top: 10px;
+  color: white;
+  display: flex;
+  align-items: stretch;
+  text-align: left;
+}
 .blockly-info h3 {
     margin: 0 0 0.5rem 0;
     font-size: 1.1rem;
+}
+.blocklyToolboxCategory{
+    flex: 1;
+    margin-top: 5px;
+    margin-bottom: 5px;
 }
 
 /* Utilidades */

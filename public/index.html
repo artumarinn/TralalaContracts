@@ -21,14 +21,14 @@
         <!-- Header -->
         <div class="header">
             <div class="logo-container">
-                <img src="IMG_2036.PNG" alt="Tralalero Contracts Logo" class="logo">
+                <video src="./tralala.mp4" alt="Tralalero Contracts Video Logo" class="logo" autoplay muted loop
+                    playsinline></video>
                 <h1 class="title">
                     <span class="title-line1">TRALALA</span>
                     <span class="title-line2">CONTRACTS</span>
                 </h1>
             </div>
         </div>
-
         <!-- Stepper Container -->
         <div class="stepper-container">
             <!-- Stepper Progress -->
@@ -51,7 +51,9 @@
             <!-- Step Content -->
             <div class="step-content active" id="step1">
                 <div class="wallets-container">
-                    <h2 class="wallets-title">Conecta tu wallet</h2>
+                    <div class="description-box">
+                        <h2 class="wallets-title">Conecta tu billetera y empieza a construir tu smart contract</h2>
+                    </div>
                     <div class="wallet-options">
                         <div class="wallet-option" id="connectFreighter">
                             <div class="wallet-icon">🦊</div>
@@ -61,14 +63,6 @@
                             <div class="wallet-icon">🐂</div>
                             <div class="wallet-label">xBull</div>
                         </div>
-                        <div class="wallet-option" id="connectAlbedo">
-                            <div class="wallet-icon">🌅</div>
-                            <div class="wallet-label">Albedo</div>
-                        </div>
-                        <div class="wallet-option" id="connectRabet">
-                            <div class="wallet-icon">🐰</div>
-                            <div class="wallet-label">Rabet</div>
-                        </div>
                     </div>
                 </div>
             </div>
@@ -76,10 +70,10 @@
             <!-- Step 2: Token Configuration -->
             <div class="step-content" id="step2">
                 <div class="blockly-container">
-                    <h2 class="step-title">Configura tu token</h2>
-                    <div class="blockly-info">
-                        <h3>🎨 ¡Arrastra y conecta los bloques!</h3>
-                        <p>Usa los bloques de la izquierda para configurar tu token. Arrastra el bloque "🔮 Mi Contrato
+                    <div class="description-box">
+                        <h2 class="wallets-title">¡Arrastra y conecta los bloques!</h2>
+                        <p class="wallets-title">Usa los bloques de la izquierda para configurar tu token. <br /> Arrastra el bloque "🔮 Mi
+                            Contrato
                             Mágico" y conecta los bloques de propiedades debajo.</p>
                     </div>
                     <div id="blocklyDiv"></div>
@@ -452,25 +446,25 @@
             blocklyWorkspace = Blockly.inject('blocklyDiv', {
                 toolbox: `
                     <xml>
-                        <category name="🚀 Empezar">
+                        <category name="Empezar">
                             <block type="contract_settings"></block>
                         </category>
-                        <category name="⚙️ Configuración">
+                        <category name="Configuración">
                             <block type="token_type"></block>
                             <block type="token_name"></block>
                             <block type="token_symbol"></block>
                             <block type="initial_supply"></block>
                         </category>
-                        <category name="✨ Características">
+                        <category name="Características">
                             <block type="feature_mintable"></block>
                             <block type="feature_burnable"></block>
                             <block type="feature_pausable"></block>
                             <block type="feature_upgradeable"></block>
                         </category>
-                        <category name="🔐 Seguridad">
+                        <category name="Seguridad">
                             <block type="access_control"></block>
                         </category>
-                        <category name="📋 Información">
+                        <category name="Información">
                             <block type="security_contact"></block>
                             <block type="license"></block>
                         </category>
@@ -485,7 +479,8 @@
                     maxScale: 3,
                     minScale: 0.3,
                     scaleSpeed: 1.2
-                }
+                },
+                theme: Blockly.Themes.Modern 
             });
 
             // Crear bloques por defecto
