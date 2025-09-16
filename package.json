@@ -12,7 +12,9 @@
     "clean": "bash cleanup-for-git.sh",
     "check": "node check-setup.js",
     "pre-deploy": "node pre-deploy-check.js",
-    "deploy-prep": "npm run clean && npm run pre-deploy"
+    "deploy-prep": "npm run clean && npm run pre-deploy",
+    "verify-render": "node verify-render-setup.js",
+    "render-ready": "npm run clean && npm run verify-render"
   },
   "engines": {
     "node": ">=16.0.0",

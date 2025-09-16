@@ -5,19 +5,41 @@ services:
     plan: free
     region: oregon # Región más barata
     buildCommand: |
-      # Instalar dependencias Node.js
+      # Intentar build completo con Rust, usar fallback si falla
+      echo "🚀 Iniciando build para Render..."
+
+      # Instalar dependencias Node.js primero (siempre funciona)
       npm install
 
-      # Instalar Rust y herramientas para smart contracts
-      curl --proto '=https' --tlsv1.2 -sSf https://sh.rustup.rs | sh -s -- -y
-      source ~/.cargo/env
-      rustup target add wasm32-unknown-unknown
-      cargo install soroban-cli
+      # Intentar instalación completa de Rust y soroban-cli
+      if (
+        apt-get update && 
+        apt-get install -y build-essential curl pkg-config libssl-dev git &&
+        curl --proto '=https' --tlsv1.2 -sSf https://sh.rustup.rs | sh -s -- -y --default-toolchain stable --profile minimal &&
+        source ~/.cargo/env &&
+        rustup target add wasm32-unknown-unknown &&
+        export CARGO_NET_RETRY=10 &&
+        export CARGO_HTTP_TIMEOUT=300 &&
+        export RUSTFLAGS="-C opt-level=2" &&
+        (
+          cargo install soroban-cli --version 21.5.0 --locked ||
+          cargo install soroban-cli --version 20.3.4 --locked ||
+          cargo install soroban-cli --version 20.0.0 --locked ||
+          cargo install soroban-cli
+        ) &&
+        soroban --version
+      ); then
+        echo "✅ Build completo exitoso - Rust y soroban-cli instalados"
+      else
+        echo "⚠️  Build completo falló, usando fallback..."
+        chmod +x ./fallback-build.sh
+        ./fallback-build.sh
+      fi
 
       # Crear directorios necesarios
       mkdir -p tralala/dynamic-contracts tralala/compiled
 
-      echo "Build completed - Rust and Node.js ready"
+      echo "🎉 Build completado"
 
     startCommand: npm start
 

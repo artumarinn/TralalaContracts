@@ -60,22 +60,61 @@ LOG_LEVEL=info
 
 ## ⚠️ Troubleshooting
 
-### Build Fails
+### Error "soroban-cli compilation failed" (exit code 101)
+
+**Problema:** El error más común en Render es la falla de compilación de soroban-cli.
+
+**Soluciones implementadas:**
+
+1. **Múltiples versiones de fallback:** El build intentará instalar diferentes versiones de soroban-cli
+2. **Modo fallback automático:** Si la compilación falla, la app funcionará con tokens simples
+3. **Dependencias optimizadas:** Se instalan todas las dependencias necesarias para Alpine/Ubuntu
+
+**Para verificar antes del deploy:**
 
 ```bash
-# Si el build falla, verificar logs en Render dashboard
-# Render instala Rust automáticamente, puede tomar 5-10 minutos
+npm run verify-render
 ```
+
+### Build Fails - Pasos de diagnóstico
+
+1. **Verificar logs en Render dashboard**
+2. **Ejecutar verificación local:**
+   ```bash
+   npm run render-ready
+   ```
+3. **Si persiste el error, el build usará modo fallback automáticamente**
 
 ### Smart Contracts No Compilan
 
-- ✅ **Render:** Funcionalidad completa con Rust
+- ✅ **Render (modo completo):** Rust + soroban-cli instalado correctamente
+- ⚠️ **Render (modo fallback):** Solo tokens simples, smart contracts deshabilitados
 - ❌ **Vercel:** Solo tokens simples (sin Rust)
+
+**La app detecta automáticamente qué funcionalidades están disponibles.**
 
 ### Timeout en Build
 
-- El primer build toma más tiempo (instala Rust)
-- Builds subsecuentes son más rápidos (cache)
+- **Primer build:** 10-15 minutos (instala Rust + soroban-cli)
+- **Builds subsecuentes:** 3-5 minutos (usa cache)
+- **Modo fallback:** 1-2 minutos (solo Node.js)
+
+### Verificación de Estado
+
+Una vez deployado, visita `/api/compilation-status` para ver el estado:
+
+```json
+{
+  "available": true,
+  "tools": {
+    "cargo": true,
+    "rustc": true,
+    "soroban": true,
+    "wasm32Target": true
+  },
+  "message": "Compilación de smart contracts disponible"
+}
+```
 
 ## 🎉 Resultado Final
 

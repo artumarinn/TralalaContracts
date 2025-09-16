@@ -14,6 +14,82 @@ const StellarSdk = require('@stellar/stellar-sdk');
 const app = express();
 const PORT = process.env.PORT || 3000;
 
+// Función para verificar disponibilidad de herramientas de compilación
+async function checkCompilationTools() {
+    const tools = {
+        cargo: false,
+        rustc: false,
+        soroban: false,
+        wasm32Target: false
+    };
+
+    try {
+        // Verificar cargo
+        await execAsync('cargo --version');
+        tools.cargo = true;
+        console.log('✅ Cargo disponible');
+    } catch (error) {
+        console.log('❌ Cargo no disponible');
+    }
+
+    try {
+        // Verificar rustc
+        await execAsync('rustc --version');
+        tools.rustc = true;
+        console.log('✅ Rustc disponible');
+    } catch (error) {
+        console.log('❌ Rustc no disponible');
+    }
+
+    try {
+        // Verificar soroban-cli
+        await execAsync('soroban --version');
+        tools.soroban = true;
+        console.log('✅ Soroban-cli disponible');
+    } catch (error) {
+        console.log('❌ Soroban-cli no disponible');
+    }
+
+    try {
+        // Verificar target wasm32
+        const { stdout } = await execAsync('rustup target list --installed');
+        tools.wasm32Target = stdout.includes('wasm32-unknown-unknown');
+        console.log(`${tools.wasm32Target ? '✅' : '❌'} Target wasm32-unknown-unknown ${tools.wasm32Target ? 'disponible' : 'no disponible'}`);
+    } catch (error) {
+        console.log('❌ No se pudo verificar targets de Rust');
+    }
+
+    return tools;
+}
+
+// Estado global de herramientas de compilación
+let compilationToolsAvailable = {
+    cargo: false,
+    rustc: false,
+    soroban: false,
+    wasm32Target: false,
+    fullCompilationSupported: false
+};
+
+// Verificar herramientas al iniciar el servidor
+checkCompilationTools().then(tools => {
+    compilationToolsAvailable = {
+        ...tools,
+        fullCompilationSupported: tools.cargo && tools.rustc && tools.wasm32Target
+    };
+
+    console.log('🔧 Estado de herramientas de compilación:');
+    console.log(`   Compilación completa: ${compilationToolsAvailable.fullCompilationSupported ? '✅ Soportada' : '❌ No soportada'}`);
+    console.log(`   Soroban-cli: ${compilationToolsAvailable.soroban ? '✅ Disponible' : '❌ No disponible'}`);
+
+    if (!compilationToolsAvailable.fullCompilationSupported) {
+        console.log('⚠️  Modo fallback activado - Smart contracts pueden no estar disponibles');
+    }
+}).catch(error => {
+    console.error('❌ Error verificando herramientas de compilación:', error);
+    console.log('⚠️  Asumiendo modo fallback');
+});
+
 // FORZAR TESTNET EXPLÍCITAMENTE
 const server = new StellarSdk.Horizon.Server('https://horizon-testnet.stellar.org');
 const networkPassphrase = StellarSdk.Networks.TESTNET;
@@ -242,8 +318,35 @@ app.post('/api/build-transaction', async (req, res) => {
 
 // ===== NUEVOS ENDPOINTS PARA SMART CONTRACTS =====
 
+// Endpoint para verificar disponibilidad de compilación
+app.get('/api/compilation-status', (req, res) => {
+    res.json({
+        available: compilationToolsAvailable.fullCompilationSupported,
+        tools: compilationToolsAvailable,
+        message: compilationToolsAvailable.fullCompilationSupported
+            ? 'Compilación de smart contracts disponible'
+            : 'Compilación no disponible - usando modo fallback'
+    });
+});
+
 // Endpoint para construir smart contract con template avanzado
 app.post('/api/build-smart-contract', async (req, res) => {
+    // Verificar si la compilación está disponible
+    if (!compilationToolsAvailable.fullCompilationSupported) {
+        console.log('⚠️  Compilación no disponible, retornando respuesta de fallback');
+        return res.json({
+            success: false,
+            fallbackMode: true,
+            message: 'Smart contract compilation is not available in this environment. The app is running in fallback mode.',
+            contractId: uuidv4(),
+            contractData: req.body.contractData,
+            userAddress: req.body.userAddress,
+            templateUsed: 'fallback',
+            compilationSkipped: true,
+            instructions: 'To compile smart contracts, you need Rust, Cargo, and soroban-cli installed. Consider running locally or using a different deployment environment.'
+        });
+    }
+
     try {
         console.log('🔧 Construyendo smart contract avanzado...');
         console.log('   Datos recibidos:', JSON.stringify(req.body, null, 2));
@@ -589,6 +692,20 @@ mod tests {
 
 // Endpoint para compilar un smart contract
 app.post('/api/compile-contract', async (req, res) => {
+    // Verificar si la compilación está disponible
+    if (!compilationToolsAvailable.fullCompilationSupported) {
+        console.log('⚠️  Compilación no disponible, retornando respuesta de fallback');
+        return res.json({
+            success: false,
+            fallbackMode: true,
+            message: 'Smart contract compilation is not available in this environment. The app is running in fallback mode.',
+            contractId: uuidv4(),
+            contractName: req.body.contractName || 'fallback_contract',
+            compilationSkipped: true,
+            instructions: 'To compile smart contracts, you need Rust, Cargo, and soroban-cli installed. Consider running locally or using a different deployment environment.'
+        });
+    }
+
     try {
         console.log('🔧 Compilando smart contract...');
         console.log('   Datos recibidos:', JSON.stringify(req.body, null, 2));

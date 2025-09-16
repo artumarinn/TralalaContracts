@@ -34,7 +34,7 @@
                 <div class="stepper-line" id="stepperLine"></div>
                 <div class="step active" data-step="1">
                     <div class="step-number">1</div>
-                    <div class="step-label">Connect Wallet</div>
+                    <div class="step-label">Setup</div>
                 </div>
                 <div class="step" data-step="2">
                     <div class="step-number">2</div>
@@ -53,17 +53,22 @@
             <div class="step-content active" id="step1">
                 <div class="wallets-container">
                     <div class="description-box">
-                        <h2 class="wallets-title">Connect your wallet and start building your smart contract</h2>
+                        <h2 class="wallets-title">Setup: Connect your wallet</h2>
                     </div>
-                    <div class="wallet-options">
-                        <div class="wallet-option" id="connectFreighter">
-                            <div class="wallet-icon"><img src="Gemini_Generated_Image_9xaz2g9xaz2g9xaz (1).png"
-                                    alt="Freighter" style="width: 40px; height: 40px; border-radius: 8px;"></div>
-                            <div class="wallet-label">Freighter</div>
-                        </div>
-                        <div class="wallet-option" id="connectXbull">
-                            <div class="wallet-icon">🐂</div>
-                            <div class="wallet-label">xBull</div>
+
+                    <!-- Wallet Connection Section -->
+                    <div class="wallet-section" id="walletSection">
+                        <h3>🔗 Connect Your Wallet</h3>
+                        <div class="wallet-options">
+                            <div class="wallet-option" id="connectFreighter">
+                                <div class="wallet-icon"><img src="Gemini_Generated_Image_9xaz2g9xaz2g9xaz (1).png"
+                                        alt="Freighter" style="width: 40px; height: 40px; border-radius: 8px;"></div>
+                                <div class="wallet-label">Freighter</div>
+                            </div>
+                            <div class="wallet-option" id="connectXbull">
+                                <div class="wallet-icon">🐂</div>
+                                <div class="wallet-label">xBull</div>
+                            </div>
                         </div>
                     </div>
                 </div>
@@ -1055,7 +1060,7 @@ impl TokenContract {
         function validateCurrentStep() {
             switch (appState.currentStep) {
                 case 1:
-                    return validateWalletConnection();
+                    return validateSetupStep();
                 case 2:
                     return validateTokenData();
                 case 3:
@@ -1063,6 +1068,14 @@ impl TokenContract {
                 default:
                     return true;
             }
+        }
+
+        function validateSetupStep() {
+            if (!appState.walletConnected) {
+                showToast('Por favor, conecta tu wallet', 'error');
+                return false;
+            }
+            return true;
         }
 
         function validateWalletConnection() {
@@ -1351,9 +1364,45 @@ impl TokenContract {
                 let result;
                 if (response.ok) {
                     result = await response.json();
+
+                    // Manejar modo fallback
+                    if (result.fallbackMode) {
+                        console.log('⚠️ Servidor en modo fallback - compilación no disponible');
+                        await updatePipelineStep('pipelineWasm', 'error', 'Compilation not available in this environment');
+                        await updatePipelineStep('pipelineDeployment', 'error', 'Smart contract compilation disabled');
+
+                        // Mostrar mensaje de fallback al usuario
+                        const fallbackMessage = `
+                            <div style="background: #fef3c7; border: 1px solid #f59e0b; border-radius: 0.5rem; padding: 1rem; margin: 1rem 0;">
+                                <h3 style="color: #92400e; margin: 0 0 0.5rem 0;">⚠️ Modo Limitado</h3>
+                                <p style="color: #92400e; margin: 0; font-size: 0.9rem;">
+                                    La compilación de smart contracts no está disponible en este entorno. 
+                                    La aplicación funciona con funcionalidad limitada para tokens simples.
+                                </p>
+                                <p style="color: #92400e; margin: 0.5rem 0 0 0; font-size: 0.8rem;">
+                                    ${result.instructions}
+                                </p>
+                            </div>
+                        `;
+
+                        // Insertar mensaje en el pipeline
+                        const pipelineContainer = document.querySelector('.pipeline-container');
+                        if (pipelineContainer) {
+                            pipelineContainer.insertAdjacentHTML('beforeend', fallbackMessage);
+                        }
+
+                        // Esperar un poco y luego intentar fallback
+                        await new Promise(resolve => setTimeout(resolve, 3000));
+                        console.log('🔄 Intentando fallback al endpoint original...');
+                    }
                 } else {
-                    // Fallback al endpoint original si el nuevo no existe aún
-                    console.log('⚠️ Smart contract endpoint not available, using fallback...');
+                    console.log('⚠️ Smart contract endpoint failed, trying fallback...');
+                    result = null; // Forzar fallback
+                }
+
+                // Si no hay resultado válido o estamos en modo fallback, usar endpoint original
+                if (!result || result.fallbackMode) {
+                    console.log('🔄 Usando endpoint de fallback para tokens simples...');
                     const fallbackResponse = await fetch('/api/build-transaction', {
                         method: 'POST',
                         headers: { 'Content-Type': 'application/json' },
@@ -1371,9 +1420,11 @@ impl TokenContract {
                     }
 
                     result = await fallbackResponse.json();
-                }
 
-                if (!result.success) {
+                    if (!result.success) {
+                        throw new Error(result.details || 'Unknown server error');
+                    }
+                } else if (!result.success && !result.fallbackMode) {
                     throw new Error(result.details || 'Unknown server error');
                 }
 
@@ -1604,6 +1655,7 @@ impl TokenContract {
 
             showToast('🎉 Smart Contract deployed successfully!', 'success');
         }
+
 
         // Event listeners
         document.addEventListener('DOMContentLoaded', () => {
