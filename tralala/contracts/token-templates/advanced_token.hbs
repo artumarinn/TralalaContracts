@@ -1,0 +1,683 @@
+#![no_std]
+use soroban_sdk::{
+    contract, contractimpl, Address, Env, String, Symbol, Map, Vec,
+    symbol_short, panic_with_error, log
+};
+
+// Storage keys
+const ADMIN_KEY: Symbol = symbol_short!("ADMIN");
+const NAME_KEY: Symbol = symbol_short!("NAME");
+const SYMBOL_KEY: Symbol = symbol_short!("SYMBOL");
+const DECIMALS_KEY: Symbol = symbol_short!("DECIMALS");
+const SUPPLY_KEY: Symbol = symbol_short!("SUPPLY");
+const BALANCE_KEY: Symbol = symbol_short!("BALANCE");
+const ALLOWANCE_KEY: Symbol = symbol_short!("ALLOW");
+
+{{#if pausable_enabled}}
+const PAUSED_KEY: Symbol = symbol_short!("PAUSED");
+{{/if}}
+
+{{#if access_control_enabled}}
+const ROLES_KEY: Symbol = symbol_short!("ROLES");
+const ROLE_ADMIN: u32 = 0;
+const ROLE_MINTER: u32 = 1;
+const ROLE_BURNER: u32 = 2;
+const ROLE_PAUSER: u32 = 3;
+{{/if}}
+
+{{#if upgrade_enabled}}
+const CONTRACT_VERSION: Symbol = symbol_short!("VERSION");
+const UPGRADE_AUTH: Symbol = symbol_short!("UPG_AUTH");
+{{/if}}
+
+{{#if security.freezeable}}
+const FROZEN_KEY: Symbol = symbol_short!("FROZEN");
+{{/if}}
+
+{{#if security.whitelistEnabled}}
+const WHITELIST_KEY: Symbol = symbol_short!("WLIST");
+{{/if}}
+
+{{#if features.stakeable}}
+const STAKING_POOL: Symbol = symbol_short!("STAKING");
+const STAKING_REWARD: Symbol = symbol_short!("STK_RWD");
+const STAKE_TIME: Symbol = symbol_short!("STK_TIME");
+{{/if}}
+
+{{#if features.governance}}
+const PROPOSAL_COUNT: Symbol = symbol_short!("PROP_CNT");
+const PROPOSALS: Symbol = symbol_short!("PROPS");
+const VOTES: Symbol = symbol_short!("VOTES");
+{{/if}}
+
+{{#if features.timeLock}}
+const TIMELOCK_PERIOD: Symbol = symbol_short!("TIMELOCK");
+const LOCKED_FUNDS: Symbol = symbol_short!("LOCKED");
+{{/if}}
+
+// Error codes
+#[derive(Clone, Debug, Copy, Eq, PartialEq, PartialOrd, Ord)]
+#[repr(u32)]
+pub enum ContractError {
+    AlreadyInitialized = 1,
+    Unauthorized = 2,
+    InsufficientBalance = 3,
+    ContractPaused = 4,
+    AccountFrozen = 5,
+    NotWhitelisted = 6,
+    TransferLimitExceeded = 7,
+    InvalidAmount = 8,
+    TimeLockActive = 9,
+}
+
+#[contract]
+pub struct {{contract_name}}Contract;
+
+#[contractimpl]
+impl {{contract_name}}Contract {
+    /// Initialize the advanced token contract
+    pub fn initialize(
+        env: Env,
+        admin: Address,
+        name: String,
+        symbol: String,
+        decimals: u32,
+        initial_supply: i128
+    ) -> Result<(), ContractError> {
+        // Check if already initialized
+        if env.storage().instance().has(&ADMIN_KEY) {
+            return Err(ContractError::AlreadyInitialized);
+        }
+
+        // Store basic metadata
+        env.storage().instance().set(&ADMIN_KEY, &admin);
+        env.storage().instance().set(&NAME_KEY, &name);
+        env.storage().instance().set(&SYMBOL_KEY, &symbol);
+        env.storage().instance().set(&DECIMALS_KEY, &decimals);
+        env.storage().instance().set(&SUPPLY_KEY, &initial_supply);
+
+        {{#if pausable_enabled}}
+        env.storage().instance().set(&PAUSED_KEY, &false);
+        {{/if}}
+
+        {{#if upgrade_enabled}}
+        env.storage().instance().set(&CONTRACT_VERSION, &String::from_str(&env, "1.0.0"));
+        {{/if}}
+
+        {{#if features.timeLock}}
+        env.storage().instance().set(&TIMELOCK_PERIOD, &({{timeLockDays}} * 24 * 60 * 60)); // días a segundos
+        {{/if}}
+
+        {{#if economics.stakingReward}}
+        env.storage().instance().set(&STAKING_REWARD, &{{economics.stakingReward}});
+        {{/if}}
+
+        {{#if access_control_enabled}}
+        // Initialize roles
+        let mut roles: Map<u32, Vec<Address>> = Map::new(&env);
+        let mut admin_addresses = Vec::new(&env);
+        admin_addresses.push_back(admin.clone());
+        roles.set(ROLE_ADMIN, admin_addresses);
+        env.storage().persistent().set(&ROLES_KEY, &roles);
+        {{/if}}
+
+        // Mint initial supply to admin
+        if initial_supply > 0 {
+            env.storage().persistent().set(&(BALANCE_KEY, &admin), &initial_supply);
+        }
+
+        log!(&env, "Token initialized: {} ({})", name, symbol);
+        Ok(())
+    }
+
+    /// Get token name
+    pub fn name(env: Env) -> String {
+        env.storage()
+            .instance()
+            .get(&NAME_KEY)
+            .unwrap_or_else(|| String::from_str(&env, "{{token_name}}"))
+    }
+
+    /// Get token symbol
+    pub fn symbol(env: Env) -> String {
+        env.storage()
+            .instance()
+            .get(&SYMBOL_KEY)
+            .unwrap_or_else(|| String::from_str(&env, "{{token_symbol}}"))
+    }
+
+    /// Get token decimals
+    pub fn decimals(env: Env) -> u32 {
+        env.storage()
+            .instance()
+            .get(&DECIMALS_KEY)
+            .unwrap_or({{token_decimals}})
+    }
+
+    /// Get total supply
+    pub fn total_supply(env: Env) -> i128 {
+        env.storage()
+            .instance()
+            .get(&SUPPLY_KEY)
+            .unwrap_or(0)
+    }
+
+    /// Get balance of an account
+    pub fn balance(env: Env, id: Address) -> i128 {
+        env.storage()
+            .persistent()
+            .get(&(BALANCE_KEY, id))
+            .unwrap_or(0)
+    }
+
+    /// Check security constraints before transfer
+    fn check_transfer_constraints(env: &Env, from: &Address, to: &Address, amount: i128) -> Result<(), ContractError> {
+        {{#if pausable_enabled}}
+        // Check if paused
+        let paused: bool = env.storage().instance().get(&PAUSED_KEY).unwrap_or(false);
+        if paused {
+            return Err(ContractError::ContractPaused);
+        }
+        {{/if}}
+
+        {{#if security.freezeable}}
+        // Check if accounts are frozen
+        let from_frozen: bool = env.storage().persistent().get(&(FROZEN_KEY, from)).unwrap_or(false);
+        let to_frozen: bool = env.storage().persistent().get(&(FROZEN_KEY, to)).unwrap_or(false);
+        if from_frozen || to_frozen {
+            return Err(ContractError::AccountFrozen);
+        }
+        {{/if}}
+
+        {{#if security.whitelistEnabled}}
+        // Check whitelist
+        let whitelist: Map<Address, bool> = env.storage().persistent().get(&WHITELIST_KEY).unwrap_or(Map::new(env));
+        if !whitelist.get(from).unwrap_or(false) || !whitelist.get(to).unwrap_or(false) {
+            return Err(ContractError::NotWhitelisted);
+        }
+        {{/if}}
+
+        {{#if security.transferLimit}}
+        // Check transfer limit
+        if amount > {{security.transferLimit}} {
+            return Err(ContractError::TransferLimitExceeded);
+        }
+        {{/if}}
+
+        Ok(())
+    }
+
+    /// Transfer tokens with advanced security
+    pub fn transfer(env: Env, from: Address, to: Address, amount: i128) -> Result<(), ContractError> {
+        from.require_auth();
+
+        if amount <= 0 {
+            return Err(ContractError::InvalidAmount);
+        }
+
+        // Check security constraints
+        Self::check_transfer_constraints(&env, &from, &to, amount)?;
+
+        // Get current balances
+        let from_balance: i128 = env.storage()
+            .persistent()
+            .get(&(BALANCE_KEY, &from))
+            .unwrap_or(0);
+
+        if from_balance < amount {
+            return Err(ContractError::InsufficientBalance);
+        }
+
+        let to_balance: i128 = env.storage()
+            .persistent()
+            .get(&(BALANCE_KEY, &to))
+            .unwrap_or(0);
+
+        {{#if economics.transactionFee}}
+        // Calculate transaction fee
+        let fee = (amount * {{economics.transactionFee}}) / 100;
+        let net_amount = amount - fee;
+        {{else}}
+        let net_amount = amount;
+        {{/if}}
+
+        {{#if economics.burnRate}}
+        // Calculate burn amount
+        let burn_amount = (net_amount * {{economics.burnRate}}) / 100;
+        let final_amount = net_amount - burn_amount;
+        
+        // Update total supply (burn)
+        let current_supply: i128 = env.storage().instance().get(&SUPPLY_KEY).unwrap_or(0);
+        env.storage().instance().set(&SUPPLY_KEY, &(current_supply - burn_amount));
+        {{else}}
+        let final_amount = net_amount;
+        {{/if}}
+
+        // Update balances
+        env.storage()
+            .persistent()
+            .set(&(BALANCE_KEY, &from), &(from_balance - amount));
+        env.storage()
+            .persistent()
+            .set(&(BALANCE_KEY, &to), &(to_balance + final_amount));
+
+        {{#if economics.transactionFee}}
+        // Add fee to admin
+        let admin: Address = env.storage().instance().get(&ADMIN_KEY).unwrap();
+        let admin_balance: i128 = env.storage().persistent().get(&(BALANCE_KEY, &admin)).unwrap_or(0);
+        env.storage().persistent().set(&(BALANCE_KEY, &admin), &(admin_balance + fee));
+        {{/if}}
+
+        log!(&env, "Transfer: {} -> {} amount: {}", from, to, amount);
+        Ok(())
+    }
+
+    {{#if access_control_enabled}}
+    /// Check if address has role
+    pub fn has_role(env: Env, role: u32, account: Address) -> bool {
+        let roles: Map<u32, Vec<Address>> = env.storage().persistent().get(&ROLES_KEY).unwrap_or(Map::new(&env));
+        if let Some(role_accounts) = roles.get(role) {
+            role_accounts.iter().any(|addr| addr == account)
+        } else {
+            false
+        }
+    }
+
+    /// Grant role (admin only)
+    pub fn grant_role(env: Env, role: u32, account: Address) -> Result<(), ContractError> {
+        // Check admin auth
+        if !Self::has_role(env.clone(), ROLE_ADMIN, env.current_contract_address()) {
+            return Err(ContractError::Unauthorized);
+        }
+
+        let mut roles: Map<u32, Vec<Address>> = env.storage().persistent().get(&ROLES_KEY).unwrap_or(Map::new(&env));
+        let mut role_accounts = roles.get(role).unwrap_or(Vec::new(&env));
+        
+        if !role_accounts.iter().any(|addr| addr == account) {
+            role_accounts.push_back(account.clone());
+            roles.set(role, role_accounts);
+            env.storage().persistent().set(&ROLES_KEY, &roles);
+        }
+
+        Ok(())
+    }
+    {{/if}}
+
+    {{#if mint_enabled}}
+    /// Mint new tokens with role-based access
+    pub fn mint(env: Env, to: Address, amount: i128) -> Result<(), ContractError> {
+        {{#if access_control_enabled}}
+        if !Self::has_role(env.clone(), ROLE_MINTER, env.current_contract_address()) {
+            return Err(ContractError::Unauthorized);
+        }
+        {{else}}
+        let admin: Address = env.storage().instance().get(&ADMIN_KEY).unwrap();
+        admin.require_auth();
+        {{/if}}
+
+        {{#if pausable_enabled}}
+        let paused: bool = env.storage().instance().get(&PAUSED_KEY).unwrap_or(false);
+        if paused {
+            return Err(ContractError::ContractPaused);
+        }
+        {{/if}}
+
+        if amount <= 0 {
+            return Err(ContractError::InvalidAmount);
+        }
+
+        let current_balance: i128 = env.storage()
+            .persistent()
+            .get(&(BALANCE_KEY, &to))
+            .unwrap_or(0);
+        let current_supply: i128 = env.storage()
+            .instance()
+            .get(&SUPPLY_KEY)
+            .unwrap_or(0);
+
+        env.storage()
+            .persistent()
+            .set(&(BALANCE_KEY, &to), &(current_balance + amount));
+        env.storage()
+            .instance()
+            .set(&SUPPLY_KEY, &(current_supply + amount));
+
+        log!(&env, "Minted {} tokens to {}", amount, to);
+        Ok(())
+    }
+    {{/if}}
+
+    {{#if burn_enabled}}
+    /// Burn tokens with role-based access
+    pub fn burn(env: Env, from: Address, amount: i128) -> Result<(), ContractError> {
+        {{#if access_control_enabled}}
+        if !Self::has_role(env.clone(), ROLE_BURNER, env.current_contract_address()) && from != env.current_contract_address() {
+            return Err(ContractError::Unauthorized);
+        }
+        {{/if}}
+
+        from.require_auth();
+
+        {{#if pausable_enabled}}
+        let paused: bool = env.storage().instance().get(&PAUSED_KEY).unwrap_or(false);
+        if paused {
+            return Err(ContractError::ContractPaused);
+        }
+        {{/if}}
+
+        if amount <= 0 {
+            return Err(ContractError::InvalidAmount);
+        }
+
+        let current_balance: i128 = env.storage()
+            .persistent()
+            .get(&(BALANCE_KEY, &from))
+            .unwrap_or(0);
+
+        if current_balance < amount {
+            return Err(ContractError::InsufficientBalance);
+        }
+
+        let current_supply: i128 = env.storage()
+            .instance()
+            .get(&SUPPLY_KEY)
+            .unwrap_or(0);
+
+        env.storage()
+            .persistent()
+            .set(&(BALANCE_KEY, &from), &(current_balance - amount));
+        env.storage()
+            .instance()
+            .set(&SUPPLY_KEY, &(current_supply - amount));
+
+        log!(&env, "Burned {} tokens from {}", amount, from);
+        Ok(())
+    }
+    {{/if}}
+
+    {{#if pausable_enabled}}
+    /// Pause the contract
+    pub fn pause(env: Env) -> Result<(), ContractError> {
+        {{#if access_control_enabled}}
+        if !Self::has_role(env.clone(), ROLE_PAUSER, env.current_contract_address()) {
+            return Err(ContractError::Unauthorized);
+        }
+        {{else}}
+        let admin: Address = env.storage().instance().get(&ADMIN_KEY).unwrap();
+        admin.require_auth();
+        {{/if}}
+
+        env.storage().instance().set(&PAUSED_KEY, &true);
+        log!(&env, "Contract paused");
+        Ok(())
+    }
+
+    /// Unpause the contract
+    pub fn unpause(env: Env) -> Result<(), ContractError> {
+        {{#if access_control_enabled}}
+        if !Self::has_role(env.clone(), ROLE_PAUSER, env.current_contract_address()) {
+            return Err(ContractError::Unauthorized);
+        }
+        {{else}}
+        let admin: Address = env.storage().instance().get(&ADMIN_KEY).unwrap();
+        admin.require_auth();
+        {{/if}}
+
+        env.storage().instance().set(&PAUSED_KEY, &false);
+        log!(&env, "Contract unpaused");
+        Ok(())
+    }
+
+    /// Check if contract is paused
+    pub fn is_paused(env: Env) -> bool {
+        env.storage().instance().get(&PAUSED_KEY).unwrap_or(false)
+    }
+    {{/if}}
+
+    {{#if features.stakeable}}
+    /// Stake tokens for rewards
+    pub fn stake(env: Env, from: Address, amount: i128) -> Result<(), ContractError> {
+        from.require_auth();
+
+        if amount <= 0 {
+            return Err(ContractError::InvalidAmount);
+        }
+
+        let current_balance: i128 = env.storage()
+            .persistent()
+            .get(&(BALANCE_KEY, &from))
+            .unwrap_or(0);
+
+        if current_balance < amount {
+            return Err(ContractError::InsufficientBalance);
+        }
+
+        // Transfer to staking pool
+        let staking_pool: i128 = env.storage()
+            .persistent()
+            .get(&(STAKING_POOL, &from))
+            .unwrap_or(0);
+
+        env.storage()
+            .persistent()
+            .set(&(BALANCE_KEY, &from), &(current_balance - amount));
+        env.storage()
+            .persistent()
+            .set(&(STAKING_POOL, &from), &(staking_pool + amount));
+        env.storage()
+            .persistent()
+            .set(&(STAKE_TIME, &from), &env.ledger().timestamp());
+
+        log!(&env, "Staked {} tokens from {}", amount, from);
+        Ok(())
+    }
+
+    /// Unstake tokens and claim rewards
+    pub fn unstake(env: Env, to: Address, amount: i128) -> Result<(), ContractError> {
+        to.require_auth();
+
+        let staked_amount: i128 = env.storage()
+            .persistent()
+            .get(&(STAKING_POOL, &to))
+            .unwrap_or(0);
+
+        if staked_amount < amount {
+            return Err(ContractError::InsufficientBalance);
+        }
+
+        // Calculate rewards
+        let stake_time: u64 = env.storage()
+            .persistent()
+            .get(&(STAKE_TIME, &to))
+            .unwrap_or(0);
+        let current_time = env.ledger().timestamp();
+        let time_staked = current_time - stake_time;
+        
+        let reward_rate: i128 = env.storage().instance().get(&STAKING_REWARD).unwrap_or(0);
+        let rewards = (amount * reward_rate * (time_staked as i128)) / (100 * 365 * 24 * 60 * 60); // Reward per second
+
+        let current_balance: i128 = env.storage()
+            .persistent()
+            .get(&(BALANCE_KEY, &to))
+            .unwrap_or(0);
+
+        env.storage()
+            .persistent()
+            .set(&(STAKING_POOL, &to), &(staked_amount - amount));
+        env.storage()
+            .persistent()
+            .set(&(BALANCE_KEY, &to), &(current_balance + amount + rewards));
+
+        // Mint rewards (increase supply)
+        let current_supply: i128 = env.storage().instance().get(&SUPPLY_KEY).unwrap_or(0);
+        env.storage().instance().set(&SUPPLY_KEY, &(current_supply + rewards));
+
+        log!(&env, "Unstaked {} tokens with {} rewards to {}", amount, rewards, to);
+        Ok(())
+    }
+
+    /// Get staking balance
+    pub fn staking_balance(env: Env, account: Address) -> i128 {
+        env.storage()
+            .persistent()
+            .get(&(STAKING_POOL, account))
+            .unwrap_or(0)
+    }
+    {{/if}}
+
+    {{#if features.governance}}
+    /// Create a governance proposal
+    pub fn create_proposal(env: Env, proposer: Address, description: String) -> Result<u32, ContractError> {
+        proposer.require_auth();
+
+        let proposal_count: u32 = env.storage().instance().get(&PROPOSAL_COUNT).unwrap_or(0);
+        let new_proposal_id = proposal_count + 1;
+
+        // Store proposal
+        env.storage().persistent().set(&(PROPOSALS, new_proposal_id), &(proposer, description, 0i128, 0i128)); // (proposer, description, votes_for, votes_against)
+        env.storage().instance().set(&PROPOSAL_COUNT, &new_proposal_id);
+
+        log!(&env, "Proposal {} created by {}", new_proposal_id, proposer);
+        Ok(new_proposal_id)
+    }
+
+    /// Vote on a proposal
+    pub fn vote(env: Env, voter: Address, proposal_id: u32, support: bool) -> Result<(), ContractError> {
+        voter.require_auth();
+
+        let voter_balance = Self::balance(env.clone(), voter.clone());
+        if voter_balance == 0 {
+            return Err(ContractError::Unauthorized);
+        }
+
+        // Check if already voted
+        let vote_key = (VOTES, proposal_id, &voter);
+        if env.storage().persistent().has(&vote_key) {
+            return Err(ContractError::Unauthorized); // Already voted
+        }
+
+        // Record vote
+        env.storage().persistent().set(&vote_key, &support);
+
+        // Update proposal votes
+        if let Some((proposer, description, votes_for, votes_against)) = env.storage().persistent().get::<(Address, String, i128, i128)>(&(PROPOSALS, proposal_id)) {
+            if support {
+                env.storage().persistent().set(&(PROPOSALS, proposal_id), &(proposer, description, votes_for + voter_balance, votes_against));
+            } else {
+                env.storage().persistent().set(&(PROPOSALS, proposal_id), &(proposer, description, votes_for, votes_against + voter_balance));
+            }
+        }
+
+        log!(&env, "Vote cast by {} on proposal {}", voter, proposal_id);
+        Ok(())
+    }
+    {{/if}}
+
+    {{#if security.freezeable}}
+    /// Freeze an account (admin only)
+    pub fn freeze_account(env: Env, account: Address) -> Result<(), ContractError> {
+        let admin: Address = env.storage().instance().get(&ADMIN_KEY).unwrap();
+        admin.require_auth();
+
+        env.storage().persistent().set(&(FROZEN_KEY, &account), &true);
+        log!(&env, "Account {} frozen", account);
+        Ok(())
+    }
+
+    /// Unfreeze an account (admin only)
+    pub fn unfreeze_account(env: Env, account: Address) -> Result<(), ContractError> {
+        let admin: Address = env.storage().instance().get(&ADMIN_KEY).unwrap();
+        admin.require_auth();
+
+        env.storage().persistent().set(&(FROZEN_KEY, &account), &false);
+        log!(&env, "Account {} unfrozen", account);
+        Ok(())
+    }
+
+    /// Check if account is frozen
+    pub fn is_frozen(env: Env, account: Address) -> bool {
+        env.storage().persistent().get(&(FROZEN_KEY, account)).unwrap_or(false)
+    }
+    {{/if}}
+
+    {{#if security.whitelistEnabled}}
+    /// Add address to whitelist (admin only)
+    pub fn add_to_whitelist(env: Env, account: Address) -> Result<(), ContractError> {
+        let admin: Address = env.storage().instance().get(&ADMIN_KEY).unwrap();
+        admin.require_auth();
+
+        let mut whitelist: Map<Address, bool> = env.storage().persistent().get(&WHITELIST_KEY).unwrap_or(Map::new(&env));
+        whitelist.set(account.clone(), true);
+        env.storage().persistent().set(&WHITELIST_KEY, &whitelist);
+
+        log!(&env, "Address {} added to whitelist", account);
+        Ok(())
+    }
+
+    /// Remove address from whitelist (admin only)
+    pub fn remove_from_whitelist(env: Env, account: Address) -> Result<(), ContractError> {
+        let admin: Address = env.storage().instance().get(&ADMIN_KEY).unwrap();
+        admin.require_auth();
+
+        let mut whitelist: Map<Address, bool> = env.storage().persistent().get(&WHITELIST_KEY).unwrap_or(Map::new(&env));
+        whitelist.remove(account.clone());
+        env.storage().persistent().set(&WHITELIST_KEY, &whitelist);
+
+        log!(&env, "Address {} removed from whitelist", account);
+        Ok(())
+    }
+
+    /// Check if address is whitelisted
+    pub fn is_whitelisted(env: Env, account: Address) -> bool {
+        let whitelist: Map<Address, bool> = env.storage().persistent().get(&WHITELIST_KEY).unwrap_or(Map::new(&env));
+        whitelist.get(account).unwrap_or(false)
+    }
+    {{/if}}
+
+    {{#if upgrade_enabled}}
+    /// Upgrade contract (admin only) - placeholder for upgrade logic
+    pub fn upgrade(env: Env, new_wasm_hash: String) -> Result<(), ContractError> {
+        let admin: Address = env.storage().instance().get(&ADMIN_KEY).unwrap();
+        admin.require_auth();
+
+        // Store new version info
+        env.storage().instance().set(&UPGRADE_AUTH, &new_wasm_hash);
+        
+        log!(&env, "Contract upgrade authorized: {}", new_wasm_hash);
+        Ok(())
+    }
+
+    /// Get contract version
+    pub fn version(env: Env) -> String {
+        env.storage()
+            .instance()
+            .get(&CONTRACT_VERSION)
+            .unwrap_or_else(|| String::from_str(&env, "1.0.0"))
+    }
+    {{/if}}
+
+    /// Get admin address
+    pub fn admin(env: Env) -> Address {
+        env.storage().instance().get(&ADMIN_KEY).unwrap()
+    }
+
+    /// Get contract statistics
+    pub fn get_stats(env: Env) -> (i128, i128, u32, bool) {
+        let total_supply = Self::total_supply(env.clone());
+        let staking_total: i128 = 0; // TODO: Calculate total staking pool
+        let holder_count: u32 = 0; // TODO: Count unique holders
+        let is_paused = {{#if pausable_enabled}}Self::is_paused(env.clone()){{else}}false{{/if}};
+        
+        (total_supply, staking_total, holder_count, is_paused)
+    }
+}
+
+// Contract metadata for documentation
+/// Smart Contract: {{token_name}}
+/// Symbol: {{token_symbol}}
+/// Decimals: {{token_decimals}}
+/// Features: {{#if mint_enabled}}Mintable{{/if}}{{#if burn_enabled}}, Burnable{{/if}}{{#if pausable_enabled}}, Pausable{{/if}}{{#if upgrade_enabled}}, Upgradeable{{/if}}{{#if access_control_enabled}}, AccessControl{{/if}}{{#if features.governance}}, Governance{{/if}}{{#if features.stakeable}}, Staking{{/if}}
+/// Security: {{#if security.transferLimit}}Transfer Limit: {{security.transferLimit}}{{/if}}{{#if security.whitelistEnabled}}, Whitelist Enabled{{/if}}{{#if security.freezeable}}, Freezeable Accounts{{/if}}
+/// Economics: {{#if economics.transactionFee}}Transaction Fee: {{economics.transactionFee}}%{{/if}}{{#if economics.burnRate}}, Burn Rate: {{economics.burnRate}}%{{/if}}{{#if economics.stakingReward}}, Staking Reward: {{economics.stakingReward}}% annual{{/if}}
+/// License: {{license}}
+/// Generated by: Tralalero Contracts v2.0
