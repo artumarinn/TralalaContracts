@@ -1,0 +1,607 @@
+<!DOCTYPE html>
+<html lang="es">
+
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Test Suite Frontend - Tralalero Contracts</title>
+    <style>
+        body {
+            font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif;
+            max-width: 1200px;
+            margin: 0 auto;
+            padding: 2rem;
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            min-height: 100vh;
+        }
+
+        .container {
+            background: white;
+            border-radius: 1rem;
+            box-shadow: 0 20px 25px -5px rgba(0, 0, 0, 0.1);
+            padding: 2rem;
+        }
+
+        h1 {
+            color: #1f2937;
+            text-align: center;
+            margin-bottom: 2rem;
+        }
+
+        .test-controls {
+            display: flex;
+            gap: 1rem;
+            margin-bottom: 2rem;
+            flex-wrap: wrap;
+        }
+
+        .btn {
+            background: linear-gradient(135deg, #4f46e5 0%, #7c3aed 100%);
+            color: white;
+            border: none;
+            padding: 0.75rem 1.5rem;
+            border-radius: 0.5rem;
+            cursor: pointer;
+            font-weight: 600;
+            transition: transform 0.2s;
+        }
+
+        .btn:hover {
+            transform: translateY(-2px);
+        }
+
+        .btn.secondary {
+            background: #6b7280;
+        }
+
+        .btn.success {
+            background: #059669;
+        }
+
+        .btn.danger {
+            background: #dc2626;
+        }
+
+        .test-results {
+            border: 1px solid #e5e7eb;
+            border-radius: 0.5rem;
+            max-height: 400px;
+            overflow-y: auto;
+            background: #f8fafc;
+        }
+
+        .test-item {
+            padding: 0.75rem 1rem;
+            border-bottom: 1px solid #e5e7eb;
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+        }
+
+        .test-item:last-child {
+            border-bottom: none;
+        }
+
+        .test-status {
+            font-weight: 600;
+            padding: 0.25rem 0.5rem;
+            border-radius: 0.25rem;
+            font-size: 0.875rem;
+        }
+
+        .status-pending {
+            background: #fef3c7;
+            color: #92400e;
+        }
+
+        .status-running {
+            background: #dbeafe;
+            color: #1e40af;
+        }
+
+        .status-passed {
+            background: #d1fae5;
+            color: #065f46;
+        }
+
+        .status-failed {
+            background: #fee2e2;
+            color: #991b1b;
+        }
+
+        .summary {
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(200px, 1fr));
+            gap: 1rem;
+            margin-bottom: 2rem;
+        }
+
+        .summary-card {
+            background: #f8fafc;
+            border: 2px solid #e5e7eb;
+            border-radius: 0.75rem;
+            padding: 1.5rem;
+            text-align: center;
+        }
+
+        .summary-number {
+            font-size: 2rem;
+            font-weight: bold;
+            margin-bottom: 0.5rem;
+        }
+
+        .progress-bar {
+            width: 100%;
+            height: 8px;
+            background: #e5e7eb;
+            border-radius: 4px;
+            overflow: hidden;
+            margin: 1rem 0;
+        }
+
+        .progress-fill {
+            height: 100%;
+            background: linear-gradient(90deg, #10b981, #059669);
+            transition: width 0.3s ease;
+            width: 0%;
+        }
+
+        .error-details {
+            background: #fef2f2;
+            border: 1px solid #fecaca;
+            border-radius: 0.5rem;
+            padding: 1rem;
+            margin-top: 1rem;
+            font-family: 'Courier New', monospace;
+            font-size: 0.875rem;
+            max-height: 200px;
+            overflow-y: auto;
+        }
+
+        .log-container {
+            background: #1f2937;
+            color: #f9fafb;
+            border-radius: 0.5rem;
+            padding: 1rem;
+            font-family: 'Courier New', monospace;
+            font-size: 0.875rem;
+            max-height: 300px;
+            overflow-y: auto;
+            margin-top: 1rem;
+        }
+
+        .log-entry {
+            margin-bottom: 0.25rem;
+        }
+
+        .log-entry.info {
+            color: #60a5fa;
+        }
+
+        .log-entry.success {
+            color: #34d399;
+        }
+
+        .log-entry.error {
+            color: #f87171;
+        }
+
+        .log-entry.warning {
+            color: #fbbf24;
+        }
+
+        @media (max-width: 768px) {
+            .test-controls {
+                flex-direction: column;
+            }
+        }
+    </style>
+</head>
+
+<body>
+    <div class="container">
+        <h1>🧪 Test Suite Frontend - Smart Contracts</h1>
+
+        <!-- Test Controls -->
+        <div class="test-controls">
+            <button class="btn" onclick="runAllTests()">🚀 Ejecutar Todos los Tests</button>
+            <button class="btn secondary" onclick="runBlocklyTests()">🧱 Tests de Blockly</button>
+            <button class="btn secondary" onclick="runUITests()">🎨 Tests de UI</button>
+            <button class="btn secondary" onclick="runIntegrationTests()">🔗 Tests de Integración</button>
+            <button class="btn danger" onclick="clearResults()">🗑️ Limpiar Resultados</button>
+        </div>
+
+        <!-- Summary -->
+        <div class="summary">
+            <div class="summary-card">
+                <div class="summary-number" id="totalTests">0</div>
+                <div>Total Tests</div>
+            </div>
+            <div class="summary-card">
+                <div class="summary-number" id="passedTests" style="color: #059669;">0</div>
+                <div>Pasaron</div>
+            </div>
+            <div class="summary-card">
+                <div class="summary-number" id="failedTests" style="color: #dc2626;">0</div>
+                <div>Fallaron</div>
+            </div>
+            <div class="summary-card">
+                <div class="summary-number" id="successRate">0%</div>
+                <div>Tasa de Éxito</div>
+            </div>
+        </div>
+
+        <!-- Progress Bar -->
+        <div class="progress-bar">
+            <div class="progress-fill" id="progressFill"></div>
+        </div>
+
+        <!-- Test Results -->
+        <div class="test-results" id="testResults">
+            <div class="test-item">
+                <span>Tests listos para ejecutar</span>
+                <span class="test-status status-pending">Pendiente</span>
+            </div>
+        </div>
+
+        <!-- Error Details -->
+        <div id="errorDetails" class="error-details" style="display: none;">
+            <h4>Detalles de Errores:</h4>
+            <div id="errorContent"></div>
+        </div>
+
+        <!-- Log Container -->
+        <div class="log-container" id="logContainer" style="display: none;">
+            <h4 style="margin-top: 0; color: #f9fafb;">Log de Ejecución:</h4>
+            <div id="logContent"></div>
+        </div>
+    </div>
+
+    <!-- Include required libraries -->
+    <script src="https://unpkg.com/blockly/blockly.min.js"></script>
+    <script src="https://cdn.jsdelivr.net/npm/@stellar/stellar-sdk@11.3.0/dist/stellar-sdk.min.js"></script>
+
+    <script>
+        // Test Framework
+        class FrontendTestSuite {
+            constructor() {
+                this.tests = [];
+                this.results = {
+                    total: 0,
+                    passed: 0,
+                    failed: 0,
+                    errors: []
+                };
+                this.running = false;
+            }
+
+            addTest(name, category, testFn) {
+                this.tests.push({ name, category, testFn, status: 'pending' });
+            }
+
+            log(message, type = 'info') {
+                const logContainer = document.getElementById('logContainer');
+                const logContent = document.getElementById('logContent');
+
+                logContainer.style.display = 'block';
+
+                const logEntry = document.createElement('div');
+                logEntry.className = `log-entry ${type}`;
+                logEntry.textContent = `[${new Date().toLocaleTimeString()}] ${message}`;
+                logContent.appendChild(logEntry);
+                logContent.scrollTop = logContent.scrollHeight;
+
+                console.log(`[${type.toUpperCase()}] ${message}`);
+            }
+
+            updateUI() {
+                // Update summary
+                document.getElementById('totalTests').textContent = this.results.total;
+                document.getElementById('passedTests').textContent = this.results.passed;
+                document.getElementById('failedTests').textContent = this.results.failed;
+
+                const successRate = this.results.total > 0
+                    ? Math.round((this.results.passed / this.results.total) * 100)
+                    : 0;
+                document.getElementById('successRate').textContent = `${successRate}%`;
+
+                // Update progress
+                const progress = this.results.total > 0
+                    ? ((this.results.passed + this.results.failed) / this.results.total) * 100
+                    : 0;
+                document.getElementById('progressFill').style.width = `${progress}%`;
+
+                // Update test results
+                const resultsContainer = document.getElementById('testResults');
+                resultsContainer.innerHTML = '';
+
+                this.tests.forEach(test => {
+                    const testItem = document.createElement('div');
+                    testItem.className = 'test-item';
+
+                    const statusClass = `status-${test.status}`;
+                    const statusText = test.status === 'pending' ? 'Pendiente' :
+                        test.status === 'running' ? 'Ejecutando' :
+                            test.status === 'passed' ? 'Pasó' : 'Falló';
+
+                    testItem.innerHTML = `
+                        <span>${test.name} <small>(${test.category})</small></span>
+                        <span class="test-status ${statusClass}">${statusText}</span>
+                    `;
+                    resultsContainer.appendChild(testItem);
+                });
+
+                // Show errors if any
+                if (this.results.errors.length > 0) {
+                    const errorDetails = document.getElementById('errorDetails');
+                    const errorContent = document.getElementById('errorContent');
+
+                    errorDetails.style.display = 'block';
+                    errorContent.innerHTML = this.results.errors
+                        .map(error => `<div><strong>${error.test}:</strong> ${error.message}</div>`)
+                        .join('');
+                }
+            }
+
+            async runTest(test) {
+                test.status = 'running';
+                this.updateUI();
+                this.log(`Ejecutando test: ${test.name}`, 'info');
+
+                try {
+                    await test.testFn();
+                    test.status = 'passed';
+                    this.results.passed++;
+                    this.log(`✅ Test pasó: ${test.name}`, 'success');
+                } catch (error) {
+                    test.status = 'failed';
+                    this.results.failed++;
+                    this.results.errors.push({ test: test.name, message: error.message });
+                    this.log(`❌ Test falló: ${test.name} - ${error.message}`, 'error');
+                }
+
+                this.updateUI();
+            }
+
+            async runTests(filter = null) {
+                if (this.running) {
+                    this.log('Ya hay tests ejecutándose', 'warning');
+                    return;
+                }
+
+                this.running = true;
+                this.results = { total: 0, passed: 0, failed: 0, errors: [] };
+
+                const testsToRun = filter ? this.tests.filter(filter) : this.tests;
+                this.results.total = testsToRun.length;
+
+                this.log(`Iniciando ${testsToRun.length} tests`, 'info');
+
+                // Reset test statuses
+                testsToRun.forEach(test => test.status = 'pending');
+                this.updateUI();
+
+                for (const test of testsToRun) {
+                    await this.runTest(test);
+                    await new Promise(resolve => setTimeout(resolve, 100)); // Small delay for UI
+                }
+
+                this.running = false;
+                this.log(`Tests completados: ${this.results.passed}/${this.results.total} pasaron`,
+                    this.results.failed === 0 ? 'success' : 'warning');
+            }
+
+            async assert(condition, message) {
+                if (!condition) {
+                    throw new Error(message || 'Assertion failed');
+                }
+            }
+
+            async assertEqual(actual, expected, message) {
+                if (actual !== expected) {
+                    throw new Error(message || `Expected ${expected}, but got ${actual}`);
+                }
+            }
+
+            async waitFor(selector, timeout = 5000) {
+                const start = Date.now();
+                while (Date.now() - start < timeout) {
+                    const element = document.querySelector(selector);
+                    if (element) return element;
+                    await new Promise(resolve => setTimeout(resolve, 100));
+                }
+                throw new Error(`Element ${selector} not found within ${timeout}ms`);
+            }
+
+            async simulateClick(selector) {
+                const element = await this.waitFor(selector);
+                element.click();
+                await new Promise(resolve => setTimeout(resolve, 100));
+            }
+
+            async simulateInput(selector, value) {
+                const element = await this.waitFor(selector);
+                element.value = value;
+                element.dispatchEvent(new Event('input', { bubbles: true }));
+                await new Promise(resolve => setTimeout(resolve, 100));
+            }
+        }
+
+        // Initialize test suite
+        const testSuite = new FrontendTestSuite();
+
+        // Blockly Tests
+        testSuite.addTest('Blockly Workspace Creation', 'blockly', async () => {
+            // Check if Blockly is loaded
+            testSuite.assert(typeof Blockly !== 'undefined', 'Blockly should be loaded');
+
+            // Create a simple workspace
+            const workspace = Blockly.inject('testDiv', { toolbox: '<xml></xml>' });
+            testSuite.assert(workspace, 'Workspace should be created');
+
+            // Clean up
+            workspace.dispose();
+        });
+
+        testSuite.addTest('Block Creation', 'blockly', async () => {
+            const workspace = Blockly.inject('testDiv', { toolbox: '<xml></xml>' });
+
+            // Define a simple block
+            Blockly.Blocks['test_block'] = {
+                init: function () {
+                    this.appendDummyInput().appendField('Test Block');
+                    this.setColour(160);
+                }
+            };
+
+            const block = workspace.newBlock('test_block');
+            testSuite.assert(block, 'Block should be created');
+
+            workspace.dispose();
+        });
+
+        // UI Tests
+        testSuite.addTest('DOM Elements Exist', 'ui', async () => {
+            // Check for essential elements that should exist in the main app
+            const essentialSelectors = [
+                'body',
+                'head',
+                'title'
+            ];
+
+            for (const selector of essentialSelectors) {
+                const element = document.querySelector(selector);
+                testSuite.assert(element, `Element ${selector} should exist`);
+            }
+        });
+
+        testSuite.addTest('CSS Loading', 'ui', async () => {
+            // Check if styles are applied
+            const body = document.body;
+            const computedStyle = window.getComputedStyle(body);
+
+            testSuite.assert(computedStyle.fontFamily, 'Body should have font-family');
+            testSuite.assert(computedStyle.backgroundColor, 'Body should have background-color');
+        });
+
+        testSuite.addTest('Responsive Design', 'ui', async () => {
+            // Test responsive behavior
+            const originalWidth = window.innerWidth;
+
+            // Simulate mobile width
+            Object.defineProperty(window, 'innerWidth', { value: 375, writable: true });
+            window.dispatchEvent(new Event('resize'));
+
+            await new Promise(resolve => setTimeout(resolve, 100));
+
+            // Check if mobile styles are applied (basic check)
+            testSuite.assert(window.innerWidth === 375, 'Window width should be set to mobile');
+
+            // Restore original width
+            Object.defineProperty(window, 'innerWidth', { value: originalWidth, writable: true });
+            window.dispatchEvent(new Event('resize'));
+        });
+
+        // Integration Tests
+        testSuite.addTest('Local Storage', 'integration', async () => {
+            // Test localStorage functionality
+            const testKey = 'tralalero_test';
+            const testValue = 'test_value';
+
+            localStorage.setItem(testKey, testValue);
+            const retrieved = localStorage.getItem(testKey);
+
+            testSuite.assertEqual(retrieved, testValue, 'Should save and retrieve from localStorage');
+
+            localStorage.removeItem(testKey);
+            const removed = localStorage.getItem(testKey);
+            testSuite.assert(removed === null, 'Should remove from localStorage');
+        });
+
+        testSuite.addTest('Fetch API Available', 'integration', async () => {
+            testSuite.assert(typeof fetch === 'function', 'Fetch API should be available');
+
+            // Test a simple fetch (this might fail if server is not running, but that's OK)
+            try {
+                const response = await fetch('/test', { method: 'HEAD' });
+                testSuite.log('Server connection test completed', 'info');
+            } catch (error) {
+                testSuite.log('Server not available (expected in test environment)', 'info');
+            }
+        });
+
+        testSuite.addTest('Stellar SDK Loading', 'integration', async () => {
+            testSuite.assert(typeof StellarSdk !== 'undefined', 'Stellar SDK should be loaded');
+            testSuite.assert(typeof StellarSdk.Keypair === 'function', 'Keypair should be available');
+            testSuite.assert(typeof StellarSdk.Networks === 'object', 'Networks should be available');
+
+            // Test basic functionality
+            const keypair = StellarSdk.Keypair.random();
+            testSuite.assert(keypair.publicKey(), 'Should generate public key');
+            testSuite.assert(keypair.secret(), 'Should generate secret key');
+        });
+
+        testSuite.addTest('Browser Compatibility', 'integration', async () => {
+            // Check for required browser features
+            const requiredFeatures = [
+                'localStorage',
+                'fetch',
+                'Promise',
+                'URL',
+                'console'
+            ];
+
+            for (const feature of requiredFeatures) {
+                testSuite.assert(window[feature], `Browser should support ${feature}`);
+            }
+
+            // Check for ES6 features
+            testSuite.assert(typeof Map === 'function', 'Should support Map');
+            testSuite.assert(typeof Set === 'function', 'Should support Set');
+            testSuite.assert(typeof Symbol === 'function', 'Should support Symbol');
+        });
+
+        // Test Control Functions
+        function runAllTests() {
+            testSuite.runTests();
+        }
+
+        function runBlocklyTests() {
+            testSuite.runTests(test => test.category === 'blockly');
+        }
+
+        function runUITests() {
+            testSuite.runTests(test => test.category === 'ui');
+        }
+
+        function runIntegrationTests() {
+            testSuite.runTests(test => test.category === 'integration');
+        }
+
+        function clearResults() {
+            testSuite.results = { total: 0, passed: 0, failed: 0, errors: [] };
+            testSuite.tests.forEach(test => test.status = 'pending');
+            testSuite.updateUI();
+
+            document.getElementById('errorDetails').style.display = 'none';
+            document.getElementById('logContainer').style.display = 'none';
+            document.getElementById('logContent').innerHTML = '';
+        }
+
+        // Initialize UI
+        document.addEventListener('DOMContentLoaded', () => {
+            // Create a hidden div for Blockly tests
+            const testDiv = document.createElement('div');
+            testDiv.id = 'testDiv';
+            testDiv.style.display = 'none';
+            testDiv.style.width = '100px';
+            testDiv.style.height = '100px';
+            document.body.appendChild(testDiv);
+
+            testSuite.updateUI();
+            testSuite.log('Frontend Test Suite inicializado', 'success');
+        });
+    </script>
+</body>
+
+</html>

@@ -5,7 +5,18 @@
   "main": "server.js",
   "scripts": {
     "start": "node server.js",
-    "test-stellar": "node test-stellar.js"
+    "dev": "nodemon server.js",
+    "build": "echo 'Build completed - static files ready'",
+    "test-stellar": "node test-stellar.js",
+    "setup": "npm install && echo 'Setup completed. Note: Rust/Cargo required for smart contract compilation'",
+    "clean": "bash cleanup-for-git.sh",
+    "check": "node check-setup.js",
+    "pre-deploy": "node pre-deploy-check.js",
+    "deploy-prep": "npm run clean && npm run pre-deploy"
+  },
+  "engines": {
+    "node": ">=16.0.0",
+    "npm": ">=8.0.0"
   },
   "keywords": [
     "stellar",

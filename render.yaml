@@ -1,0 +1,60 @@
+services:
+  - type: web
+    name: tralalero-contracts
+    env: node
+    plan: free
+    region: oregon # Región más barata
+    buildCommand: |
+      # Instalar dependencias Node.js
+      npm install
+
+      # Instalar Rust y herramientas para smart contracts
+      curl --proto '=https' --tlsv1.2 -sSf https://sh.rustup.rs | sh -s -- -y
+      source ~/.cargo/env
+      rustup target add wasm32-unknown-unknown
+      cargo install soroban-cli
+
+      # Crear directorios necesarios
+      mkdir -p tralala/dynamic-contracts tralala/compiled
+
+      echo "Build completed - Rust and Node.js ready"
+
+    startCommand: npm start
+
+    # Variables de entorno para producción
+    envVars:
+      - key: NODE_ENV
+        value: production
+      - key: STELLAR_NETWORK
+        value: TESTNET
+      - key: STELLAR_HORIZON_URL
+        value: https://horizon-testnet.stellar.org
+      - key: ENABLE_CONTRACT_COMPILATION
+        value: true
+      - key: LOG_LEVEL
+        value: info
+      - key: PORT
+        fromService:
+          type: web
+          name: tralalero-contracts
+          property: port
+
+    # Configuración de salud y recursos
+    healthCheckPath: /
+
+    # Configuración de build
+    buildFilter:
+      paths:
+        - public/**
+        - server.js
+        - package.json
+        - package-lock.json
+        - tralala/contracts/**
+        - templates/**
+      ignoredPaths:
+        - tralala/target/**
+        - tralala/dynamic-contracts/**
+        - tralala/compiled/**
+        - node_modules/**
+        - "*.log"
+        - ".git/**"

@@ -1,90 +1,38 @@
-# Node.js
+# ===== ARCHIVOS GRANDES - EXCLUIR SIEMPRE =====
+# Directorios de compilación Rust (4.6GB+ - se regeneran en deployment)
+tralala/target/
+tralala/dynamic-contracts/
+tralala/compiled/
+tralala/cache/
+
+# Node.js dependencies (se instalan con npm install)
 node_modules/
 npm-debug.log*
 yarn-debug.log*
 yarn-error.log*
-package-lock.json
 
-# Logs
-logs
-*.log
-
-# Runtime data
-pids
-*.pid
-*.seed
-*.pid.lock
-
-# Coverage directory used by tools like istanbul
-coverage/
-
-# nyc test coverage
-.nyc_output
-
-# Dependency directories
-jspm_packages/
-
-# Optional npm cache directory
-.npm
-
-# Optional eslint cache
-.eslintcache
-
-# Microbundle cache
-.rpt2_cache/
-.rts2_cache_cjs/
-.rts2_cache_es/
-.rts2_cache_umd/
-
-# Optional REPL history
-.node_repl_history
-
-# Output of 'npm pack'
-*.tgz
-
-# Yarn Integrity file
-.yarn-integrity
-
-# dotenv environment variables file
+# ===== ARCHIVOS DE CONFIGURACIÓN LOCAL =====
+# Environment variables
 .env
 .env.local
 .env.development.local
 .env.test.local
 .env.production.local
 
-# parcel-bundler cache (https://parceljs.org/)
-.cache
-.parcel-cache
+# ===== ARCHIVOS DEL SISTEMA =====
+# Logs
+logs/
+*.log
 
-# next.js build output
-.next
+# Runtime data
+pids/
+*.pid
+*.seed
+*.pid.lock
 
-# nuxt.js build output
-.nuxt
-
-# vuepress build output
-.vuepress/dist
-
-# Serverless directories
-.serverless/
-
-# FuseBox cache
-.fusebox/
-
-# DynamoDB Local files
-.dynamodb/
-
-# Rust/Cargo
-target/
-Cargo.lock
-**/*.rs.bk
-
-# Stellar/Soroban specific
-tralala/target/
-tralala/cache/
-tralala/compiled/
-tralala/dynamic-contracts/*/target/
-tralala/dynamic-contracts/*/Cargo.lock
+# Coverage directory
+coverage/
+*.lcov
 
 # OS generated files
 .DS_Store
@@ -95,6 +43,7 @@ tralala/dynamic-contracts/*/Cargo.lock
 ehthumbs.db
 Thumbs.db
 
+# ===== ARCHIVOS DE DESARROLLO =====
 # IDE files
 .vscode/
 .idea/
@@ -105,23 +54,40 @@ Thumbs.db
 # Temporary files
 *.tmp
 *.temp
+*.bak
 
-# Build artifacts
+# ===== ARCHIVOS DE BUILD Y DEPLOYMENT =====
+# Build outputs
 dist/
 build/
 out/
 
-# Test files (optional - remove if you want to track test files)
-test-*.js
-*-test.js
-error-handling-tests.js
-test-*.html
+# Platform specific
+.vercel/
+.railway/
+.render/
+.netlify/
 
-# Media files (optional - uncomment if you don't want to track media)
-# *.mp4
-# *.mov
-# *.avi
-# *.png
-# *.jpg
-# *.jpeg
-# *.gif
+# ===== RUST/CARGO ESPECÍFICOS =====
+# Todos los targets de compilación
+**/target/
+**/*.pdb
+**/Cargo.lock
+
+# ===== ARCHIVOS DE PRUEBA Y DESARROLLO =====
+# Test files que no son necesarios en producción
+test-*.js
+**/test_*
+error-handling-tests.js
+
+# ===== ARCHIVOS MULTIMEDIA GRANDES =====
+# Videos e imágenes grandes (mantener solo los esenciales)
+*.mov
+*.avi
+*.mp4.backup
+*.png.backup
+*.jpg.backup
+
+# ===== ARCHIVOS ESPECÍFICOS DEL PROYECTO =====
+# Solo mantener templates, excluir contratos generados dinámicamente
+# Los templates están en tralala/contracts/token-templates/ y SÍ se incluyen

@@ -1,10 +1,10 @@
 <!DOCTYPE html>
-<html lang="es">
+<html lang="en">
 
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Tralalero Contracts - Crea tu Smart Contract con bloques</title>
+    <title>Tralalero Contracts - Create your Smart Contract with blocks</title>
     <link rel="preconnect" href="https://fonts.googleapis.com">
     <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
     <link
@@ -15,10 +15,8 @@
 
 <body style="">
     <div class="main-container">
-        <!-- Grid Pattern Background -->
         <div id="gridBackground" class="grid-background"></div>
 
-        <!-- Header -->
         <div class="header" style="margin-bottom: 50px;">
             <div class="logo-container">
                 <video style="z-index: 999;
@@ -30,15 +28,13 @@
                 </h1>
             </div>
         </div>
-        <!-- Stepper Container -->
         <div class="stepper-container"
             style="background-color: white; box-shadow: 0 0 10px 0 rgba(0, 0, 0, 0.5); padding: 50px; border-radius: 10px;">
-            <!-- Stepper Progress -->
             <div class="stepper">
                 <div class="stepper-line" id="stepperLine"></div>
                 <div class="step active" data-step="1">
                     <div class="step-number">1</div>
-                    <div class="step-label">Conectar Wallet</div>
+                    <div class="step-label">Connect Wallet</div>
                 </div>
                 <div class="step" data-step="2">
                     <div class="step-number">2</div>
@@ -54,15 +50,15 @@
                 </div>
             </div>
 
-            <!-- Step Content -->
             <div class="step-content active" id="step1">
                 <div class="wallets-container">
                     <div class="description-box">
-                        <h2 class="wallets-title">Conecta tu billetera y empieza a construir tu smart contract</h2>
+                        <h2 class="wallets-title">Connect your wallet and start building your smart contract</h2>
                     </div>
                     <div class="wallet-options">
                         <div class="wallet-option" id="connectFreighter">
-                            <div class="wallet-icon">🦊</div>
+                            <div class="wallet-icon"><img src="Gemini_Generated_Image_9xaz2g9xaz2g9xaz (1).png"
+                                    alt="Freighter" style="width: 40px; height: 40px; border-radius: 8px;"></div>
                             <div class="wallet-label">Freighter</div>
                         </div>
                         <div class="wallet-option" id="connectXbull">
@@ -73,93 +69,85 @@
                 </div>
             </div>
 
-            <!-- Step 2: Token Configuration -->
             <div class="step-content" id="step2">
                 <div class="blockly-container">
                     <div class="description-box">
-                        <h2 class="wallets-title">¡Arrastra y conecta los bloques!</h2>
-                        <p class="wallets-title">Usa los bloques de la izquierda para modelar tu smart contract. <br />
-                            Arrastra el bloque "🔮 Mi Smart Contract" y conecta los bloques de
-                            propiedades/estado/funciones.</p>
+                        <h2 class="wallets-title">Drag and connect the blocks!</h2>
+                        <p class="wallets-title">Use the blocks on the left to model your smart contract. <br />
+                            Drag the "🔮 My Smart Contract" block and connect the properties/state/function blocks.</p>
                     </div>
                     <div id="blocklyDiv"></div>
                 </div>
             </div>
 
-            <!-- Step 3: Smart Contract Configuration -->
             <div class="step-content" id="step3">
                 <div class="smart-contract-container">
                     <div class="description-box">
-                        <h2 class="wallets-title">⚙️ Configuración Avanzada del Smart Contract</h2>
-                        <p class="wallets-title">Configura las características avanzadas de tu smart contract. ¡Arrastra
-                            más bloques para añadir funcionalidades!</p>
+                        <h2 class="wallets-title">⚙️ Advanced Smart Contract Configuration</h2>
+                        <p class="wallets-title">Configure the advanced features of your smart contract. Drag more
+                            blocks to add functionalities!</p>
                     </div>
 
-                    <!-- Preview del Código -->
                     <div class="code-preview-section">
                         <div class="preview-header">
-                            <h3>📋 Vista Previa del Código</h3>
+                            <h3>📋 Code Preview</h3>
 
                         </div>
                         <div class="code-preview" id="codePreview">
                             <pre id="contractPreview"
-                                style="text-align: left;">// El código se generará automáticamente cuando configures los bloques...</pre>
+                                style="text-align: left;">// The code will be generated automatically when you configure the blocks...</pre>
                         </div>
                         <div class="validation-result hidden" id="validationResult">
                             <div id="validationMessage"></div>
                         </div>
                     </div>
 
-                    <!-- Interfaz de Blockly Expandida -->
                     <div style="display: none;" class="blockly-advanced-container">
                         <div id="blocklyDiv"></div>
                     </div>
                 </div>
             </div>
 
-            <!-- Step 4: Review and Deploy -->
             <div class="step-content" id="step4">
                 <div class="create-token-container">
-                    <h2 class="step-title">🚀 Revisa y exporta tu Smart Contract</h2>
+                    <h2 class="step-title">🚀 Review and export your Smart Contract</h2>
 
-                    <!-- Resumen del Contrato -->
                     <div class="contract-summary" id="contractSummary">
-                        <h3>📄 Resumen del Contrato</h3>
+                        <h3>📄 Contract Summary</h3>
                         <div class="summary-grid" id="summaryGrid">
                             <div class="summary-item">
-                                <strong>Tipo:</strong> <span id="summaryType">-</span>
+                                <strong>Type:</strong> <span id="summaryType">-</span>
                             </div>
                             <div class="summary-item">
-                                <strong>Nombre:</strong> <span id="summaryName">-</span>
+                                <strong>Name:</strong> <span id="summaryName">-</span>
                             </div>
                             <div class="summary-item">
-                                <strong>Símbolo:</strong> <span id="summarySymbol">-</span>
+                                <strong>Symbol:</strong> <span id="summarySymbol">-</span>
                             </div>
                             <div class="summary-item">
-                                <strong>Cantidad Inicial:</strong> <span id="summarySupply">-</span>
+                                <strong>Initial Amount:</strong> <span id="summarySupply">-</span>
                             </div>
                             <div class="summary-item">
-                                <strong>Características:</strong> <span id="summaryFeatures">-</span>
+                                <strong>Features:</strong> <span id="summaryFeatures">-</span>
                             </div>
                             <div class="summary-item">
-                                <strong>Licencia:</strong> <span id="summaryLicense">-</span>
+                                <strong>License:</strong> <span id="summaryLicense">-</span>
                             </div>
                             <div class="summary-item">
-                                <strong>Administrador:</strong> <span id="summaryAdmin">-</span>
+                                <strong>Administrator:</strong> <span id="summaryAdmin">-</span>
                             </div>
                             <div class="summary-item">
-                                <strong>Red:</strong> <span id="summaryNetwork">Stellar Testnet</span>
+                                <strong>Network:</strong> <span id="summaryNetwork">Stellar Testnet</span>
                             </div>
                         </div>
                     </div>
 
-                    <!-- Progreso de Despliegue -->
                     <div class="deployment-pipeline" id="deploymentPipeline">
                         <div class="pipeline-step" id="pipelineValidation">
                             <div class="step-icon">🔍</div>
                             <div class="step-info">
-                                <h4>Validación</h4>
-                                <p>Verificando configuración del contrato...</p>
+                                <h4>Validation</h4>
+                                <p>Verifying contract configuration...</p>
                             </div>
                             <div class="step-status pending">⏳</div>
                         </div>
@@ -167,8 +155,8 @@
                         <div class="pipeline-step" id="pipelineCompilation">
                             <div class="step-icon">⚙️</div>
                             <div class="step-info">
-                                <h4>Compilación</h4>
-                                <p>Generando código Rust del smart contract...</p>
+                                <h4>Compilation</h4>
+                                <p>Generating Rust smart contract code...</p>
                             </div>
                             <div class="step-status pending">⏳</div>
                         </div>
@@ -177,7 +165,7 @@
                             <div class="step-icon">📦</div>
                             <div class="step-info">
                                 <h4>Build WASM</h4>
-                                <p>Compilando a WebAssembly optimizado...</p>
+                                <p>Compiling to optimized WebAssembly...</p>
                             </div>
                             <div class="step-status pending">⏳</div>
                         </div>
@@ -185,38 +173,34 @@
                         <div class="pipeline-step" id="pipelineDeployment">
                             <div class="step-icon">📦</div>
                             <div class="step-info">
-                                <h4>Exportación</h4>
-                                <p>Preparando código para descargar/copiar...</p>
+                                <h4>Export</h4>
+                                <p>Preparing code to download/copy...</p>
                             </div>
                             <div class="step-status pending">⏳</div>
                         </div>
                     </div>
 
-                    <!-- Estado de Despliegue -->
                     <div class="deployment-status hidden" id="deploymentStatus">
-                        <div class="deployment-message" id="deploymentMessage">Preparando despliegue...</div>
+                        <div class="deployment-message" id="deploymentMessage">Preparing deployment...</div>
                         <div class="deployment-progress">
                             <div class="progress-bar" id="progressBar"></div>
                         </div>
                     </div>
 
-                    <!-- Resultado del Despliegue -->
                     <div class="deployment-result hidden" id="deploymentResult">
                         <div class="result-content" id="resultContent"></div>
                     </div>
                 </div>
             </div>
 
-            <!-- Navigation Buttons -->
             <div class="stepper-navigation">
-                <button class="btn btn-secondary" id="prevBtn" disabled>Anterior</button>
-                <button class="btn btn-primary" id="nextBtn">Siguiente</button>
+                <button class="btn btn-secondary" id="prevBtn" disabled>Previous</button>
+                <button class="btn btn-primary" id="nextBtn">Next</button>
             </div>
         </div>
 
     </div>
 
-    <!-- Scripts -->
     <script src="https://unpkg.com/blockly/blockly.min.js"></script>
     <script src="https://cdn.jsdelivr.net/npm/@stellar/stellar-sdk@11.3.0/dist/stellar-sdk.min.js"></script>
     <script src="https://cdn.jsdelivr.net/npm/@stellar/freighter-api@1.7.0/build/index.min.js"></script>
@@ -349,9 +333,9 @@
             elements.prevBtn.disabled = appState.currentStep === 1;
 
             if (appState.currentStep === appState.totalSteps) {
-                elements.nextBtn.textContent = 'Crear Smart Contract';
+                elements.nextBtn.textContent = 'Create Smart Contract';
             } else {
-                elements.nextBtn.textContent = 'Siguiente';
+                elements.nextBtn.textContent = 'Next';
             }
 
             // Actualizar contenido dinámico según el paso
@@ -410,7 +394,7 @@
 
             const blocklyData = readBlocklyData();
             if (!blocklyData || !blocklyData.name) {
-                contractPreview.textContent = '// Configura los bloques para ver el preview del código...';
+                contractPreview.textContent = '// Configure the blocks to see the code preview...';
                 return;
             }
 
@@ -434,8 +418,8 @@
                 if (data.features.accessControl) features.push('AccessControl');
             }
 
-            return `// Smart Contract: ${data.name || 'Mi Token'}
-// Generado automáticamente por Tralalero Contracts
+            return `// Smart Contract: ${data.name || 'MyToken'}
+// Automatically generated by Tralalero Contracts
 #![no_std]
 
 use soroban_sdk::{
@@ -446,13 +430,13 @@ use soroban_sdk::{
     ${data.features && data.features.stakeable ? 'staking::StakingInterface,' : ''}
 };
 
-// Constantes del contrato
-const TOKEN_NAME: &str = "${data.name || 'Mi Token'}";
+// Contract constants
+const TOKEN_NAME: &str = "${data.name || 'My Token'}";
 const TOKEN_SYMBOL: &str = "${data.symbol || 'TOKEN'}";
 const DECIMALS: u32 = ${data.decimals || 2};
 const INITIAL_SUPPLY: i128 = ${data.supply || 1000};
 
-// Claves de almacenamiento
+// Storage keys
 const ADMIN: Symbol = symbol_short!("ADMIN");
 const PAUSED: Symbol = symbol_short!("PAUSED");
 const TOTAL_SUPPLY: Symbol = symbol_short!("TOTAL_SUP");
@@ -465,7 +449,7 @@ pub struct TokenContract;
 #[contractimpl]
 impl TokenContract {
     
-    /// Inicializa el contrato con configuración personalizada
+    /// Initializes the contract with custom settings
     pub fn initialize(env: Env, admin: Address) {
         if env.storage().instance().has(&ADMIN) {
             panic!("Contract already initialized");
@@ -476,14 +460,14 @@ impl TokenContract {
         ${data.features && data.features.pausable ? 'env.storage().instance().set(&PAUSED, &false);' : ''}
         ${data.security && data.security.transferLimit ? `env.storage().instance().set(&TRANSFER_LIMIT, &${data.security.transferLimit});` : ''}
         
-        // Mint inicial al admin
+        // Initial mint to the admin
         if INITIAL_SUPPLY > 0 {
             token::Client::new(&env, &env.current_contract_address())
                 .mint(&admin, &INITIAL_SUPPLY);
         }
     }
 
-    /// Metadata del token
+    /// Token metadata
     pub fn name(env: Env) -> String {
         String::from_str(&env, TOKEN_NAME)
     }
@@ -497,7 +481,7 @@ impl TokenContract {
     }
 
     ${data.features && data.features.mintable ? `
-    /// Mint nuevos tokens (solo admin)
+    /// Mint new tokens (admin only)
     pub fn mint(env: Env, to: Address, amount: i128) {
         Self::check_admin(&env);
         ${data.features && data.features.pausable ? 'Self::check_not_paused(&env);' : ''}
@@ -517,29 +501,29 @@ impl TokenContract {
     }` : ''}
 
     ${data.features && data.features.pausable ? `
-    /// Pausar el contrato (solo admin)
+    /// Pause the contract (admin only)
     pub fn pause(env: Env) {
         Self::check_admin(&env);
         env.storage().instance().set(&PAUSED, &true);
     }
     
-    /// Despausar el contrato (solo admin)
+    /// Unpause the contract (admin only)
     pub fn unpause(env: Env) {
         Self::check_admin(&env);
         env.storage().instance().set(&PAUSED, &false);
     }` : ''}
 
     ${data.features && data.features.stakeable ? `
-    /// Hacer staking de tokens
+    /// Stake tokens
     pub fn stake(env: Env, from: Address, amount: i128) {
         from.require_auth();
         Self::check_not_paused(&env);
         
-        // Lógica de staking...
-        // TODO: Implementar pool de staking
+        // Staking logic...
+        // TODO: Implement staking pool
     }` : ''}
 
-    /// Funciones auxiliares
+    /// Helper functions
     fn check_admin(env: &Env) {
         let admin: Address = env.storage().instance().get(&ADMIN).unwrap();
         admin.require_auth();
@@ -554,10 +538,10 @@ impl TokenContract {
     }` : ''}
 }
 
-// Características habilitadas: ${features.join(', ') || 'Ninguna'}
-// Límite de transferencia: ${data.security && data.security.transferLimit || 'Sin límite'}
-// Recompensa de staking: ${data.economics && data.economics.stakingReward || 0}% anual
-// Fee de transacción: ${data.economics && data.economics.transactionFee || 0}%
+// Enabled features: ${features.join(', ') || 'None'}
+// Transfer limit: ${data.security && data.security.transferLimit || 'No limit'}
+// Staking reward: ${data.economics && data.economics.stakingReward || 0}% yearly
+// Transaction fee: ${data.economics && data.economics.transactionFee || 0}%
 // Burn rate: ${data.economics && data.economics.burnRate || 0}%`;
         }
 
@@ -574,7 +558,7 @@ impl TokenContract {
             const warnings = [];
 
             if (contractBlocks.length === 0) {
-                errors.push('❌ Falta el bloque principal "Mi Smart Contract"');
+                errors.push('❌ Missing the main "My Smart Contract" block');
             } else {
                 const contractBlock = contractBlocks[0];
                 let currentBlock = contractBlock.getInputTargetBlock('SETTINGS');
@@ -591,7 +575,7 @@ impl TokenContract {
                 }
 
                 if (!hasName) {
-                    errors.push('❌ El nombre del contrato es requerido');
+                    errors.push('❌ The contract name is required');
                 }
             }
 
@@ -600,7 +584,7 @@ impl TokenContract {
 
             if (errors.length > 0) {
                 validationMessage.innerHTML = `
-                    <div style="color: #dc2626; font-weight: bold;">❌ Errores encontrados:</div>
+                    <div style="color: #dc2626; font-weight: bold;">❌ Errors found:</div>
                     ${errors.map(error => `<div style="margin: 0.5rem 0;">${error}</div>`).join('')}
                 `;
                 validationResult.style.backgroundColor = '#fef2f2';
@@ -608,11 +592,11 @@ impl TokenContract {
                 appState.contractValidated = false;
                 return false;
             } else {
-                let message = '<div style="color: #059669; font-weight: bold;">✅ Contrato válido!</div>';
+                let message = '<div style="color: #059669; font-weight: bold;">✅ Contract is valid!</div>';
 
                 if (warnings.length > 0) {
                     message += `
-                        <div style="color: #d97706; font-weight: bold; margin-top: 1rem;">⚠️ Advertencias:</div>
+                        <div style="color: #d97706; font-weight: bold; margin-top: 1rem;">⚠️ Warnings:</div>
                         ${warnings.map(warning => `<div style="margin: 0.5rem 0;">${warning}</div>`).join('')}
                     `;
                 }
@@ -699,7 +683,7 @@ impl TokenContract {
         // Funciones de Blockly
         function initializeBlockly() {
             if (typeof Blockly === 'undefined') {
-                console.error('Blockly no está cargado');
+                console.error('Blockly is not loaded');
                 return;
             }
 
@@ -707,77 +691,77 @@ impl TokenContract {
             Blockly.Blocks['contract_settings'] = {
                 init: function () {
                     this.appendDummyInput()
-                        .appendField("🔮 Mi Smart Contract");
+                        .appendField("🔮 My Smart Contract");
                     this.appendStatementInput("SETTINGS")
                         .setCheck(null);
                     this.setColour(290);
-                    this.setTooltip("Bloque principal del contrato");
+                    this.setTooltip("Main contract block");
                 }
             };
 
             Blockly.Blocks['contract_name'] = {
                 init: function () {
                     this.appendDummyInput()
-                        .appendField("Nombre del Contrato")
-                        .appendField(new Blockly.FieldTextInput("MiContrato"), "NAME");
+                        .appendField("Contract Name")
+                        .appendField(new Blockly.FieldTextInput("MyContract"), "NAME");
                     this.setPreviousStatement(true, null);
                     this.setNextStatement(true, null);
                     this.setColour(190);
-                    this.setTooltip("Define el nombre de tu contrato");
+                    this.setTooltip("Defines the name of your contract");
                 }
             };
 
             Blockly.Blocks['contract_version'] = {
                 init: function () {
                     this.appendDummyInput()
-                        .appendField("Versión")
+                        .appendField("Version")
                         .appendField(new Blockly.FieldTextInput("0.1.0"), "VERSION");
                     this.setPreviousStatement(true, null);
                     this.setNextStatement(true, null);
                     this.setColour(190);
-                    this.setTooltip("Define la versión de tu contrato");
+                    this.setTooltip("Defines the version of your contract");
                 }
             };
 
             Blockly.Blocks['admin_address'] = {
                 init: function () {
                     this.appendDummyInput()
-                        .appendField("🔑 Administrador")
+                        .appendField("🔑 Administrator")
                         .appendField(new Blockly.FieldTextInput('G...'), "ADDRESS");
                     this.setPreviousStatement(true, null);
                     this.setNextStatement(true, null);
                     this.setColour(230);
-                    this.setTooltip("Define el administrador del contrato");
+                    this.setTooltip("Defines the contract administrator");
                 }
             };
 
             Blockly.Blocks['state_var'] = {
                 init: function () {
                     this.appendDummyInput()
-                        .appendField("📦 Variable de estado")
-                        .appendField("nombre:")
-                        .appendField(new Blockly.FieldTextInput("contador"), "VAR_NAME")
-                        .appendField("tipo:")
+                        .appendField("📦 State Variable")
+                        .appendField("name:")
+                        .appendField(new Blockly.FieldTextInput("counter"), "VAR_NAME")
+                        .appendField("type:")
                         .appendField(new Blockly.FieldDropdown([["i32", "I32"], ["i128", "I128"], ["bool", "BOOL"], ["String", "STRING"], ["Address", "ADDRESS"]]), "VAR_TYPE");
                     this.setPreviousStatement(true, null);
                     this.setNextStatement(true, null);
                     this.setColour(160);
-                    this.setTooltip("Define una variable de estado del contrato");
+                    this.setTooltip("Defines a contract state variable");
                 }
             };
 
             Blockly.Blocks['function_def'] = {
                 init: function () {
                     this.appendDummyInput()
-                        .appendField("⚙️ Función")
-                        .appendField("nombre:")
-                        .appendField(new Blockly.FieldTextInput("mi_funcion"), "FN_NAME")
-                        .appendField("retorna:")
+                        .appendField("⚙️ Function")
+                        .appendField("name:")
+                        .appendField(new Blockly.FieldTextInput("my_function"), "FN_NAME")
+                        .appendField("returns:")
                         .appendField(new Blockly.FieldDropdown([["void", "VOID"], ["i32", "I32"], ["i128", "I128"], ["bool", "BOOL"], ["String", "STRING"], ["Address", "ADDRESS"]]), "RET_TYPE");
                     this.setPreviousStatement(true, null);
                     this.setNextStatement(true, null);
                     this.setColour(120);
-                    this.setTooltip("Define una función del contrato");
+                    this.setTooltip("Defines a contract function");
                 }
             };
 
@@ -785,7 +769,7 @@ impl TokenContract {
             Blockly.Blocks['feature_toggle'] = {
                 init: function () {
                     this.appendDummyInput()
-                        .appendField("🔥 Característica")
+                        .appendField("🔥 Feature")
                         .appendField(new Blockly.FieldDropdown([
                             ["Mintable", "mintable"],
                             ["Burnable", "burnable"],
@@ -794,13 +778,13 @@ impl TokenContract {
                             ["Governance", "governance"],
                             ["Stakeable", "stakeable"],
                             ["Time Lock", "timeLock"],
-                            ["Control de Acceso", "accessControl"]
+                            ["Access Control", "accessControl"]
                         ]), "FEATURE")
                         .appendField(new Blockly.FieldCheckbox("FALSE"), "ENABLED");
                     this.setPreviousStatement(true, null);
                     this.setNextStatement(true, null);
                     this.setColour(290);
-                    this.setTooltip("Habilita o deshabilita características del contrato");
+                    this.setTooltip("Enables or disables contract features");
                 }
             };
 
@@ -808,14 +792,14 @@ impl TokenContract {
                 init: function () {
                     this.appendDummyInput()
                         .appendField("🪙 Token Config")
-                        .appendField("símbolo:")
+                        .appendField("symbol:")
                         .appendField(new Blockly.FieldTextInput("TKN"), "SYMBOL")
-                        .appendField("suministro:")
+                        .appendField("supply:")
                         .appendField(new Blockly.FieldNumber(1000, 0), "SUPPLY");
                     this.setPreviousStatement(true, null);
                     this.setNextStatement(true, null);
                     this.setColour(260);
-                    this.setTooltip("Configura el token asociado al contrato");
+                    this.setTooltip("Configures the token associated with the contract");
                 }
             };
 
@@ -823,22 +807,22 @@ impl TokenContract {
             blocklyWorkspace = Blockly.inject('blocklyDiv', {
                 toolbox: `
                     <xml>
-                        <category name="🚀 Empezar">
+                        <category name="🚀 Get Started">
                             <block type="contract_settings"></block>
                         </category>
-                        <category name="🎨 Propiedades">
+                        <category name="🎨 Properties">
                             <block type="contract_name"></block>
                             <block type="contract_version"></block>
                             <block type="admin_address"></block>
                             <block type="token_config"></block>
                         </category>
-                        <category name="📦 Estado">
+                        <category name="📦 State">
                             <block type="state_var"></block>
                         </category>
-                        <category name="⚙️ Funciones">
+                        <category name="⚙️ Functions">
                             <block type="function_def"></block>
                         </category>
-                        <category name="🔥 Características">
+                        <category name="🔥 Features">
                             <block type="feature_toggle"></block>
                         </category>
                     </xml>
@@ -870,7 +854,7 @@ impl TokenContract {
                 // Crear el bloque principal del contrato
                 const contractBlock = blocklyWorkspace.newBlock('contract_settings');
                 if (!contractBlock) {
-                    console.error('❌ No se pudo crear el bloque de contrato');
+                    console.error('❌ Could not create contract block');
                     return;
                 }
                 contractBlock.initSvg();
@@ -884,7 +868,7 @@ impl TokenContract {
                 if (nameBlock) {
                     nameBlock.initSvg();
                     nameBlock.render();
-                    nameBlock.setFieldValue('MiContrato', 'NAME');
+                    nameBlock.setFieldValue('MyContract', 'NAME');
                     blocks.push(nameBlock);
                 }
 
@@ -917,7 +901,7 @@ impl TokenContract {
                 if (stateVarBlock) {
                     stateVarBlock.initSvg();
                     stateVarBlock.render();
-                    stateVarBlock.setFieldValue('contador', 'VAR_NAME');
+                    stateVarBlock.setFieldValue('counter', 'VAR_NAME');
                     stateVarBlock.setFieldValue('I32', 'VAR_TYPE');
                     blocks.push(stateVarBlock);
                 }
@@ -926,7 +910,7 @@ impl TokenContract {
                 if (fnBlock) {
                     fnBlock.initSvg();
                     fnBlock.render();
-                    fnBlock.setFieldValue('incrementar', 'FN_NAME');
+                    fnBlock.setFieldValue('increment', 'FN_NAME');
                     fnBlock.setFieldValue('VOID', 'RET_TYPE');
                     blocks.push(fnBlock);
                 }
@@ -934,7 +918,7 @@ impl TokenContract {
                 // Conectar todos los bloques de forma secuencial
                 setTimeout(() => {
                     try {
-                        console.log('🔗 Conectando bloques...');
+                        console.log('🔗 Connecting blocks...');
 
                         // Conectar el primer bloque al contrato
                         const settingsInput = contractBlock.getInput('SETTINGS');
@@ -955,27 +939,27 @@ impl TokenContract {
 
                         // Renderizar después de conectar
                         blocklyWorkspace.render();
-                        console.log('🎉 Bloques creados y conectados');
+                        console.log('🎉 Blocks created and connected');
 
                     } catch (error) {
-                        console.error('❌ Error conectando bloques:', error);
+                        console.error('❌ Error connecting blocks:', error);
                     }
                 }, 500);
 
             } catch (error) {
-                console.error('❌ Error creando bloques:', error);
+                console.error('❌ Error creating blocks:', error);
             }
         }
 
         function readBlocklyData() {
             if (!blocklyWorkspace) {
-                console.error('Blockly workspace no está inicializado');
+                console.error('Blockly workspace is not initialized');
                 return null;
             }
 
             const contractBlock = blocklyWorkspace.getBlocksByType('contract_settings', false)[0];
             if (!contractBlock) {
-                console.error('No se encontró bloque de contrato');
+                console.error('Contract block not found');
                 return null;
             }
 
@@ -1083,7 +1067,7 @@ impl TokenContract {
 
         function validateWalletConnection() {
             if (!appState.walletConnected) {
-                showToast('Por favor, conecta tu wallet primero', 'error');
+                showToast('Please, connect your wallet first', 'error');
                 return false;
             }
             return true;
@@ -1094,7 +1078,7 @@ impl TokenContract {
             const contractBlocks = blocklyWorkspace.getBlocksByType('contract_settings', false);
 
             if (contractBlocks.length === 0) {
-                showToast('Por favor, configura tu contrato usando los bloques', 'error');
+                showToast('Please, configure your contract using the blocks', 'error');
                 return false;
             }
 
@@ -1114,7 +1098,7 @@ impl TokenContract {
             }
 
             if (!hasName) {
-                showToast('El nombre del contrato es requerido', 'error');
+                showToast('The contract name is required', 'error');
                 return false;
             }
 
@@ -1136,7 +1120,7 @@ impl TokenContract {
 
             // Actualizar elementos del resumen
             if (elements.summaryType) {
-                const typeLabels = { 'FUNGIBLE': 'Fungible', 'NON_FUNGIBLE': 'No Fungible', 'STABLECOIN': 'Stablecoin' };
+                const typeLabels = { 'FUNGIBLE': 'Fungible', 'NON_FUNGIBLE': 'Non-Fungible', 'STABLECOIN': 'Stablecoin' };
                 elements.summaryType.textContent = typeLabels[blocklyData.tokenType] || blocklyData.tokenType;
             }
             if (elements.summaryName) elements.summaryName.textContent = blocklyData.name || '-';
@@ -1150,12 +1134,12 @@ impl TokenContract {
                 if (blocklyData.features && blocklyData.features.burnable) enabledFeatures.push('Burnable');
                 if (blocklyData.features && blocklyData.features.pausable) enabledFeatures.push('Pausable');
                 if (blocklyData.features && blocklyData.features.upgradeable) enabledFeatures.push('Upgradeable');
-                if (blocklyData.features && blocklyData.features.accessControl) enabledFeatures.push('Control de Acceso');
+                if (blocklyData.features && blocklyData.features.accessControl) enabledFeatures.push('Access Control');
                 if (blocklyData.features && blocklyData.features.governance) enabledFeatures.push('Governance');
                 if (blocklyData.features && blocklyData.features.stakeable) enabledFeatures.push('Stakeable');
                 if (blocklyData.features && blocklyData.features.timeLock) enabledFeatures.push('Time Lock');
 
-                elements.summaryFeatures.textContent = enabledFeatures.length > 0 ? enabledFeatures.join(', ') : 'Smart Contract Básico';
+                elements.summaryFeatures.textContent = enabledFeatures.length > 0 ? enabledFeatures.join(', ') : 'Basic Smart Contract';
             }
 
             if (elements.summaryLicense) elements.summaryLicense.textContent = blocklyData.license || '-';
@@ -1220,7 +1204,7 @@ impl TokenContract {
         // Funciones de conexión de wallet
         async function connectWallet(walletType) {
             try {
-                showToast('Conectando wallet...', 'info');
+                showToast('Connecting wallet...', 'info');
 
                 let address;
 
@@ -1228,7 +1212,7 @@ impl TokenContract {
                     if (!window.freighterApi) {
                         // Redirigir a la página de instalación de Freighter
                         window.open('https://freighter.app/', '_blank');
-                        showToast('Freighter no está instalado. Abriendo página de instalación...', 'info');
+                        showToast('Freighter is not installed. Opening installation page...', 'info');
                         return;
                     }
 
@@ -1237,7 +1221,7 @@ impl TokenContract {
                 } else if (walletType === 'Albedo') {
                     if (!(window.albedo && window.albedo.publicKey)) {
                         window.open('https://albedo.link/', '_blank');
-                        showToast('Albedo no está instalado/disponible. Abriendo página...', 'info');
+                        showToast('Albedo is not installed/available. Opening page...', 'info');
                         return;
                     }
                     const res = await window.albedo.publicKey({
@@ -1250,28 +1234,28 @@ impl TokenContract {
                     if (!window.xBullApi) {
                         // Redirigir a la página de instalación de xBull
                         window.open('https://xbull.app/', '_blank');
-                        showToast('xBull no está instalado. Abriendo página de instalación...', 'info');
+                        showToast('xBull is not installed. Opening installation page...', 'info');
                         return;
                     }
                     // Implementar conexión con xBull cuando esté disponible
-                    throw new Error('xBull wallet no está disponible en este momento');
+                    throw new Error('xBull wallet is not available at this moment');
                 } else if (walletType === 'Rabet') {
                     if (!window.rabetApi) {
                         // Redirigir a la página de instalación de Rabet
                         window.open('https://rabet.io/', '_blank');
-                        showToast('Rabet no está instalado. Abriendo página de instalación...', 'info');
+                        showToast('Rabet is not installed. Opening installation page...', 'info');
                         return;
                     }
                     // Implementar conexión con Rabet cuando esté disponible
-                    throw new Error('Rabet wallet no está disponible en este momento');
+                    throw new Error('Rabet wallet is not available at this moment');
                 } else {
-                    throw new Error(`${walletType} wallet no está disponible en este momento`);
+                    throw new Error(`${walletType} wallet is not available at this moment`);
                 }
 
                 appState.walletConnected = true;
                 appState.walletAddress = address;
 
-                showToast('Wallet conectado exitosamente', 'success');
+                showToast('Wallet connected successfully', 'success');
 
                 // Navegar automáticamente al siguiente paso con transición suave
                 setTimeout(() => {
@@ -1279,8 +1263,8 @@ impl TokenContract {
                 }, 800);
 
             } catch (error) {
-                console.error('Error conectando wallet:', error);
-                showToast(`Error conectando wallet: ${error.message}`, 'error');
+                console.error('Error connecting wallet:', error);
+                showToast(`Error connecting wallet: ${error.message}`, 'error');
             }
         }
 
@@ -1289,7 +1273,7 @@ impl TokenContract {
             try {
                 // Validar antes de empezar
                 if (!validateSmartContract()) {
-                    showToast('❌ Valida el contrato antes de desplegarlo', 'error');
+                    showToast('❌ Validate the contract before deploying it', 'error');
                     return;
                 }
 
@@ -1303,36 +1287,36 @@ impl TokenContract {
                 elements.nextBtn.disabled = true;
                 elements.prevBtn.disabled = true;
 
-                await updatePipelineStep('pipelineValidation', 'active', 'Validando configuración del contrato...');
+                await updatePipelineStep('pipelineValidation', 'active', 'Validating contract configuration...');
                 await new Promise(resolve => setTimeout(resolve, 1000));
-                await updatePipelineStep('pipelineValidation', 'completed', 'Configuración validada correctamente');
+                await updatePipelineStep('pipelineValidation', 'completed', 'Configuration validated successfully');
 
                 // Paso 1: Compilación del Smart Contract
-                await updatePipelineStep('pipelineCompilation', 'active', 'Generando código Rust del smart contract...');
+                await updatePipelineStep('pipelineCompilation', 'active', 'Generating Rust smart contract code...');
 
                 const blocklyData = readBlocklyData();
                 const rustCode = generateAdvancedRustCode(blocklyData);
 
-                console.log('🔧 Compilando Smart Contract:');
-                console.log('   Nombre:', blocklyData.name);
-                console.log('   Características:', Object.keys(blocklyData.features).filter(f => blocklyData.features[f]));
+                console.log('🔧 Compiling Smart Contract:');
+                console.log('   Name:', blocklyData.name);
+                console.log('   Features:', Object.keys(blocklyData.features).filter(f => blocklyData.features[f]));
 
                 // Simular tiempo de compilación
                 await new Promise(resolve => setTimeout(resolve, 2000));
-                await updatePipelineStep('pipelineCompilation', 'completed', 'Smart contract compilado exitosamente');
+                await updatePipelineStep('pipelineCompilation', 'completed', 'Smart contract compiled successfully');
                 appState.contractCompiled = true;
 
                 // Paso 2: Build WASM
-                await updatePipelineStep('pipelineWasm', 'active', 'Compilando a WebAssembly optimizado...');
+                await updatePipelineStep('pipelineWasm', 'active', 'Compiling to optimized WebAssembly...');
 
                 // Simular compilación WASM
                 await new Promise(resolve => setTimeout(resolve, 2500));
-                await updatePipelineStep('pipelineWasm', 'completed', 'WASM optimizado generado');
+                await updatePipelineStep('pipelineWasm', 'completed', 'Optimized WASM generated');
 
                 // Paso 3: Despliegue a la red
-                await updatePipelineStep('pipelineDeployment', 'active', 'Desplegando a la red Stellar...');
+                await updatePipelineStep('pipelineDeployment', 'active', 'Deploying to the Stellar network...');
 
-                console.log('🚀 Datos del Smart Contract para despliegue:');
+                console.log('🚀 Smart Contract data for deployment:');
                 console.log('   code:', blocklyData.symbol);
                 console.log('   amount:', blocklyData.supply);
                 console.log('   userAddress:', appState.walletAddress);
@@ -1369,7 +1353,7 @@ impl TokenContract {
                     result = await response.json();
                 } else {
                     // Fallback al endpoint original si el nuevo no existe aún
-                    console.log('⚠️ Endpoint de smart contract no disponible, usando fallback...');
+                    console.log('⚠️ Smart contract endpoint not available, using fallback...');
                     const fallbackResponse = await fetch('/api/build-transaction', {
                         method: 'POST',
                         headers: { 'Content-Type': 'application/json' },
@@ -1383,21 +1367,21 @@ impl TokenContract {
 
                     if (!fallbackResponse.ok) {
                         const errorText = await fallbackResponse.text();
-                        throw new Error(`Error del servidor: ${errorText}`);
+                        throw new Error(`Server error: ${errorText}`);
                     }
 
                     result = await fallbackResponse.json();
                 }
 
                 if (!result.success) {
-                    throw new Error(result.details || 'Error desconocido del servidor');
+                    throw new Error(result.details || 'Unknown server error');
                 }
 
                 // Paso 4: Verificar si se desplegó automáticamente o compiló solamente
                 const isDeployed = result.deployment.status === 'deployed';
                 const stepMessage = isDeployed ?
-                    'Smart contract desplegado exitosamente' :
-                    'Smart contract compilado - Deployment manual disponible';
+                    'Smart contract deployed successfully' :
+                    'Smart contract compiled - Manual deployment available';
 
                 await updatePipelineStep('pipelineDeployment', 'active', stepMessage);
 
@@ -1406,15 +1390,15 @@ impl TokenContract {
                 console.log('📁 WASM path:', result.smartContract.wasmPath);
 
                 if (isDeployed) {
-                    console.log('🚀 Dirección del contrato:', result.smartContract.contractAddress);
+                    console.log('🚀 Contract address:', result.smartContract.contractAddress);
                 } else {
-                    console.log('⚠️ Deployment manual requerido');
+                    console.log('⚠️ Manual deployment required');
                 }
 
                 // Finalizar proceso según el estado del deployment
                 const finalMessage = isDeployed ?
-                    'Finalizando deployment...' :
-                    'Finalizando compilación...';
+                    'Finalizing deployment...' :
+                    'Finalizing compilation...';
 
                 await updatePipelineStep('pipelineDeployment', 'active', finalMessage);
 
@@ -1432,15 +1416,15 @@ impl TokenContract {
                 };
 
                 const logMessage = isDeployed ?
-                    `✅ Smart Contract desplegado exitosamente: ${processResult.hash}` :
-                    `✅ Smart Contract compilado exitosamente: ${processResult.hash}`;
+                    `✅ Smart Contract deployed successfully: ${processResult.hash}` :
+                    `✅ Smart Contract compiled successfully: ${processResult.hash}`;
 
                 console.log(logMessage);
 
                 // Completar el pipeline
                 const completionMessage = isDeployed ?
-                    'Smart Contract desplegado exitosamente' :
-                    'Smart Contract compilado exitosamente';
+                    'Smart Contract deployed successfully' :
+                    'Smart Contract compiled successfully';
 
                 await updatePipelineStep('pipelineDeployment', 'completed', completionMessage);
 
@@ -1450,7 +1434,7 @@ impl TokenContract {
                 }, 1000);
 
             } catch (error) {
-                console.error('❌ Error desplegando Smart Contract:', error);
+                console.error('❌ Error deploying Smart Contract:', error);
 
                 // Marcar paso actual como error
                 const activeStep = document.querySelector('.pipeline-step.active');
@@ -1459,7 +1443,7 @@ impl TokenContract {
                     await updatePipelineStep(stepId, 'error', `Error: ${error.message}`);
                 }
 
-                showToast(`❌ Error desplegando contrato: ${error.message}`, 'error');
+                showToast(`❌ Error deploying contract: ${error.message}`, 'error');
 
                 // Re-habilitar botones
                 elements.nextBtn.disabled = false;
@@ -1484,8 +1468,8 @@ impl TokenContract {
 
             modal.innerHTML = `
                 <div style="background: white; padding: 2rem; border-radius: 1rem; max-width: 700px; width: 90%; max-height: 80vh; overflow-y: auto;">
-                    <h3 style="margin: 0 0 1rem 0; color: #1f2937;">📋 Instrucciones de Deployment</h3>
-                    <p style="margin: 0 0 1rem 0; color: #6b7280;">Para desplegar tu smart contract, ejecuta estos comandos en orden:</p>
+                    <h3 style="margin: 0 0 1rem 0; color: #1f2937;">📋 Deployment Instructions</h3>
+                    <p style="margin: 0 0 1rem 0; color: #6b7280;">To deploy your smart contract, run these commands in order:</p>
                     
                     <div style="background: #f8fafc; border: 1px solid #e2e8f0; border-radius: 0.5rem; padding: 1rem; margin: 1rem 0;">
                         ${stepsHtml}
@@ -1493,22 +1477,22 @@ impl TokenContract {
                     
                     <div style="background: #eff6ff; border-radius: 0.5rem; padding: 1rem; margin: 1rem 0;">
                         <p style="margin: 0; color: #1e40af; font-size: 0.9rem;">
-                            <strong>ℹ️ Explicación de los comandos:</strong><br>
-                            1. <strong>generate</strong>: Crea una nueva identity para firmar transacciones<br>
-                            2. <strong>fund</strong>: Solicita XLM gratuitos para la testnet<br>
-                            3. <strong>deploy</strong>: Despliega el smart contract a la red
+                            <strong>ℹ️ Command Explanations:</strong><br>
+                            1. <strong>generate</strong>: Creates a new identity to sign transactions<br>
+                            2. <strong>fund</strong>: Requests free XLM for the testnet<br>
+                            3. <strong>deploy</strong>: Deploys the smart contract to the network
                         </p>
                     </div>
                     
                     <p style="margin: 1rem 0 0 0; color: #6b7280; font-size: 0.9rem;">
-                        <strong>Instalación de Stellar CLI:</strong> 
-                        <a href="${instructions.setupGuide || 'https://developers.stellar.org/docs/build/smart-contracts/getting-started/setup'}" target="_blank" style="color: #3b82f6;">Ver guía oficial</a>
+                        <strong>Stellar CLI Installation:</strong> 
+                        <a href="${instructions.setupGuide || 'https://developers.stellar.org/docs/build/smart-contracts/getting-started/setup'}" target="_blank" style="color: #3b82f6;">View official guide</a>
                         <br><br>
-                        <strong>Alternativa:</strong> 
-                        <a href="${instructions.stellarLaboratory || 'https://laboratory.stellar.org/'}" target="_blank" style="color: #3b82f6;">Usar Stellar Laboratory</a>
+                        <strong>Alternative:</strong> 
+                        <a href="${instructions.stellarLaboratory || 'https://laboratory.stellar.org/'}" target="_blank" style="color: #3b82f6;">Use Stellar Laboratory</a>
                     </p>
                     
-                    <button onclick="this.parentElement.parentElement.remove()" style="background: #3b82f6; color: white; border: none; padding: 0.75rem 1.5rem; border-radius: 0.5rem; cursor: pointer; margin-top: 1rem; font-weight: 600;">Entendido</button>
+                    <button onclick="this.parentElement.parentElement.remove()" style="background: #3b82f6; color: white; border: none; padding: 0.75rem 1.5rem; border-radius: 0.5rem; cursor: pointer; margin-top: 1rem; font-weight: 600;">Got it</button>
                 </div>
             `;
 
@@ -1542,7 +1526,7 @@ impl TokenContract {
                             'governance': 'Governance',
                             'stakeable': 'Stakeable',
                             'timeLock': 'Time Lock',
-                            'accessControl': 'Control de Acceso'
+                            'accessControl': 'Access Control'
                         };
                         return names[f] || f;
                     }).join(', ');
@@ -1557,9 +1541,8 @@ impl TokenContract {
                 elements.resultContent.innerHTML = `
                     <div style="text-align: center; max-width: 700px; margin: 0 auto;">
                         <div style="font-size: 2rem; margin-bottom: 1rem;">🎉</div>
-                        <h2 style="color: #10b981; margin-bottom: 2rem;">${submitResult.deployed ? '¡Smart Contract Desplegado Exitosamente!' : '¡Smart Contract Compilado Exitosamente!'}</h2>
+                        <h2 style="color: #10b981; margin-bottom: 2rem;">${submitResult.deployed ? 'Smart Contract Deployed Successfully!' : 'Smart Contract Compiled Successfully!'}</h2>
                         
-                        <!-- Stellar Explorer - Elemento Principal -->
                         <div style="background: linear-gradient(135deg, #1e40af 0%, #3b82f6 100%); border-radius: 1rem; padding: 2rem; margin-bottom: 2rem; color: white; box-shadow: 0 10px 25px rgba(59, 130, 246, 0.3);">
                             <div style="display: flex; align-items: center; justify-content: center; gap: 1rem; margin-bottom: 1.5rem;">
                                 <div style="font-size: 2.5rem;">🔍</div>
@@ -1567,7 +1550,7 @@ impl TokenContract {
                             </div>
                             
                             <p style="margin-bottom: 2rem; font-size: 1.1rem; opacity: 0.9;">
-                                Explora tu smart contract en la blockchain de Stellar
+                                Explore your smart contract on the Stellar blockchain
                             </p>
                             
                             <div style="display: grid; grid-template-columns: repeat(auto-fit, minmax(280px, 1fr)); gap: 1rem;">
@@ -1578,8 +1561,8 @@ impl TokenContract {
                                        onmouseover="this.style.transform='translateY(-3px)'; this.style.boxShadow='0 15px 35px rgba(0,0,0,0.2)'"
                                        onmouseout="this.style.transform='translateY(0)'; this.style.boxShadow='none'">
                                         <div style="font-size: 1.8rem;">📄</div>
-                                        <div>Ver Smart Contract</div>
-                                        <div style="font-size: 0.8rem; opacity: 0.8; text-align: center;">Explora el contrato desplegado</div>
+                                        <div>View Smart Contract</div>
+                                        <div style="font-size: 0.8rem; opacity: 0.8; text-align: center;">Explore the deployed contract</div>
                                     </a>
                                 ` : ''}
                                 
@@ -1589,8 +1572,8 @@ impl TokenContract {
                                    onmouseover="this.style.transform='translateY(-3px)'; this.style.boxShadow='0 15px 35px rgba(0,0,0,0.2)'"
                                    onmouseout="this.style.transform='translateY(0)'; this.style.boxShadow='none'">
                                     <div style="font-size: 1.8rem;">⚡</div>
-                                    <div>${submitResult.deployed ? 'Ver Transacción' : 'Ver Hash'}</div>
-                                    <div style="font-size: 0.8rem; opacity: 0.8; text-align: center;">${submitResult.deployed ? 'Detalles del deployment' : 'Hash de compilación'}</div>
+                                    <div>${submitResult.deployed ? 'View Transaction' : 'View Hash'}</div>
+                                    <div style="font-size: 0.8rem; opacity: 0.8; text-align: center;">${submitResult.deployed ? 'Deployment details' : 'Compilation hash'}</div>
                                 </a>
                                 
                                 <a href="https://stellar.expert/explorer/testnet" 
@@ -1599,8 +1582,8 @@ impl TokenContract {
                                    onmouseover="this.style.transform='translateY(-3px)'; this.style.boxShadow='0 15px 35px rgba(0,0,0,0.2)'"
                                    onmouseout="this.style.transform='translateY(0)'; this.style.boxShadow='none'">
                                     <div style="font-size: 1.8rem;">🌐</div>
-                                    <div>Explorar Red</div>
-                                    <div style="font-size: 0.8rem; opacity: 0.8; text-align: center;">Red completa de Stellar</div>
+                                    <div>Explore Network</div>
+                                    <div style="font-size: 0.8rem; opacity: 0.8; text-align: center;">Entire Stellar Network</div>
                                 </a>
                             </div>
                             
@@ -1609,52 +1592,17 @@ impl TokenContract {
                             </div>
                         </div>
                         
-                        <!-- Detalles del Contrato - Información compacta -->
-                        <details style="background: #f8fafc; border: 1px solid #e2e8f0; border-radius: 0.75rem; padding: 1rem; margin-bottom: 2rem; text-align: left;">
-                            <summary style="cursor: pointer; font-weight: 600; color: #374151; padding: 0.5rem;">📄 Detalles del Contrato</summary>
-                            <div style="display: grid; gap: 0.5rem; margin-top: 1rem; font-size: 0.9rem;">
-                                <div><strong>Nombre:</strong> ${contractData.name}</div>
-                                <div><strong>Símbolo:</strong> ${result.smartContract?.tokenSymbol || contractData.symbol}</div>
-                                ${submitResult.deployed ? `<div><strong>Dirección:</strong> <code style="font-size: 0.8rem; background: #f3f4f6; padding: 0.25rem 0.5rem; border-radius: 0.25rem;">${submitResult.contract_address}</code></div>` : ''}
-                                <div><strong>Suministro:</strong> ${(contractData.supply || 0).toLocaleString()}</div>
-                                <div><strong>Características:</strong> ${features || 'Smart Contract Básico'}</div>
-                                <div><strong>Estado:</strong> <span style="color: ${submitResult.deployed ? '#059669' : '#d97706'}; font-weight: 600;">${submitResult.deployed ? '✅ Desplegado en Testnet' : '⚠️ Requiere Deployment Manual'}</span></div>
-                            </div>
-                        </details>
-                        
-                        <!-- Herramientas adicionales - Elementos secundarios -->
-                        <details style="margin-bottom: 2rem;">
-                            <summary style="cursor: pointer; font-weight: 600; color: #6b7280; padding: 0.5rem;">🛠️ Herramientas y Documentación</summary>
-                            <div style="display: grid; grid-template-columns: repeat(auto-fit, minmax(200px, 1fr)); gap: 1rem; margin-top: 1rem;">
-                                <a href="https://github.com/stellar/soroban-cli" 
-                                   target="_blank" 
-                                   style="display: flex; align-items: center; justify-content: center; gap: 0.5rem; background: #6b7280; color: white; padding: 0.75rem; text-decoration: none; border-radius: 0.5rem; font-weight: 500; font-size: 0.9rem; transition: transform 0.2s;">
-                                    🛠️ Soroban CLI
-                                </a>
-                                <a href="https://soroban.stellar.org/" 
-                                   target="_blank" 
-                                   style="display: flex; align-items: center; justify-content: center; gap: 0.5rem; background: #6b7280; color: white; padding: 0.75rem; text-decoration: none; border-radius: 0.5rem; font-weight: 500; font-size: 0.9rem; transition: transform 0.2s;">
-                                    📚 Docs Soroban
-                                </a>
-                                ${!submitResult.deployed ? `<button onclick="showDeploymentInstructions(${JSON.stringify(result.deployment?.deploymentInstructions || {}).replace(/"/g, '&quot;')})" 
-                                        style="display: flex; align-items: center; justify-content: center; gap: 0.5rem; background: #f59e0b; color: white; padding: 0.75rem; border: none; border-radius: 0.5rem; font-weight: 500; cursor: pointer; font-size: 0.9rem; transition: transform 0.2s;">
-                                    📋 Ver Instrucciones
-                                </button>` : ''}
-                            </div>
-                        </details>
-                        
-                        <!-- Botón para crear otro contrato -->
                         <button onclick="window.location.reload()" 
                                 style="display: flex; align-items: center; justify-content: center; gap: 0.5rem; background: #10b981; color: white; padding: 1rem 2rem; border: none; border-radius: 0.75rem; font-weight: 600; cursor: pointer; transition: all 0.3s; margin: 0 auto;"
                                 onmouseover="this.style.transform='translateY(-2px)'; this.style.boxShadow='0 8px 20px rgba(16, 185, 129, 0.3)'"
                                 onmouseout="this.style.transform='translateY(0)'; this.style.boxShadow='none'">
-                            🔄 Crear Otro Smart Contract
+                            🔄 Create Another Smart Contract
                         </button>
                     </div>
                 `;
             }
 
-            showToast('🎉 ¡Smart Contract desplegado exitosamente!', 'success');
+            showToast('🎉 Smart Contract deployed successfully!', 'success');
         }
 
         // Event listeners
@@ -1666,8 +1614,8 @@ impl TokenContract {
             // Botones de conexión de wallet
             document.getElementById('connectFreighter').addEventListener('click', () => connectWallet('Freighter'));
             document.getElementById('connectXbull').addEventListener('click', () => connectWallet('xBull'));
-            document.getElementById('connectAlbedo').addEventListener('click', () => connectWallet('Albedo'));
-            document.getElementById('connectRabet').addEventListener('click', () => connectWallet('Rabet'));
+            // document.getElementById('connectAlbedo').addEventListener('click', () => connectWallet('Albedo'));
+            // document.getElementById('connectRabet').addEventListener('click', () => connectWallet('Rabet'));
 
             // Botones de preview y validación
             const refreshPreviewBtn = document.getElementById('refreshPreview');
@@ -1680,9 +1628,9 @@ impl TokenContract {
                 validateContractBtn.addEventListener('click', () => {
                     const isValid = validateSmartContract();
                     if (isValid) {
-                        showToast('✅ Contrato validado correctamente', 'success');
+                        showToast('✅ Contract validated successfully', 'success');
                     } else {
-                        showToast('❌ Se encontraron errores en el contrato', 'error');
+                        showToast('❌ Errors found in the contract', 'error');
                     }
                 });
             }
@@ -1713,13 +1661,13 @@ impl TokenContract {
                         modal.innerHTML = `
                             <div style="background: white; border-radius: 1rem; padding: 2rem; max-width: 80%; max-height: 80%; overflow: auto;">
                                 <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 1rem;">
-                                    <h3>📄 Código Completo del Smart Contract</h3>
-                                    <button id="closeCodeModal" style="background: #dc2626; color: white; border: none; padding: 0.5rem 1rem; border-radius: 0.5rem; cursor: pointer;">✕ Cerrar</button>
+                                    <h3>📄 Full Smart Contract Code</h3>
+                                    <button id="closeCodeModal" style="background: #dc2626; color: white; border: none; padding: 0.5rem 1rem; border-radius: 0.5rem; cursor: pointer;">✕ Close</button>
                                 </div>
                                 <pre style="background: #f8f9fa; padding: 1rem; border-radius: 0.5rem; overflow: auto; font-size: 0.875rem; line-height: 1.5;">${fullCode}</pre>
                                 <div style="margin-top: 1rem; display: flex; gap: 1rem;">
-                                    <button id="downloadCode" style="background: #6366f1; color: white; border: none; padding: 0.75rem 1.5rem; border-radius: 0.5rem; cursor: pointer;">📥 Descargar</button>
-                                    <button id="copyCode" style="background: #10b981; color: white; border: none; padding: 0.75rem 1.5rem; border-radius: 0.5rem; cursor: pointer;">📋 Copiar</button>
+                                    <button id="downloadCode" style="background: #6366f1; color: white; border: none; padding: 0.75rem 1.5rem; border-radius: 0.5rem; cursor: pointer;">📥 Download</button>
+                                    <button id="copyCode" style="background: #10b981; color: white; border: none; padding: 0.75rem 1.5rem; border-radius: 0.5rem; cursor: pointer;">📋 Copy</button>
                                 </div>
                             </div>
                         `;
@@ -1739,15 +1687,15 @@ impl TokenContract {
                             a.download = `${blocklyData.symbol || 'token'}_contract.rs`;
                             a.click();
                             URL.revokeObjectURL(url);
-                            showToast('📥 Código descargado', 'success');
+                            showToast('📥 Code downloaded', 'success');
                         });
 
                         document.getElementById('copyCode').addEventListener('click', async () => {
                             try {
                                 await navigator.clipboard.writeText(fullCode);
-                                showToast('📋 Código copiado al portapapeles', 'success');
+                                showToast('📋 Code copied to clipboard', 'success');
                             } catch (err) {
-                                showToast('❌ Error al copiar código', 'error');
+                                showToast('❌ Error copying code', 'error');
                             }
                         });
 
@@ -1758,7 +1706,7 @@ impl TokenContract {
                             }
                         });
                     } else {
-                        showToast('⚠️ Configura los bloques primero', 'error');
+                        showToast('⚠️ Configure the blocks first', 'error');
                     }
                 });
             }

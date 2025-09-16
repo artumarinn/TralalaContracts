@@ -1,7 +1,0 @@
-/Users/matiasboldrini/Documents/hackathon/tralalerocontracts-app/tralala/target/debug/deps/soroban_builtin_sdk_macros-a7adde4bb437fac1.d: /Users/matiasboldrini/.cargo/registry/src/index.crates.io-1949cf8c6b5b557f/soroban-builtin-sdk-macros-23.0.1/src/lib.rs /Users/matiasboldrini/.cargo/registry/src/index.crates.io-1949cf8c6b5b557f/soroban-builtin-sdk-macros-23.0.1/src/derive_fn.rs /Users/matiasboldrini/.cargo/registry/src/index.crates.io-1949cf8c6b5b557f/soroban-builtin-sdk-macros-23.0.1/src/derive_type.rs
-
-/Users/matiasboldrini/Documents/hackathon/tralalerocontracts-app/tralala/target/debug/deps/libsoroban_builtin_sdk_macros-a7adde4bb437fac1.dylib: /Users/matiasboldrini/.cargo/registry/src/index.crates.io-1949cf8c6b5b557f/soroban-builtin-sdk-macros-23.0.1/src/lib.rs /Users/matiasboldrini/.cargo/registry/src/index.crates.io-1949cf8c6b5b557f/soroban-builtin-sdk-macros-23.0.1/src/derive_fn.rs /Users/matiasboldrini/.cargo/registry/src/index.crates.io-1949cf8c6b5b557f/soroban-builtin-sdk-macros-23.0.1/src/derive_type.rs
-
-/Users/matiasboldrini/.cargo/registry/src/index.crates.io-1949cf8c6b5b557f/soroban-builtin-sdk-macros-23.0.1/src/lib.rs:
-/Users/matiasboldrini/.cargo/registry/src/index.crates.io-1949cf8c6b5b557f/soroban-builtin-sdk-macros-23.0.1/src/derive_fn.rs:
-/Users/matiasboldrini/.cargo/registry/src/index.crates.io-1949cf8c6b5b557f/soroban-builtin-sdk-macros-23.0.1/src/derive_type.rs:
