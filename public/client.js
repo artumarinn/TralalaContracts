@@ -22,84 +22,67 @@ document.addEventListener("DOMContentLoaded", () => {
         }
     });
 
-    // --- 2. Definition of Magic Blocks (Restored) ---
+    // --- 2. Definición de bloques de Smart Contract (Genérico) ---
     Blockly.Blocks['contract_settings'] = {
         init: function () {
-            this.appendDummyInput().appendField("🔮 My Stellar Token");
+            this.appendDummyInput().appendField("🔮 Mi Smart Contract");
             this.appendStatementInput("SETTINGS").setCheck(null);
             this.setStyle('start_blocks');
         }
     };
-    Blockly.Blocks['token_name'] = {
+    Blockly.Blocks['contract_name'] = {
         init: function () {
-            this.appendDummyInput().appendField("Coin Name").appendField(new Blockly.FieldTextInput("MyTreasure"), "NAME");
+            this.appendDummyInput().appendField("Nombre del Contrato").appendField(new Blockly.FieldTextInput("MiContrato"), "NAME");
             this.setPreviousStatement(true, null); this.setNextStatement(true, null); this.setStyle('property_blocks');
         }
     };
-    Blockly.Blocks['token_symbol'] = {
+    Blockly.Blocks['contract_version'] = {
         init: function () {
-            this.appendDummyInput().appendField("Symbol (icon)").appendField(new Blockly.FieldTextInput("GOLD"), "SYMBOL");
-            this.setPreviousStatement(true, null); this.setNextStatement(true, null); this.setStyle('property_blocks');
-        }
-    };
-    Blockly.Blocks['token_decimals'] = {
-        init: function () {
-            this.appendDummyInput().appendField("How many tiny pieces?").appendField(new Blockly.FieldNumber(7, 0, 18), "DECIMALS");
+            this.appendDummyInput().appendField("Versión").appendField(new Blockly.FieldTextInput("0.1.0"), "VERSION");
             this.setPreviousStatement(true, null); this.setNextStatement(true, null); this.setStyle('property_blocks');
         }
     };
     Blockly.Blocks['admin_address'] = {
         init: function () {
-            this.appendDummyInput().appendField("🔑 Contract Owner (Admin)").appendField(new Blockly.FieldTextInput('G...'), "ADDRESS");
+            this.appendDummyInput().appendField("🔑 Administrador (Address)").appendField(new Blockly.FieldTextInput('G...'), "ADDRESS");
             this.setPreviousStatement(true, null); this.setNextStatement(true, null); this.setStyle('rules_blocks');
         }
     };
-    Blockly.Blocks['initial_supply'] = {
+    Blockly.Blocks['state_var'] = {
         init: function () {
-            this.appendDummyInput().appendField("💰 Initial Number of Coins").appendField(new Blockly.FieldNumber(1000, 1), "SUPPLY");
+            this.appendDummyInput()
+                .appendField("📦 Variable de estado")
+                .appendField("nombre:")
+                .appendField(new Blockly.FieldTextInput("contador"), "VAR_NAME")
+                .appendField("tipo:")
+                .appendField(new Blockly.FieldDropdown([["i32", "I32"], ["i128", "I128"], ["bool", "BOOL"], ["String", "STRING"], ["Address", "ADDRESS"]]), "VAR_TYPE");
             this.setPreviousStatement(true, null); this.setNextStatement(true, null); this.setStyle('rules_blocks');
         }
     };
-    Blockly.Blocks['can_mint'] = {
+    Blockly.Blocks['function_def'] = {
         init: function () {
-            this.appendDummyInput().appendField("👑 Can owner create more?").appendField(new Blockly.FieldCheckbox(true), "MINT_ENABLED");
-            this.setPreviousStatement(true, null); this.setNextStatement(true, null); this.setStyle('powers_blocks');
-        }
-    };
-    Blockly.Blocks['can_burn'] = {
-        init: function () {
-            this.appendDummyInput().appendField("🔥 Can coins be burned?").appendField(new Blockly.FieldCheckbox(true), "BURN_ENABLED");
-            this.setPreviousStatement(true, null); this.setNextStatement(true, null); this.setStyle('powers_blocks');
-        }
-    };
-    Blockly.Blocks['is_pausable'] = {
-        init: function () {
-            this.appendDummyInput().appendField("⏸️ Can admin pause contract?").appendField(new Blockly.FieldCheckbox(true), "PAUSABLE_ENABLED");
-            this.setPreviousStatement(true, null); this.setNextStatement(true, null); this.setStyle('advanced_blocks');
-        }
-    };
-    Blockly.Blocks['transfer_limit'] = {
-        init: function () {
-            this.appendDummyInput().appendField("✋ Max amount per transfer").appendField(new Blockly.FieldNumber(100, 0), "TRANSFER_LIMIT");
+            this.appendDummyInput()
+                .appendField("⚙️ Función")
+                .appendField("nombre:")
+                .appendField(new Blockly.FieldTextInput("mi_funcion"), "FN_NAME")
+                .appendField("retorna:")
+                .appendField(new Blockly.FieldDropdown([["void", "VOID"], ["i32", "I32"], ["i128", "I128"], ["bool", "BOOL"], ["String", "STRING"], ["Address", "ADDRESS"]]), "RET_TYPE");
             this.setPreviousStatement(true, null); this.setNextStatement(true, null); this.setStyle('advanced_blocks');
         }
     };
 
-    // --- 3. The Magic Toolbox (Restored) ---
+    // --- 3. Toolbox ---
     const toolbox = `
         <xml id="toolbox" style="display: none">
-            <category name="🚀 Start Here" categorystyle="start_category"><block type="contract_settings"></block></category>
-            <category name="🎨 Basic Properties" categorystyle="property_category">
-                <block type="token_name"></block><block type="token_symbol"></block><block type="token_decimals"></block>
+            <category name="🚀 Empezar" categorystyle="start_category"><block type="contract_settings"></block></category>
+            <category name="🎨 Propiedades" categorystyle="property_category">
+                <block type="contract_name"></block><block type="contract_version"></block><block type="admin_address"></block>
             </category>
-            <category name="⚙️ Game Rules" categorystyle="rules_category">
-                <block type="admin_address"></block><block type="initial_supply"></block>
+            <category name="📦 Estado" categorystyle="rules_category">
+                <block type="state_var"></block>
             </category>
-            <category name="✨ Special Powers" categorystyle="powers_category">
-                <block type="can_mint"></block><block type="can_burn"></block>
-            </category>
-            <category name="🛡️ Advanced Rules" categorystyle="advanced_category">
-                <block type="is_pausable"></block><block type="transfer_limit"></block>
+            <category name="⚙️ Funciones" categorystyle="advanced_category">
+                <block type="function_def"></block>
             </category>
         </xml>
     `;
@@ -131,31 +114,22 @@ document.addEventListener("DOMContentLoaded", () => {
             // Crear bloques básicos necesarios
             const blocks = [];
 
-            const nameBlock = blocklyWorkspace.newBlock('token_name');
+            const nameBlock = blocklyWorkspace.newBlock('contract_name');
             if (nameBlock) {
                 nameBlock.initSvg();
                 nameBlock.render();
-                nameBlock.setFieldValue('Mi Token Mágico', 'NAME');
+                nameBlock.setFieldValue('MiContrato', 'NAME');
                 blocks.push(nameBlock);
                 console.log('✅ Bloque de nombre creado');
             }
 
-            const symbolBlock = blocklyWorkspace.newBlock('token_symbol');
-            if (symbolBlock) {
-                symbolBlock.initSvg();
-                symbolBlock.render();
-                symbolBlock.setFieldValue('MAGIC', 'SYMBOL');
-                blocks.push(symbolBlock);
-                console.log('✅ Bloque de símbolo creado');
-            }
-
-            const decimalsBlock = blocklyWorkspace.newBlock('token_decimals');
-            if (decimalsBlock) {
-                decimalsBlock.initSvg();
-                decimalsBlock.render();
-                decimalsBlock.setFieldValue(2, 'DECIMALS');
-                blocks.push(decimalsBlock);
-                console.log('✅ Bloque de decimales creado');
+            const versionBlock = blocklyWorkspace.newBlock('contract_version');
+            if (versionBlock) {
+                versionBlock.initSvg();
+                versionBlock.render();
+                versionBlock.setFieldValue('0.1.0', 'VERSION');
+                blocks.push(versionBlock);
+                console.log('✅ Bloque de versión creado');
             }
 
             const adminBlock = blocklyWorkspace.newBlock('admin_address');
@@ -167,31 +141,24 @@ document.addEventListener("DOMContentLoaded", () => {
                 console.log('✅ Bloque de admin creado');
             }
 
-            const supplyBlock = blocklyWorkspace.newBlock('initial_supply');
-            if (supplyBlock) {
-                supplyBlock.initSvg();
-                supplyBlock.render();
-                supplyBlock.setFieldValue(1000, 'SUPPLY');
-                blocks.push(supplyBlock);
-                console.log('✅ Bloque de suministro creado');
+            const stateVarBlock = blocklyWorkspace.newBlock('state_var');
+            if (stateVarBlock) {
+                stateVarBlock.initSvg();
+                stateVarBlock.render();
+                stateVarBlock.setFieldValue('contador', 'VAR_NAME');
+                stateVarBlock.setFieldValue('I32', 'VAR_TYPE');
+                blocks.push(stateVarBlock);
+                console.log('✅ Bloque de variable de estado creado');
             }
 
-            const mintBlock = blocklyWorkspace.newBlock('can_mint');
-            if (mintBlock) {
-                mintBlock.initSvg();
-                mintBlock.render();
-                mintBlock.setFieldValue(true, 'MINT_ENABLED');
-                blocks.push(mintBlock);
-                console.log('✅ Bloque de mint creado');
-            }
-
-            const burnBlock = blocklyWorkspace.newBlock('can_burn');
-            if (burnBlock) {
-                burnBlock.initSvg();
-                burnBlock.render();
-                burnBlock.setFieldValue(true, 'BURN_ENABLED');
-                blocks.push(burnBlock);
-                console.log('✅ Bloque de burn creado');
+            const fnBlock = blocklyWorkspace.newBlock('function_def');
+            if (fnBlock) {
+                fnBlock.initSvg();
+                fnBlock.render();
+                fnBlock.setFieldValue('incrementar', 'FN_NAME');
+                fnBlock.setFieldValue('VOID', 'RET_TYPE');
+                blocks.push(fnBlock);
+                console.log('✅ Bloque de función creado');
             }
 
             // Conectar todos los bloques de forma secuencial
@@ -258,31 +225,31 @@ document.addEventListener("DOMContentLoaded", () => {
             return null;
         }
 
-        const data = {};
+        const data = { name: '', version: '0.1.0', admin: '', state: [], functions: [] };
         let currentBlock = contractBlock.getInputTargetBlock('SETTINGS');
 
         while (currentBlock) {
             switch (currentBlock.type) {
-                case 'token_name':
-                    data.token_name = currentBlock.getFieldValue('NAME');
+                case 'contract_name':
+                    data.name = currentBlock.getFieldValue('NAME');
                     break;
-                case 'token_symbol':
-                    data.token_symbol = currentBlock.getFieldValue('SYMBOL');
-                    break;
-                case 'token_decimals':
-                    data.token_decimals = currentBlock.getFieldValue('DECIMALS');
+                case 'contract_version':
+                    data.version = currentBlock.getFieldValue('VERSION');
                     break;
                 case 'admin_address':
-                    data.admin_address = currentBlock.getFieldValue('ADDRESS');
+                    data.admin = currentBlock.getFieldValue('ADDRESS');
                     break;
-                case 'initial_supply':
-                    data.initial_supply = currentBlock.getFieldValue('SUPPLY');
+                case 'state_var':
+                    data.state.push({
+                        name: currentBlock.getFieldValue('VAR_NAME'),
+                        type: currentBlock.getFieldValue('VAR_TYPE')
+                    });
                     break;
-                case 'can_mint':
-                    data.mint_enabled = currentBlock.getFieldValue('MINT_ENABLED') === 'TRUE';
-                    break;
-                case 'can_burn':
-                    data.burn_enabled = currentBlock.getFieldValue('BURN_ENABLED') === 'TRUE';
+                case 'function_def':
+                    data.functions.push({
+                        name: currentBlock.getFieldValue('FN_NAME'),
+                        returns: currentBlock.getFieldValue('RET_TYPE')
+                    });
                     break;
             }
             currentBlock = currentBlock.getNextBlock();
@@ -298,7 +265,7 @@ document.addEventListener("DOMContentLoaded", () => {
 
         const contractBlock = blocklyWorkspace.getBlocksByType('contract_settings', false)[0];
         if (!contractBlock) {
-            errors.push('❌ Falta el bloque principal "Mi Contrato Mágico"');
+            errors.push('❌ Falta el bloque principal "Mi Smart Contract"');
             return { errors, warnings, isValid: false };
         }
 
@@ -309,38 +276,21 @@ document.addEventListener("DOMContentLoaded", () => {
         }
 
         // Validar campos requeridos
-        if (!data.token_name || data.token_name.trim() === '') {
-            errors.push('❌ El nombre del token está vacío. Usa el bloque "Nombre de la moneda"');
+        if (!data.name || data.name.trim() === '') {
+            errors.push('❌ El nombre del contrato está vacío. Usa el bloque "Nombre del Contrato"');
         }
 
-        if (!data.token_symbol || data.token_symbol.trim() === '') {
-            errors.push('❌ El símbolo del token está vacío. Usa el bloque "Símbolo (dibujito)"');
-        }
-
-        if (data.token_decimals === undefined || data.token_decimals === '') {
-            errors.push('❌ Los decimales no están definidos. Usa el bloque "Nº de pedacitos"');
-        }
-
-        if (!data.admin_address || data.admin_address.trim() === '' || data.admin_address === 'G...') {
-            errors.push('❌ La dirección del administrador no está configurada. Cambia "G..." por tu dirección real');
-        }
-
-        if (!data.initial_supply || data.initial_supply <= 0) {
-            errors.push('❌ El suministro inicial debe ser mayor a 0. Usa el bloque "Cantidad inicial"');
+        if (!data.admin || data.admin.trim() === '' || data.admin === 'G...') {
+            warnings.push('⚠️ La dirección del administrador no está configurada');
         }
 
         // Validar formato de dirección Stellar
-        if (data.admin_address && data.admin_address !== 'G...' && !data.admin_address.startsWith('G')) {
-            errors.push('❌ La dirección del administrador debe empezar con "G" (formato Stellar)');
+        if (data.admin && data.admin !== 'G...' && !data.admin.startsWith('G')) {
+            warnings.push('⚠️ La dirección del administrador debería empezar con "G" (Stellar)');
         }
 
-        // Warnings
-        if (data.token_name && data.token_name.length < 3) {
-            warnings.push('⚠️ El nombre del token es muy corto (mínimo 3 caracteres)');
-        }
-
-        if (data.token_symbol && data.token_symbol.length > 4) {
-            warnings.push('⚠️ El símbolo del token es muy largo (máximo 4 caracteres recomendado)');
+        if (data.state.some(v => !v.name || v.name.trim() === '')) {
+            errors.push('❌ Hay variables de estado sin nombre');
         }
 
         return {
@@ -351,79 +301,29 @@ document.addEventListener("DOMContentLoaded", () => {
         };
     }
 
-    // Función para generar código Rust como string
+    // Función para generar código Rust como string (genérico)
     function generateRustCodeString(data) {
-        return `// Código generado automáticamente por Tralalero Contracts
-#![no_std]
-use soroban_sdk::{contract, contractimpl, Address, Env, String, IntoVal, Val};
-use soroban_token_sdk::{TokenUtils, metadata::TokenMetadata};
+        const contractName = (data.name || 'MyContract').replace(/[^A-Za-z0-9_]/g, '');
+        const stateDecls = (data.state || []).map(v => {
+            const key = v.name.toUpperCase().replace(/[^A-Z0-9_]/g, '_');
+            return `const ${key}: Symbol = symbol_short!("${key.substring(0, 9)}");`;
+        }).join('\n');
 
-const ADMIN_KEY: Val = soroban_sdk::symbol_short!("ADMIN").into_val();
+        const gettersSetters = (data.state || []).map(v => {
+            const key = v.name.toUpperCase().replace(/[^A-Z0-9_]/g, '_');
+            const rustType = v.type === 'I32' ? 'i32' : v.type === 'I128' ? 'i128' : v.type === 'BOOL' ? 'bool' : v.type === 'ADDRESS' ? 'Address' : 'String';
+            const getFn = `pub fn get_${v.name}(env: Env) -> ${rustType} { env.storage().instance().get(&${key}).unwrap() }`;
+            const setFn = `pub fn set_${v.name}(env: Env, value: ${rustType}) { Self::require_admin(&env); env.storage().instance().set(&${key}, &value); }`;
+            return `${getFn}\n\n${setFn}`;
+        }).join('\n\n');
 
-fn check_admin(env: &Env) {
-    let admin: Address = env.storage().instance().get(&ADMIN_KEY).unwrap();
-    admin.require_auth();
-}
+        const fnStubs = (data.functions || []).map(f => {
+            const ret = f.returns === 'VOID' ? '' : ` -> ${f.returns === 'I32' ? 'i32' : f.returns === 'I128' ? 'i128' : f.returns === 'BOOL' ? 'bool' : f.returns === 'ADDRESS' ? 'Address' : 'String'}`;
+            const body = f.returns === 'VOID' ? ` { /* TODO */ }` : ` { panic!("not implemented") }`;
+            return `pub fn ${f.name}(env: Env)${ret}${body}`;
+        }).join('\n\n');
 
-#[contract]
-pub struct TokenContract;
-
-#[contractimpl]
-impl TokenContract {
-    pub fn initialize(env: Env, admin: Address, initial_supply: i128) {
-        if env.storage().instance().has(&ADMIN_KEY) {
-            panic!("Contract already initialized");
-        }
-        env.storage().instance().set(&ADMIN_KEY, &admin);
-
-        if initial_supply > 0 {
-            let token_utils = TokenUtils::new(&env);
-            let formatted_supply = initial_supply * 10i128.pow(${data.token_decimals || 2});
-            token_utils.mint(&admin, &formatted_supply);
-        }
-    }
-
-    pub fn metadata(env: Env) -> TokenMetadata {
-        TokenMetadata {
-            name: String::from_slice(&env, "${data.token_name || 'Mi Token'}"),
-            symbol: String::from_slice(&env, "${data.token_symbol || 'TOKEN'}"),
-            decimals: ${data.token_decimals || 2},
-        }
-    }
-
-    ${data.mint_enabled ? `
-    pub fn mint(env: Env, to: Address, amount: i128) {
-        check_admin(&env);
-        TokenUtils::new(&env).mint(&to, &amount);
-    }` : ''}
-
-    ${data.burn_enabled ? `
-    pub fn burn(env: Env, from: Address, amount: i128) {
-        from.require_auth();
-        TokenUtils::new(&env).burn(&from, &amount);
-    }` : ''}
-
-    // Funciones estándar del token
-    pub fn allowance(env: Env, from: Address, spender: Address) -> i128 {
-        TokenUtils::new(&env).allowance(&from, &spender)
-    }
-
-    pub fn approve(env: Env, from: Address, spender: Address, amount: i128, expiration_ledger: u32) {
-        TokenUtils::new(&env).approve(&from, &spender, &amount, expiration_ledger)
-    }
-
-    pub fn balance(env: Env, id: Address) -> i128 {
-        TokenUtils::new(&env).balance(&id)
-    }
-
-    pub fn transfer(env: Env, from: Address, to: Address, amount: i128) {
-        TokenUtils::new(&env).transfer(&from, &to, &amount)
-    }
-
-    pub fn transfer_from(env: Env, spender: Address, from: Address, to: Address, amount: i128) {
-        TokenUtils::new(&env).transfer_from(&spender, &from, &to, &amount)
-    }
-}`;
+        return `// Código generado automáticamente por Tralalero Contracts\n#![no_std]\nuse soroban_sdk::{contract, contractimpl, symbol_short, Address, Env, Symbol, String};\n\nconst ADMIN: Symbol = symbol_short!("ADMIN");\n${stateDecls ? stateDecls + '\n' : ''}\n#[contract]\npub struct ${contractName};\n\n#[contractimpl]\nimpl ${contractName} {\n    pub fn initialize(env: Env, admin: Address) {\n        if env.storage().instance().has(&ADMIN) {\n            panic!("Contract already initialized");\n        }\n        env.storage().instance().set(&ADMIN, &admin);\n    }\n\n    fn require_admin(env: &Env) {\n        let admin: Address = env.storage().instance().get(&ADMIN).unwrap();\n        admin.require_auth();\n    }\n\n${gettersSetters}\n\n${fnStubs}\n}`;
     }
 
     // Función para mostrar toasts
@@ -456,7 +356,7 @@ impl TokenContract {
             // Actualizar estado de validación
             const validation = validateBlocks();
             if (validation.isValid) {
-                statusDiv.textContent = '✅ Configuración válida. Listo para deployar.';
+                statusDiv.textContent = '✅ Configuración válida. Listo para generar el contrato.';
                 statusDiv.className = 'status-area success';
             } else {
                 statusDiv.textContent = '⚠️ ' + validation.errors[0];
@@ -596,7 +496,7 @@ impl TokenContract {
         const url = URL.createObjectURL(blob);
         const a = document.createElement('a');
         a.href = url;
-        a.download = 'token_contract.rs';
+        a.download = 'smart_contract.rs';
         document.body.appendChild(a);
         a.click();
         document.body.removeChild(a);
@@ -615,13 +515,12 @@ impl TokenContract {
     });
 
 
+    // En este flujo, solo generamos/mostramos el contrato (sin crear tokens)
     deployBtn.addEventListener('click', async () => {
         statusDiv.textContent = 'Validando configuración...';
         statusDiv.className = 'status-area';
 
-        // 1. Validar bloques con errores detallados
         const validation = validateBlocks();
-
         if (!validation.isValid) {
             statusDiv.textContent = '❌ ' + validation.errors[0];
             statusDiv.classList.add('error');
@@ -629,105 +528,10 @@ impl TokenContract {
             return;
         }
 
-        // Mostrar warnings si hay
-        if (validation.warnings.length > 0) {
-            statusDiv.textContent = '⚠️ Advertencias encontradas, pero continuando...';
-            statusDiv.className = 'status-area';
-            // Mostrar warnings en el estado en lugar de codeOutput que no existe
-            console.warn('Warnings:', validation.warnings.join('\n'));
-        } else {
-            statusDiv.textContent = '✅ Configuración válida. Iniciando deployment...';
-            statusDiv.className = 'status-area';
-        }
-
-        const data = validation.data;
-
-        try {
-            // 2. Crear token directamente en el servidor
-            statusDiv.textContent = '🧙‍♂️ Creando token en la red Stellar...';
-            console.log('📝 Enviando datos para crear token:');
-            console.log('   Token código:', data.token_symbol);
-            console.log('   Cantidad inicial:', data.initial_supply);
-
-            const response = await fetch('/api/build-transaction', {
-                method: 'POST',
-                headers: { 'Content-Type': 'application/json' },
-                body: JSON.stringify({
-                    code: data.token_symbol,
-                    amount: data.initial_supply
-                }),
-            });
-
-            if (!response.ok) {
-                const errorText = await response.text();
-                console.error('📋 Error del servidor:', errorText);
-                throw new Error(`Error del servidor: ${errorText}`);
-            }
-
-            const result = await response.json();
-            console.log('✅ Respuesta del servidor:', result);
-
-            if (!result.success) {
-                throw new Error(result.details || 'Error desconocido del servidor');
-            }
-
-            // 4. Mostrar resultado exitoso
-            statusDiv.innerHTML = `
-                <div style="text-align: center;">
-                    <div style="font-size: 1.2em; margin-bottom: 1rem;">✅ ¡Token creado exitosamente!</div>
-                    <div style="margin-bottom: 1rem;">
-                        <div style="font-family: monospace; background: #f1f5f9; padding: 0.5rem; border-radius: 0.375rem; font-size: 0.875rem; margin-bottom: 0.5rem;">
-                            <strong>Token:</strong> ${result.assetCode}
-                        </div>
-                        <div style="font-family: monospace; background: #f1f5f9; padding: 0.5rem; border-radius: 0.375rem; font-size: 0.875rem; margin-bottom: 0.5rem;">
-                            <strong>Emisor:</strong> ${result.assetIssuer}
-                        </div>
-                        <div style="font-family: monospace; background: #f1f5f9; padding: 0.5rem; border-radius: 0.375rem; font-size: 0.875rem; margin-bottom: 0.5rem;">
-                            <strong>Hash:</strong> ${result.transactionHash}
-                        </div>
-                    </div>
-                    <a href="https://stellar.expert/explorer/testnet/tx/${result.transactionHash}" 
-                       target="_blank" 
-                       style="display: inline-block; background: #6366f1; color: white; padding: 0.75rem 1.5rem; text-decoration: none; border-radius: 0.5rem; font-weight: 600; margin: 0.5rem;">
-                        🔍 Ver en Stellar Explorer
-                    </a>
-                    <a href="https://laboratory.stellar.org/#explorer?resource=transactions&endpoint=single&network=testnet&request=+${result.transactionHash}" 
-                       target="_blank" 
-                       style="display: inline-block; background: #10b981; color: white; padding: 0.75rem 1.5rem; text-decoration: none; border-radius: 0.5rem; font-weight: 600; margin: 0.5rem;">
-                        🧪 Ver en Laboratory
-                    </a>
-                </div>
-            `;
-            statusDiv.classList.add('success');
-
-            // Mostrar toast adicional
-            showToast('¡Token creado exitosamente! Revisa los enlaces de abajo.', 'success');
-            console.log('Transaction Hash:', result.transactionHash);
-            console.log('Explorer Link:', `https://stellar.expert/explorer/testnet/tx/${result.transactionHash}`);
-
-        } catch (error) {
-            console.error('Deployment Error:', error);
-
-            // Manejo específico de errores
-            let errorMessage = '🔥 Error desconocido';
-
-            if (error.message.includes('STELLAR_SECRET_KEY')) {
-                errorMessage = '🔐 Error de configuración del servidor. Contacta al administrador.';
-            } else if (error.message.includes('Error del servidor')) {
-                errorMessage = '🖥️ Error del servidor. Verifica la configuración.';
-            } else if (error.message.includes('balance insuficiente') || error.message.includes('Balance insuficiente')) {
-                errorMessage = '💰 Balance insuficiente en la cuenta del servidor. Necesita más XLM.';
-            } else if (error.message.includes('network') || error.message.includes('conexión')) {
-                errorMessage = '🌐 Error de conexión. Verifica tu internet.';
-            } else if (error.message.includes('Error de transacción')) {
-                errorMessage = '⚠️ Error en la transacción. Revisa los datos del token.';
-            } else {
-                errorMessage = `🔥 Error: ${error.message}`;
-            }
-
-            statusDiv.textContent = errorMessage;
-            statusDiv.classList.add('error');
-            showToast(errorMessage, 'error');
-        }
+        const rustCode = generateRustCodeString(validation.data);
+        contractCode.textContent = rustCode;
+        contractModal.style.display = 'block';
+        statusDiv.textContent = '✅ Contrato generado. Puedes descargarlo o copiarlo.';
+        statusDiv.className = 'status-area success';
     });
 });

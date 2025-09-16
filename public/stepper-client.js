@@ -304,15 +304,8 @@ function validateFormData() {
         appState.tokenData.symbol = tokenSymbol;
     }
 
-    // Validar cantidad inicial
-    const initialSupply = parseInt(elements.initialSupply.value);
-    if (!initialSupply || initialSupply <= 0) {
-        showError('initialSupplyError', 'La cantidad inicial debe ser mayor a 0');
-        isValid = false;
-    } else {
-        hideError('initialSupplyError');
-        appState.tokenData.initialSupply = initialSupply;
-    }
+    // Para smart contracts genéricos, no necesitamos validar cantidad inicial
+    // Los datos se obtienen de los bloques de Blockly
 
     // Actualizar otros datos
     appState.tokenData.decimals = parseInt(elements.tokenDecimals.value);
@@ -672,41 +665,46 @@ async function deployToken() {
     }
 }
 
-// Función para actualizar el resumen del token
-function updateTokenSummary() {
+// Función para actualizar el resumen del contrato
+function updateContractSummary() {
     if (appState.currentStep === 3 && elements.summaryContent) {
         // Obtener datos de los bloques
-        const data = getBlocksData();
+        const data = generateRustCode();
 
-        if (data && Object.keys(data).length > 0 && data.token_name && data.token_symbol) {
+        if (data && Object.keys(data).length > 0 && data.name) {
+            const stateVars = data.state || [];
+            const functions = data.functions || [];
+
             elements.summaryContent.innerHTML = `
                 <div style="padding: 1rem; background: white; border-radius: 0.5rem; border: 1px solid rgba(61, 81, 128, 0.1);">
-                    <strong>Nombre:</strong> ${data.token_name || 'Sin definir'}
+                    <strong>Nombre:</strong> ${data.name || 'Sin definir'}
                 </div>
                 <div style="padding: 1rem; background: white; border-radius: 0.5rem; border: 1px solid rgba(61, 81, 128, 0.1);">
-                    <strong>Símbolo:</strong> ${data.token_symbol || 'Sin definir'}
+                    <strong>Versión:</strong> ${data.version || '0.1.0'}
                 </div>
                 <div style="padding: 1rem; background: white; border-radius: 0.5rem; border: 1px solid rgba(61, 81, 128, 0.1);">
-                    <strong>Decimales:</strong> ${data.token_decimals || 2}
+                    <strong>Administrador:</strong> ${data.admin || 'Sin definir'}
                 </div>
                 <div style="padding: 1rem; background: white; border-radius: 0.5rem; border: 1px solid rgba(61, 81, 128, 0.1);">
-                    <strong>Cantidad Inicial:</strong> ${(data.initial_supply || 0).toLocaleString()}
+                    <strong>Variables de Estado:</strong> ${stateVars.length > 0 ? stateVars.map(v => `${v.name} (${v.type})`).join(', ') : 'Ninguna'}
                 </div>
                 <div style="padding: 1rem; background: white; border-radius: 0.5rem; border: 1px solid rgba(61, 81, 128, 0.1);">
-                    <strong>Administrador:</strong> ${appState.walletAddress || 'Sin definir'}
-                </div>
-                <div style="padding: 1rem; background: white; border-radius: 0.5rem; border: 1px solid rgba(61, 81, 128, 0.1);">
-                    <strong>Puede Crear Más:</strong> ${data.mint_enabled ? 'Sí' : 'No'}
+                    <strong>Funciones:</strong> ${functions.length > 0 ? functions.map(f => `${f.name}() -> ${f.returns}`).join(', ') : 'Ninguna'}
                 </div>
             `;
         } else {
             elements.summaryContent.innerHTML = `
                 <div style="padding: 2rem; background: white; border-radius: 0.5rem; border: 1px solid rgba(61, 81, 128, 0.1); text-align: center; color: var(--stellar-text-light); grid-column: 1 / -1;">
-                    🧩 Conecta los bloques para ver el resumen de tu token
+                    🧩 Conecta los bloques para ver el resumen de tu contrato
                 </div>
             `;
         }
     }
+}
+
+// Mantener función legacy para compatibilidad
+function updateTokenSummary() {
+    updateContractSummary();
 }
 
 // Función para obtener datos del formulario
@@ -799,36 +797,27 @@ function initializeBlockly() {
 
 // Funciones de Blockly - Implementación completa
 function defineBlocks() {
-    // Definir bloques de Blockly
+    // Definir bloques de Smart Contract genérico
     Blockly.Blocks['contract_settings'] = {
         init: function () {
-            this.appendDummyInput().appendField("🔮 Mi Contrato Stellar");
+            this.appendDummyInput().appendField("🔮 Mi Smart Contract");
             this.appendStatementInput("SETTINGS").setCheck(null);
             this.setStyle('start_blocks');
         }
     };
 
-    Blockly.Blocks['token_name'] = {
+    Blockly.Blocks['contract_name'] = {
         init: function () {
-            this.appendDummyInput().appendField("Nombre de la Moneda").appendField(new Blockly.FieldTextInput("Mi Tesoro"), "NAME");
+            this.appendDummyInput().appendField("Nombre del Contrato").appendField(new Blockly.FieldTextInput("MiContrato"), "NAME");
             this.setPreviousStatement(true, null);
             this.setNextStatement(true, null);
             this.setStyle('property_blocks');
         }
     };
 
-    Blockly.Blocks['token_symbol'] = {
+    Blockly.Blocks['contract_version'] = {
         init: function () {
-            this.appendDummyInput().appendField("Símbolo (dibujito)").appendField(new Blockly.FieldTextInput("ORO"), "SYMBOL");
-            this.setPreviousStatement(true, null);
-            this.setNextStatement(true, null);
-            this.setStyle('property_blocks');
-        }
-    };
-
-    Blockly.Blocks['token_decimals'] = {
-        init: function () {
-            this.appendDummyInput().appendField("¿Cuántos pedacitos?").appendField(new Blockly.FieldNumber(2, 0, 18), "DECIMALS");
+            this.appendDummyInput().appendField("Versión").appendField(new Blockly.FieldTextInput("0.1.0"), "VERSION");
             this.setPreviousStatement(true, null);
             this.setNextStatement(true, null);
             this.setStyle('property_blocks');
@@ -837,37 +826,52 @@ function defineBlocks() {
 
     Blockly.Blocks['admin_address'] = {
         init: function () {
-            this.appendDummyInput().appendField("🔑 Dueño del Contrato").appendField(new Blockly.FieldTextInput('G...'), "ADDRESS");
+            this.appendDummyInput().appendField("🔑 Administrador").appendField(new Blockly.FieldTextInput('G...'), "ADDRESS");
             this.setPreviousStatement(true, null);
             this.setNextStatement(true, null);
             this.setStyle('rules_blocks');
         }
     };
 
-    Blockly.Blocks['initial_supply'] = {
+    Blockly.Blocks['state_var'] = {
         init: function () {
-            this.appendDummyInput().appendField("💰 Cantidad Inicial de Monedas").appendField(new Blockly.FieldNumber(1000, 1), "SUPPLY");
+            this.appendDummyInput()
+                .appendField("📦 Variable de estado")
+                .appendField("nombre:")
+                .appendField(new Blockly.FieldTextInput("contador"), "VAR_NAME")
+                .appendField("tipo:")
+                .appendField(new Blockly.FieldDropdown([["i32", "I32"], ["i128", "I128"], ["bool", "BOOL"], ["String", "STRING"], ["Address", "ADDRESS"]]), "VAR_TYPE");
             this.setPreviousStatement(true, null);
             this.setNextStatement(true, null);
             this.setStyle('rules_blocks');
         }
     };
 
-    Blockly.Blocks['can_mint'] = {
+    Blockly.Blocks['function_def'] = {
         init: function () {
-            this.appendDummyInput().appendField("👑 ¿Puede crear más?").appendField(new Blockly.FieldCheckbox(true), "MINT_ENABLED");
+            this.appendDummyInput()
+                .appendField("⚙️ Función")
+                .appendField("nombre:")
+                .appendField(new Blockly.FieldTextInput("mi_funcion"), "FN_NAME")
+                .appendField("retorna:")
+                .appendField(new Blockly.FieldDropdown([["void", "VOID"], ["i32", "I32"], ["i128", "I128"], ["bool", "BOOL"], ["String", "STRING"], ["Address", "ADDRESS"]]), "RET_TYPE");
             this.setPreviousStatement(true, null);
             this.setNextStatement(true, null);
-            this.setStyle('powers_blocks');
+            this.setStyle('advanced_blocks');
         }
     };
 
-    Blockly.Blocks['can_burn'] = {
+    Blockly.Blocks['function_param'] = {
         init: function () {
-            this.appendDummyInput().appendField("🔥 ¿Se pueden quemar?").appendField(new Blockly.FieldCheckbox(true), "BURN_ENABLED");
+            this.appendDummyInput()
+                .appendField("📝 Parámetro")
+                .appendField("nombre:")
+                .appendField(new Blockly.FieldTextInput("param"), "PARAM_NAME")
+                .appendField("tipo:")
+                .appendField(new Blockly.FieldDropdown([["i32", "I32"], ["i128", "I128"], ["bool", "BOOL"], ["String", "STRING"], ["Address", "ADDRESS"]]), "PARAM_TYPE");
             this.setPreviousStatement(true, null);
             this.setNextStatement(true, null);
-            this.setStyle('powers_blocks');
+            this.setStyle('advanced_blocks');
         }
     };
 }
@@ -875,21 +879,20 @@ function defineBlocks() {
 function createToolbox() {
     return `
         <xml id="toolbox" style="display: none">
-            <category name="🚀 Empezar Aquí" categorystyle="start_category">
+            <category name="🚀 Empezar" categorystyle="start_category">
                 <block type="contract_settings"></block>
             </category>
-            <category name="🎨 Propiedades Básicas" categorystyle="property_category">
-                <block type="token_name"></block>
-                <block type="token_symbol"></block>
-                <block type="token_decimals"></block>
-            </category>
-            <category name="⚙️ Reglas del Juego" categorystyle="rules_category">
+            <category name="🎨 Propiedades" categorystyle="property_category">
+                <block type="contract_name"></block>
+                <block type="contract_version"></block>
                 <block type="admin_address"></block>
-                <block type="initial_supply"></block>
             </category>
-            <category name="✨ Poderes Especiales" categorystyle="powers_category">
-                <block type="can_mint"></block>
-                <block type="can_burn"></block>
+            <category name="📦 Estado" categorystyle="rules_category">
+                <block type="state_var"></block>
+            </category>
+            <category name="⚙️ Funciones" categorystyle="powers_category">
+                <block type="function_def"></block>
+                <block type="function_param"></block>
             </category>
         </xml>
     `;
@@ -907,7 +910,14 @@ function generateRustCode() {
         return {};
     }
 
-    const data = {};
+    const data = {
+        name: '',
+        version: '0.1.0',
+        admin: '',
+        state: [],
+        functions: [],
+        parameters: []
+    };
     let currentBlock = contractBlock.getInputTargetBlock('SETTINGS');
 
     console.log('🔍 Extrayendo datos de bloques...');
@@ -915,33 +925,38 @@ function generateRustCode() {
     while (currentBlock) {
         console.log(`   Procesando bloque: ${currentBlock.type}`);
         switch (currentBlock.type) {
-            case 'token_name':
-                data.token_name = currentBlock.getFieldValue('NAME');
-                console.log(`     Nombre: ${data.token_name}`);
+            case 'contract_name':
+                data.name = currentBlock.getFieldValue('NAME');
+                console.log(`     Nombre: ${data.name}`);
                 break;
-            case 'token_symbol':
-                data.token_symbol = currentBlock.getFieldValue('SYMBOL');
-                console.log(`     Símbolo: ${data.token_symbol}`);
-                break;
-            case 'token_decimals':
-                data.token_decimals = currentBlock.getFieldValue('DECIMALS');
-                console.log(`     Decimales: ${data.token_decimals}`);
+            case 'contract_version':
+                data.version = currentBlock.getFieldValue('VERSION');
+                console.log(`     Versión: ${data.version}`);
                 break;
             case 'admin_address':
-                data.admin_address = currentBlock.getFieldValue('ADDRESS');
-                console.log(`     Admin: ${data.admin_address}`);
+                data.admin = currentBlock.getFieldValue('ADDRESS');
+                console.log(`     Admin: ${data.admin}`);
                 break;
-            case 'initial_supply':
-                data.initial_supply = currentBlock.getFieldValue('SUPPLY');
-                console.log(`     Suministro: ${data.initial_supply}`);
+            case 'state_var':
+                data.state.push({
+                    name: currentBlock.getFieldValue('VAR_NAME'),
+                    type: currentBlock.getFieldValue('VAR_TYPE')
+                });
+                console.log(`     Variable: ${data.state[data.state.length - 1].name} (${data.state[data.state.length - 1].type})`);
                 break;
-            case 'can_mint':
-                data.mint_enabled = currentBlock.getFieldValue('MINT_ENABLED') === 'TRUE';
-                console.log(`     Mint: ${data.mint_enabled}`);
+            case 'function_def':
+                data.functions.push({
+                    name: currentBlock.getFieldValue('FN_NAME'),
+                    returns: currentBlock.getFieldValue('RET_TYPE')
+                });
+                console.log(`     Función: ${data.functions[data.functions.length - 1].name} -> ${data.functions[data.functions.length - 1].returns}`);
                 break;
-            case 'can_burn':
-                data.burn_enabled = currentBlock.getFieldValue('BURN_ENABLED') === 'TRUE';
-                console.log(`     Burn: ${data.burn_enabled}`);
+            case 'function_param':
+                data.parameters.push({
+                    name: currentBlock.getFieldValue('PARAM_NAME'),
+                    type: currentBlock.getFieldValue('PARAM_TYPE')
+                });
+                console.log(`     Parámetro: ${data.parameters[data.parameters.length - 1].name} (${data.parameters[data.parameters.length - 1].type})`);
                 break;
         }
         currentBlock = currentBlock.getNextBlock();
@@ -962,7 +977,7 @@ function validateBlocks() {
 
     const contractBlock = window.blocklyWorkspace.getBlocksByType('contract_settings', false)[0];
     if (!contractBlock) {
-        errors.push('❌ Falta el bloque principal "Mi Contrato Stellar"');
+        errors.push('❌ Falta el bloque principal "Mi Smart Contract"');
         return { errors, warnings, isValid: false };
     }
 
@@ -973,20 +988,25 @@ function validateBlocks() {
     }
 
     // Validar campos requeridos
-    if (!data.token_name || data.token_name.trim() === '') {
-        errors.push('❌ El nombre del token está vacío. Usa el bloque "Nombre de la moneda"');
+    if (!data.name || data.name.trim() === '') {
+        errors.push('❌ El nombre del contrato está vacío. Usa el bloque "Nombre del Contrato"');
     }
 
-    if (!data.token_symbol || data.token_symbol.trim() === '') {
-        errors.push('❌ El símbolo del token está vacío. Usa el bloque "Símbolo (dibujito)"');
+    if (!data.admin || data.admin.trim() === '' || data.admin === 'G...') {
+        warnings.push('⚠️ La dirección del administrador no está configurada');
     }
 
-    if (data.token_decimals === undefined || data.token_decimals === '') {
-        errors.push('❌ Los decimales no están definidos. Usa el bloque "¿Cuántos pedacitos?"');
+    // Validar formato de dirección Stellar
+    if (data.admin && data.admin !== 'G...' && !data.admin.startsWith('G')) {
+        warnings.push('⚠️ La dirección del administrador debería empezar con "G" (Stellar)');
     }
 
-    if (!data.initial_supply || data.initial_supply <= 0) {
-        errors.push('❌ El suministro inicial debe ser mayor a 0. Usa el bloque "Cantidad inicial"');
+    if (data.state.some(v => !v.name || v.name.trim() === '')) {
+        errors.push('❌ Hay variables de estado sin nombre');
+    }
+
+    if (data.functions.some(f => !f.name || f.name.trim() === '')) {
+        errors.push('❌ Hay funciones sin nombre');
     }
 
     return {
@@ -1019,44 +1039,46 @@ function createDefaultBlocks() {
         // Crear bloques básicos necesarios
         const blocks = [];
 
-        const nameBlock = window.blocklyWorkspace.newBlock('token_name');
+        const nameBlock = window.blocklyWorkspace.newBlock('contract_name');
         if (nameBlock) {
             nameBlock.initSvg();
             nameBlock.render();
-            nameBlock.setFieldValue('Mi Token Mágico', 'NAME');
+            nameBlock.setFieldValue('MiContrato', 'NAME');
             blocks.push(nameBlock);
         }
 
-        const symbolBlock = window.blocklyWorkspace.newBlock('token_symbol');
-        if (symbolBlock) {
-            symbolBlock.initSvg();
-            symbolBlock.render();
-            symbolBlock.setFieldValue('MAGIC', 'SYMBOL');
-            blocks.push(symbolBlock);
+        const versionBlock = window.blocklyWorkspace.newBlock('contract_version');
+        if (versionBlock) {
+            versionBlock.initSvg();
+            versionBlock.render();
+            versionBlock.setFieldValue('0.1.0', 'VERSION');
+            blocks.push(versionBlock);
         }
 
-        const decimalsBlock = window.blocklyWorkspace.newBlock('token_decimals');
-        if (decimalsBlock) {
-            decimalsBlock.initSvg();
-            decimalsBlock.render();
-            decimalsBlock.setFieldValue(2, 'DECIMALS');
-            blocks.push(decimalsBlock);
+        const adminBlock = window.blocklyWorkspace.newBlock('admin_address');
+        if (adminBlock) {
+            adminBlock.initSvg();
+            adminBlock.render();
+            adminBlock.setFieldValue('G...', 'ADDRESS');
+            blocks.push(adminBlock);
         }
 
-        const supplyBlock = window.blocklyWorkspace.newBlock('initial_supply');
-        if (supplyBlock) {
-            supplyBlock.initSvg();
-            supplyBlock.render();
-            supplyBlock.setFieldValue(1000, 'SUPPLY');
-            blocks.push(supplyBlock);
+        const stateVarBlock = window.blocklyWorkspace.newBlock('state_var');
+        if (stateVarBlock) {
+            stateVarBlock.initSvg();
+            stateVarBlock.render();
+            stateVarBlock.setFieldValue('contador', 'VAR_NAME');
+            stateVarBlock.setFieldValue('I32', 'VAR_TYPE');
+            blocks.push(stateVarBlock);
         }
 
-        const mintBlock = window.blocklyWorkspace.newBlock('can_mint');
-        if (mintBlock) {
-            mintBlock.initSvg();
-            mintBlock.render();
-            mintBlock.setFieldValue(true, 'MINT_ENABLED');
-            blocks.push(mintBlock);
+        const fnBlock = window.blocklyWorkspace.newBlock('function_def');
+        if (fnBlock) {
+            fnBlock.initSvg();
+            fnBlock.render();
+            fnBlock.setFieldValue('incrementar', 'FN_NAME');
+            fnBlock.setFieldValue('VOID', 'RET_TYPE');
+            blocks.push(fnBlock);
         }
 
         // Conectar todos los bloques de forma secuencial
@@ -1085,8 +1107,8 @@ function createDefaultBlocks() {
                 window.blocklyWorkspace.render();
                 console.log('🎉 Bloques creados y conectados');
 
-                // Actualizar el resumen
-                updateTokenSummary();
+                // Actualizar el resumen del contrato
+                updateContractSummary();
 
             } catch (error) {
                 console.error('❌ Error conectando bloques:', error);
