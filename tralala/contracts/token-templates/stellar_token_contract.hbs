@@ -1,0 +1,164 @@
+#![no_std]
+use soroban_sdk::{contract, contractimpl, Address, Env, String, IntoVal, Val, panic_with_error, symbol_short};
+
+// Import what we need from the token SDK.
+use soroban_token_sdk::{TokenUtils, metadata::TokenMetadata};
+
+// --- STORAGE KEYS ---
+// Using symbols for keys is efficient.
+const ADMIN_KEY: Val = symbol_short!("ADMIN").into_val();
+{{#if pausable_enabled}}
+const PAUSED_KEY: Val = symbol_short!("PAUSED").into_val();
+{{/if}}
+{{#if transfer_limit}}
+const LIMIT_KEY: Val = symbol_short!("LIMIT").into_val();
+{{/if}}
+
+// --- CUSTOM ERRORS ---
+#[derive(Debug)]
+#[repr(u32)]
+pub enum Error {
+    NotInitialized = 1,
+    AlreadyInitialized = 2,
+    Paused = 3,
+    TransferLimitExceeded = 4,
+}
+
+// --- HELPER FUNCTIONS ---
+fn get_admin(env: &Env) -> Address {
+    env.storage().instance().get(&ADMIN_KEY).unwrap_or_else(|| panic_with_error!(env, Error::NotInitialized))
+}
+
+fn check_admin(env: &Env) {
+    get_admin(env).require_auth();
+}
+
+{{#if pausable_enabled}}
+fn is_paused(env: &Env) -> bool {
+    env.storage().instance().get(&PAUSED_KEY).unwrap_or(false)
+}
+
+fn require_not_paused(env: &Env) {
+    if is_paused(env) {
+        panic_with_error!(env, Error::Paused);
+    }
+}
+{{/if}}
+
+
+#[contract]
+pub struct TokenContract;
+
+#[contractimpl]
+impl TokenContract {
+    pub fn initialize(env: Env, admin: Address) {
+        if env.storage().instance().has(&ADMIN_KEY) {
+            panic_with_error!(&env, Error::AlreadyInitialized);
+        }
+        env.storage().instance().set(&ADMIN_KEY, &admin);
+        
+        {{#if pausable_enabled}}
+        env.storage().instance().set(&PAUSED_KEY, &false);
+        {{/if}}
+
+        {{#if transfer_limit}}
+        if {{transfer_limit}} > 0 {
+            env.storage().instance().set(&LIMIT_KEY, &{{transfer_limit}}); 
+        }
+        {{/if}}
+
+        // Mint the initial supply of tokens to the admin.
+        let initial_supply: i128 = {{initial_supply}};
+        if initial_supply > 0 {
+            let token_utils = TokenUtils::new(&env);
+            // We need to multiply by 10 to the power of decimals to get the correct value.
+            let formatted_supply = initial_supply * 10i128.pow({{token_decimals}});
+            token_utils.mint(&admin, &formatted_supply);
+        }
+    }
+
+    pub fn metadata(env: Env) -> TokenMetadata {
+        TokenMetadata {
+            name: String::from_slice(&env, "{{token_name}}"),
+            symbol: String::from_slice(&env, "{{token_symbol}}"),
+            decimals: {{token_decimals}},
+        }
+    }
+
+    // --- ADMIN FUNCTIONS ---
+    {{#if mint_enabled}}
+    pub fn mint(env: Env, to: Address, amount: i128) {
+        check_admin(&env);
+        {{#if pausable_enabled}}require_not_paused(&env);{{/if}}
+        TokenUtils::new(&env).mint(&to, &amount);
+    }
+    {{/if}}
+
+    {{#if pausable_enabled}}
+    pub fn pause(env: Env) {
+        check_admin(&env);
+        env.storage().instance().set(&PAUSED_KEY, &true);
+    }
+
+    pub fn unpause(env: Env) {
+        check_admin(&env);
+        env.storage().instance().set(&PAUSED_KEY, &false);
+    }
+    {{/if}}
+
+    // --- TOKEN FUNCTIONS ---
+    {{#if burn_enabled}}
+    pub fn burn(env: Env, from: Address, amount: i128) {
+        {{#if pausable_enabled}}require_not_paused(&env);{{/if}}
+        from.require_auth();
+        TokenUtils::new(&env).burn(&from, &amount);
+    }
+    {{/if}}
+
+    pub fn transfer(env: Env, from: Address, to: Address, amount: i128) {
+        {{#if pausable_enabled}}require_not_paused(&env);{{/if}}
+        from.require_auth();
+
+        {{#if transfer_limit}}
+        if {{transfer_limit}} > 0 {
+            let limit: u32 = env.storage().instance().get(&LIMIT_KEY).unwrap();
+            let formatted_limit = (limit as i128) * 10i128.pow({{token_decimals}});
+            if amount > formatted_limit {
+                panic_with_error!(&env, Error::TransferLimitExceeded);
+            }
+        }
+        {{/if}}
+
+        TokenUtils::new(&env).transfer(&from, &to, &amount)
+    }
+
+    // Other standard token functions
+    pub fn allowance(env: Env, from: Address, spender: Address) -> i128 {
+        TokenUtils::new(&env).allowance(&from, &spender)
+    }
+
+    pub fn approve(env: Env, from: Address, spender: Address, amount: i128, expiration_ledger: u32) {
+        TokenUtils::new(&env).approve(&from, &spender, &amount, expiration_ledger)
+    }
+
+    pub fn balance(env: Env, id: Address) -> i128 {
+        TokenUtils::new(&env).balance(&id)
+    }
+
+    pub fn transfer_from(env: Env, spender: Address, from: Address, to: Address, amount: i128) {
+        {{#if pausable_enabled}}require_not_paused(&env);{{/if}}
+        spender.require_auth();
+
+        {{#if transfer_limit}}
+        if {{transfer_limit}} > 0 {
+            let limit: u32 = env.storage().instance().get(&LIMIT_KEY).unwrap();
+            let formatted_limit = (limit as i128) * 10i128.pow({{token_decimals}});
+            if amount > formatted_limit {
+                panic_with_error!(&env, Error::TransferLimitExceeded);
+            }
+        }
+        {{/if}}
+
+        TokenUtils::new(&env).transfer_from(&spender, &from, &to, &amount)
+    }
+}

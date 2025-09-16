@@ -1,0 +1,33 @@
+[package]
+name = "token_test_d8d35460"
+version = "1.0.0"
+edition = "2021"
+
+[workspace]
+
+[lib]
+crate-type = ["cdylib"]
+
+[dependencies]
+soroban-sdk = "23.0.1"
+soroban-token-sdk = "23.0.1"
+
+[dev-dependencies]
+soroban-sdk = { version = "23.0.1", features = ["testutils"] }
+
+[features]
+testutils = ["soroban-sdk/testutils"]
+
+[profile.release]
+opt-level = "z"
+overflow-checks = true
+debug = 0
+strip = "symbols"
+debug-assertions = false
+panic = "abort"
+codegen-units = 1
+lto = true
+
+[profile.release-with-logs]
+inherits = "release"
+debug-assertions = true

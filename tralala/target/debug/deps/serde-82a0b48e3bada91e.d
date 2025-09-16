@@ -1,0 +1,9 @@
+/Users/matiasboldrini/Documents/hackathon/tralalerocontracts-app/tralala/target/debug/deps/serde-82a0b48e3bada91e.d: /Users/matiasboldrini/.cargo/registry/src/index.crates.io-1949cf8c6b5b557f/serde-1.0.224/src/lib.rs /Users/matiasboldrini/.cargo/registry/src/index.crates.io-1949cf8c6b5b557f/serde-1.0.224/src/integer128.rs /Users/matiasboldrini/.cargo/registry/src/index.crates.io-1949cf8c6b5b557f/serde-1.0.224/src/private/mod.rs /Users/matiasboldrini/.cargo/registry/src/index.crates.io-1949cf8c6b5b557f/serde-1.0.224/src/private/de.rs /Users/matiasboldrini/.cargo/registry/src/index.crates.io-1949cf8c6b5b557f/serde-1.0.224/src/private/ser.rs
+
+/Users/matiasboldrini/Documents/hackathon/tralalerocontracts-app/tralala/target/debug/deps/libserde-82a0b48e3bada91e.rmeta: /Users/matiasboldrini/.cargo/registry/src/index.crates.io-1949cf8c6b5b557f/serde-1.0.224/src/lib.rs /Users/matiasboldrini/.cargo/registry/src/index.crates.io-1949cf8c6b5b557f/serde-1.0.224/src/integer128.rs /Users/matiasboldrini/.cargo/registry/src/index.crates.io-1949cf8c6b5b557f/serde-1.0.224/src/private/mod.rs /Users/matiasboldrini/.cargo/registry/src/index.crates.io-1949cf8c6b5b557f/serde-1.0.224/src/private/de.rs /Users/matiasboldrini/.cargo/registry/src/index.crates.io-1949cf8c6b5b557f/serde-1.0.224/src/private/ser.rs
+
+/Users/matiasboldrini/.cargo/registry/src/index.crates.io-1949cf8c6b5b557f/serde-1.0.224/src/lib.rs:
+/Users/matiasboldrini/.cargo/registry/src/index.crates.io-1949cf8c6b5b557f/serde-1.0.224/src/integer128.rs:
+/Users/matiasboldrini/.cargo/registry/src/index.crates.io-1949cf8c6b5b557f/serde-1.0.224/src/private/mod.rs:
+/Users/matiasboldrini/.cargo/registry/src/index.crates.io-1949cf8c6b5b557f/serde-1.0.224/src/private/de.rs:
+/Users/matiasboldrini/.cargo/registry/src/index.crates.io-1949cf8c6b5b557f/serde-1.0.224/src/private/ser.rs:

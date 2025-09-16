@@ -2,7 +2,12 @@
 const express = require('express');
 const handlebars = require('handlebars');
 const fs = require('fs').promises;
+const fse = require('fs-extra');
 const path = require('path');
+const { v4: uuidv4 } = require('uuid');
+const { spawn, exec } = require('child_process');
+const util = require('util');
+const execAsync = util.promisify(exec);
 // Reverting to original syntax with the NEW, CORRECT package name
 const StellarSdk = require('@stellar/stellar-sdk');
 
@@ -230,6 +235,353 @@ app.post('/api/build-transaction', async (req, res) => {
         res.status(500).json({
             success: false,
             error: 'Error interno del servidor',
+            details: error.message
+        });
+    }
+});
+
+// ===== NUEVOS ENDPOINTS PARA SMART CONTRACTS =====
+
+// Endpoint para compilar un smart contract
+app.post('/api/compile-contract', async (req, res) => {
+    try {
+        console.log('🔧 Compilando smart contract...');
+        console.log('   Datos recibidos:', JSON.stringify(req.body, null, 2));
+
+        const { tokenData, userAddress } = req.body;
+
+        if (!tokenData || !userAddress) {
+            throw new Error('Se requieren tokenData y userAddress');
+        }
+
+        // Generar ID único para este contrato
+        const contractId = uuidv4();
+        const contractName = `token_${tokenData.symbol.toLowerCase()}_${contractId.slice(0, 8)}`;
+
+        console.log(`📝 Generando contrato: ${contractName}`);
+
+        // Preparar datos para el template
+        const templateData = {
+            token_name: tokenData.name,
+            token_symbol: tokenData.symbol,
+            token_decimals: tokenData.decimals || 2,
+            initial_supply: tokenData.initialSupply || tokenData.supply,
+            mint_enabled: tokenData.features?.mintable || false,
+            burn_enabled: tokenData.features?.burnable || false,
+            pausable_enabled: tokenData.features?.pausable || false,
+            upgrade_enabled: tokenData.features?.upgradeable || false,
+            access_control_enabled: tokenData.features?.accessControl || false,
+            admin_address: userAddress,
+            security_contact: tokenData.securityContact || '',
+            license: tokenData.license || 'MIT'
+        };
+
+        // Leer y compilar template
+        const templatePath = path.join(__dirname, 'tralala', 'contracts', 'token-templates', 'simple_token.hbs');
+        const templateContent = await fs.readFile(templatePath, 'utf-8');
+        const template = handlebars.compile(templateContent);
+        const rustCode = template(templateData);
+
+        // Crear directorio para el contrato (fuera del workspace)
+        const contractDir = path.join(__dirname, 'tralala', 'dynamic-contracts', contractName);
+        await fse.ensureDir(contractDir);
+        await fse.ensureDir(path.join(contractDir, 'src'));
+
+        // Crear archivos del contrato
+        const cargoToml = `[package]
+name = "${contractName}"
+version = "1.0.0"
+edition = "2021"
+
+[workspace]
+
+[lib]
+crate-type = ["cdylib"]
+
+[dependencies]
+soroban-sdk = "23.0.1"
+soroban-token-sdk = "23.0.1"
+
+[dev-dependencies]
+soroban-sdk = { version = "23.0.1", features = ["testutils"] }
+
+[features]
+testutils = ["soroban-sdk/testutils"]
+
+[profile.release]
+opt-level = "z"
+overflow-checks = true
+debug = 0
+strip = "symbols"
+debug-assertions = false
+panic = "abort"
+codegen-units = 1
+lto = true
+
+[profile.release-with-logs]
+inherits = "release"
+debug-assertions = true`;
+
+        await fs.writeFile(path.join(contractDir, 'Cargo.toml'), cargoToml);
+        await fs.writeFile(path.join(contractDir, 'src', 'lib.rs'), rustCode);
+
+        // Compilar el contrato
+        console.log('⚙️ Compilando contrato a WASM...');
+
+        const compileCommand = `cd "${contractDir}" && cargo build --target wasm32-unknown-unknown --release`;
+
+        try {
+            const { stdout, stderr } = await execAsync(compileCommand);
+            console.log('✅ Compilación exitosa');
+            if (stdout) console.log('STDOUT:', stdout);
+            if (stderr) console.log('STDERR:', stderr);
+        } catch (compileError) {
+            console.error('❌ Error en compilación:', compileError);
+            throw new Error(`Error compilando contrato: ${compileError.message}`);
+        }
+
+        // Verificar que el WASM fue creado
+        const wasmPath = path.join(contractDir, 'target', 'wasm32-unknown-unknown', 'release', `${contractName}.wasm`);
+
+        try {
+            await fs.access(wasmPath);
+            console.log('✅ Archivo WASM generado correctamente');
+        } catch (accessError) {
+            throw new Error('El archivo WASM no fue generado correctamente');
+        }
+
+        // Optimizar WASM (opcional)
+        console.log('🎯 Optimizando WASM...');
+        try {
+            const optimizeCommand = `cd "${contractDir}" && soroban contract optimize --wasm target/wasm32-unknown-unknown/release/${contractName}.wasm`;
+            const { stdout: optimizeStdout } = await execAsync(optimizeCommand);
+            console.log('✅ WASM optimizado');
+        } catch (optimizeError) {
+            console.warn('⚠️ No se pudo optimizar WASM (continuando):', optimizeError.message);
+        }
+
+        // Guardar información del contrato compilado
+        const contractInfo = {
+            contractId,
+            contractName,
+            tokenData,
+            userAddress,
+            wasmPath,
+            compiledAt: new Date().toISOString(),
+            rustCode,
+            templateData
+        };
+
+        const compiledDir = path.join(__dirname, 'tralala', 'compiled');
+        await fse.ensureDir(compiledDir);
+        await fs.writeFile(
+            path.join(compiledDir, `${contractId}.json`),
+            JSON.stringify(contractInfo, null, 2)
+        );
+
+        console.log('🎉 Contrato compilado exitosamente');
+
+        res.json({
+            success: true,
+            message: 'Contrato compilado exitosamente',
+            contractId,
+            contractName,
+            wasmPath,
+            contractInfo
+        });
+
+    } catch (error) {
+        console.error('❌ Error compilando contrato:', error);
+        res.status(500).json({
+            success: false,
+            error: 'Error compilando contrato',
+            details: error.message
+        });
+    }
+});
+
+// Endpoint para desplegar un smart contract
+app.post('/api/deploy-contract', async (req, res) => {
+    try {
+        console.log('🚀 Desplegando smart contract...');
+        console.log('   Datos recibidos:', JSON.stringify(req.body, null, 2));
+
+        const { contractId, userAddress, networkPassphrase } = req.body;
+
+        if (!contractId || !userAddress) {
+            throw new Error('Se requieren contractId y userAddress');
+        }
+
+        // Cargar información del contrato compilado
+        const contractInfoPath = path.join(__dirname, 'tralala', 'compiled', `${contractId}.json`);
+
+        let contractInfo;
+        try {
+            const contractInfoContent = await fs.readFile(contractInfoPath, 'utf-8');
+            contractInfo = JSON.parse(contractInfoContent);
+        } catch (infoError) {
+            throw new Error('Contrato no encontrado o no compilado');
+        }
+
+        const wasmPath = contractInfo.wasmPath;
+
+        // Verificar que el WASM existe
+        try {
+            await fs.access(wasmPath);
+        } catch (accessError) {
+            throw new Error('Archivo WASM no encontrado');
+        }
+
+        // Configurar red (testnet por defecto)
+        const network = networkPassphrase || StellarSdk.Networks.TESTNET;
+        const server = new StellarSdk.Horizon.Server('https://horizon-testnet.stellar.org');
+
+        console.log('📤 Desplegando contrato a red:', network);
+
+        // Leer el WASM
+        const wasmBuffer = await fs.readFile(wasmPath);
+        console.log(`📦 WASM leído: ${wasmBuffer.length} bytes`);
+
+        // Crear keypairs para el contrato
+        const sourceKeypair = StellarSdk.Keypair.fromPublicKey(userAddress);
+
+        // Cargar cuenta del usuario
+        const sourceAccount = await server.loadAccount(userAddress);
+
+        // Construir transacción de deploy
+        const deployTransaction = new StellarSdk.TransactionBuilder(sourceAccount, {
+            fee: StellarSdk.BASE_FEE,
+            networkPassphrase: network,
+        })
+            .addOperation(StellarSdk.Operation.uploadContractWasm({
+                wasm: wasmBuffer,
+            }))
+            .setTimeout(30)
+            .build();
+
+        console.log('📄 Transacción de deploy construida');
+
+        // Devolver transacción para firma del usuario
+        res.json({
+            success: true,
+            message: 'Transacción de deploy preparada',
+            deployTransactionXDR: deployTransaction.toXDR(),
+            contractInfo: {
+                contractId: contractInfo.contractId,
+                contractName: contractInfo.contractName,
+                tokenData: contractInfo.tokenData,
+                wasmSize: wasmBuffer.length
+            },
+            network
+        });
+
+    } catch (error) {
+        console.error('❌ Error desplegando contrato:', error);
+        res.status(500).json({
+            success: false,
+            error: 'Error desplegando contrato',
+            details: error.message
+        });
+    }
+});
+
+// Endpoint para interactuar con un smart contract desplegado
+app.post('/api/interact-contract', async (req, res) => {
+    try {
+        console.log('🔗 Interactuando con smart contract...');
+        console.log('   Datos recibidos:', JSON.stringify(req.body, null, 2));
+
+        const { contractAddress, method, params, userAddress } = req.body;
+
+        if (!contractAddress || !method || !userAddress) {
+            throw new Error('Se requieren contractAddress, method y userAddress');
+        }
+
+        const server = new StellarSdk.Horizon.Server('https://horizon-testnet.stellar.org');
+        const sourceAccount = await server.loadAccount(userAddress);
+
+        // Construir operación de invoke contract
+        const operation = StellarSdk.Operation.invokeContract({
+            contract: contractAddress,
+            method,
+            args: params || []
+        });
+
+        const transaction = new StellarSdk.TransactionBuilder(sourceAccount, {
+            fee: StellarSdk.BASE_FEE,
+            networkPassphrase: StellarSdk.Networks.TESTNET,
+        })
+            .addOperation(operation)
+            .setTimeout(30)
+            .build();
+
+        res.json({
+            success: true,
+            message: 'Transacción de interacción preparada',
+            interactionTransactionXDR: transaction.toXDR(),
+            contractAddress,
+            method,
+            params
+        });
+
+    } catch (error) {
+        console.error('❌ Error interactuando con contrato:', error);
+        res.status(500).json({
+            success: false,
+            error: 'Error interactuando con contrato',
+            details: error.message
+        });
+    }
+});
+
+// Endpoint para obtener información de contratos compilados del usuario
+app.get('/api/user-contracts/:userAddress', async (req, res) => {
+    try {
+        const { userAddress } = req.params;
+        console.log(`📋 Obteniendo contratos del usuario: ${userAddress}`);
+
+        const compiledDir = path.join(__dirname, 'tralala', 'compiled');
+
+        try {
+            const files = await fs.readdir(compiledDir);
+            const userContracts = [];
+
+            for (const file of files) {
+                if (file.endsWith('.json')) {
+                    const contractInfoPath = path.join(compiledDir, file);
+                    const contractInfoContent = await fs.readFile(contractInfoPath, 'utf-8');
+                    const contractInfo = JSON.parse(contractInfoContent);
+
+                    if (contractInfo.userAddress === userAddress) {
+                        userContracts.push({
+                            contractId: contractInfo.contractId,
+                            contractName: contractInfo.contractName,
+                            tokenData: contractInfo.tokenData,
+                            compiledAt: contractInfo.compiledAt
+                        });
+                    }
+                }
+            }
+
+            res.json({
+                success: true,
+                contracts: userContracts,
+                count: userContracts.length
+            });
+
+        } catch (readError) {
+            res.json({
+                success: true,
+                contracts: [],
+                count: 0
+            });
+        }
+
+    } catch (error) {
+        console.error('❌ Error obteniendo contratos del usuario:', error);
+        res.status(500).json({
+            success: false,
+            error: 'Error obteniendo contratos',
             details: error.message
         });
     }

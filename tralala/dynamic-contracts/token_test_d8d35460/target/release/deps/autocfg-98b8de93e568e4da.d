@@ -1,0 +1,10 @@
+/Users/matiasboldrini/Documents/hackathon/tralalerocontracts-app/tralala/dynamic-contracts/token_test_d8d35460/target/release/deps/autocfg-98b8de93e568e4da.d: /Users/matiasboldrini/.cargo/registry/src/index.crates.io-1949cf8c6b5b557f/autocfg-1.5.0/src/lib.rs /Users/matiasboldrini/.cargo/registry/src/index.crates.io-1949cf8c6b5b557f/autocfg-1.5.0/src/error.rs /Users/matiasboldrini/.cargo/registry/src/index.crates.io-1949cf8c6b5b557f/autocfg-1.5.0/src/rustc.rs /Users/matiasboldrini/.cargo/registry/src/index.crates.io-1949cf8c6b5b557f/autocfg-1.5.0/src/version.rs
+
+/Users/matiasboldrini/Documents/hackathon/tralalerocontracts-app/tralala/dynamic-contracts/token_test_d8d35460/target/release/deps/libautocfg-98b8de93e568e4da.rlib: /Users/matiasboldrini/.cargo/registry/src/index.crates.io-1949cf8c6b5b557f/autocfg-1.5.0/src/lib.rs /Users/matiasboldrini/.cargo/registry/src/index.crates.io-1949cf8c6b5b557f/autocfg-1.5.0/src/error.rs /Users/matiasboldrini/.cargo/registry/src/index.crates.io-1949cf8c6b5b557f/autocfg-1.5.0/src/rustc.rs /Users/matiasboldrini/.cargo/registry/src/index.crates.io-1949cf8c6b5b557f/autocfg-1.5.0/src/version.rs
+
+/Users/matiasboldrini/Documents/hackathon/tralalerocontracts-app/tralala/dynamic-contracts/token_test_d8d35460/target/release/deps/libautocfg-98b8de93e568e4da.rmeta: /Users/matiasboldrini/.cargo/registry/src/index.crates.io-1949cf8c6b5b557f/autocfg-1.5.0/src/lib.rs /Users/matiasboldrini/.cargo/registry/src/index.crates.io-1949cf8c6b5b557f/autocfg-1.5.0/src/error.rs /Users/matiasboldrini/.cargo/registry/src/index.crates.io-1949cf8c6b5b557f/autocfg-1.5.0/src/rustc.rs /Users/matiasboldrini/.cargo/registry/src/index.crates.io-1949cf8c6b5b557f/autocfg-1.5.0/src/version.rs
+
+/Users/matiasboldrini/.cargo/registry/src/index.crates.io-1949cf8c6b5b557f/autocfg-1.5.0/src/lib.rs:
+/Users/matiasboldrini/.cargo/registry/src/index.crates.io-1949cf8c6b5b557f/autocfg-1.5.0/src/error.rs:
+/Users/matiasboldrini/.cargo/registry/src/index.crates.io-1949cf8c6b5b557f/autocfg-1.5.0/src/rustc.rs:
+/Users/matiasboldrini/.cargo/registry/src/index.crates.io-1949cf8c6b5b557f/autocfg-1.5.0/src/version.rs:
