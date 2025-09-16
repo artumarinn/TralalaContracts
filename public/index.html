@@ -22,8 +22,8 @@
         <div class="header" style="margin-bottom: 50px;">
             <div class="logo-container">
                 <video style="z-index: 999;
-    border-radius: 100%; margin-right: 30px;" src="/tralala.mp4" alt="Tralalero Contracts Video Logo" class="logo" autoplay muted loop
-                    playsinline></video>
+    border-radius: 100%; margin-right: 30px;" src="/tralala.mp4" alt="Tralalero Contracts Video Logo" class="logo"
+                    autoplay muted loop playsinline></video>
                 <h1 class="title" style="z-index: 999;">
                     <span class="title-line1">TRALALA</span>
                     <span class="title-line2">CONTRACT</span>
@@ -31,7 +31,8 @@
             </div>
         </div>
         <!-- Stepper Container -->
-        <div class="stepper-container" style="background-color: white; box-shadow: 0 0 10px 0 rgba(0, 0, 0, 0.5); padding: 50px; border-radius: 10px;">
+        <div class="stepper-container"
+            style="background-color: white; box-shadow: 0 0 10px 0 rgba(0, 0, 0, 0.5); padding: 50px; border-radius: 10px;">
             <!-- Stepper Progress -->
             <div class="stepper">
                 <div class="stepper-line" id="stepperLine"></div>
@@ -101,8 +102,8 @@
 
                         </div>
                         <div class="code-preview" id="codePreview">
-                            <pre
-                                id="contractPreview"style="text-align: left;" >// El código se generará automáticamente cuando configures los bloques...</pre>
+                            <pre id="contractPreview"
+                                style="text-align: left;">// El código se generará automáticamente cuando configures los bloques...</pre>
                         </div>
                         <div class="validation-result hidden" id="validationResult">
                             <div id="validationMessage"></div>
@@ -1546,57 +1547,109 @@ impl TokenContract {
                         return names[f] || f;
                     }).join(', ');
 
+                // Generar URLs del Stellar Explorer
+                const explorerBaseUrl = 'https://stellar.expert/explorer/testnet';
+                const contractExplorerUrl = submitResult.contract_address ?
+                    `${explorerBaseUrl}/contract/${submitResult.contract_address}` :
+                    `${explorerBaseUrl}/search?term=${submitResult.hash}`;
+                const transactionExplorerUrl = `${explorerBaseUrl}/tx/${submitResult.hash}`;
+
                 elements.resultContent.innerHTML = `
-                    <div style="text-align: center; max-width: 600px; margin: 0 auto;">
+                    <div style="text-align: center; max-width: 700px; margin: 0 auto;">
                         <div style="font-size: 2rem; margin-bottom: 1rem;">🎉</div>
-                        <h2 style="color: #10b981; margin-bottom: 1rem;">${submitResult.deployed ? '¡Smart Contract Desplegado Exitosamente!' : '¡Smart Contract Compilado Exitosamente!'}</h2>
+                        <h2 style="color: #10b981; margin-bottom: 2rem;">${submitResult.deployed ? '¡Smart Contract Desplegado Exitosamente!' : '¡Smart Contract Compilado Exitosamente!'}</h2>
                         
-                        <div style="background: #f0fdf4; border: 2px solid #10b981; border-radius: 1rem; padding: 1.5rem; margin-bottom: 2rem; text-align: left;">
-                            <h3 style="margin: 0 0 1rem 0; color: #059669;">📄 Detalles del Contrato</h3>
-                            <div style="display: grid; gap: 0.75rem;">
-                                <div><strong>Nombre:</strong> ${contractData.name}</div>
-                                <div><strong>Símbolo:</strong> ${result.smartContract?.tokenSymbol || contractData.symbol}</div>
-                                <div><strong>Contrato ID:</strong> ${result.smartContract?.contractId || 'Generado'}</div>
-                                ${submitResult.deployed ? `<div><strong>Dirección del Contrato:</strong> <code style="font-size: 0.8rem; background: #dcfce7; padding: 0.25rem 0.5rem; border-radius: 0.25rem;">${submitResult.contract_address}</code></div>` : ''}
-                                <div><strong>WASM Size:</strong> ${result.wasmSize ? `${Math.round(result.wasmSize / 1024)} KB` : 'N/A'}</div>
-                                <div><strong>Template:</strong> ${result.smartContract?.templateUsed || 'Avanzado'}</div>
-                                <div><strong>Suministro Inicial:</strong> ${(contractData.supply || 0).toLocaleString()}</div>
-                                <div><strong>Características:</strong> ${features || 'Smart Contract Básico'}</div>
-                                <div><strong>${submitResult.deployed ? 'Hash de Deployment' : 'Hash de Compilación'}:</strong> <code style="font-size: 0.8rem; background: #dcfce7; padding: 0.25rem 0.5rem; border-radius: 0.25rem;">${submitResult.hash}</code></div>
-                                <div><strong>Estado:</strong> <span style="color: ${submitResult.deployed ? '#059669' : '#d97706'}; font-weight: 600;">${submitResult.deployed ? '✅ Desplegado en Testnet' : '⚠️ Requiere Deployment Manual'}</span></div>
+                        <!-- Stellar Explorer - Elemento Principal -->
+                        <div style="background: linear-gradient(135deg, #1e40af 0%, #3b82f6 100%); border-radius: 1rem; padding: 2rem; margin-bottom: 2rem; color: white; box-shadow: 0 10px 25px rgba(59, 130, 246, 0.3);">
+                            <div style="display: flex; align-items: center; justify-content: center; gap: 1rem; margin-bottom: 1.5rem;">
+                                <div style="font-size: 2.5rem;">🔍</div>
+                                <h3 style="margin: 0; font-size: 1.5rem; font-weight: 700;">Stellar Explorer</h3>
+                            </div>
+                            
+                            <p style="margin-bottom: 2rem; font-size: 1.1rem; opacity: 0.9;">
+                                Explora tu smart contract en la blockchain de Stellar
+                            </p>
+                            
+                            <div style="display: grid; grid-template-columns: repeat(auto-fit, minmax(280px, 1fr)); gap: 1rem;">
+                                ${submitResult.deployed ? `
+                                    <a href="${contractExplorerUrl}" 
+                                       target="_blank" 
+                                       style="display: flex; flex-direction: column; align-items: center; gap: 0.75rem; background: rgba(255,255,255,0.15); backdrop-filter: blur(10px); color: white; padding: 1.5rem; text-decoration: none; border-radius: 0.75rem; font-weight: 600; transition: all 0.3s; border: 1px solid rgba(255,255,255,0.2);"
+                                       onmouseover="this.style.transform='translateY(-3px)'; this.style.boxShadow='0 15px 35px rgba(0,0,0,0.2)'"
+                                       onmouseout="this.style.transform='translateY(0)'; this.style.boxShadow='none'">
+                                        <div style="font-size: 1.8rem;">📄</div>
+                                        <div>Ver Smart Contract</div>
+                                        <div style="font-size: 0.8rem; opacity: 0.8; text-align: center;">Explora el contrato desplegado</div>
+                                    </a>
+                                ` : ''}
+                                
+                                <a href="${transactionExplorerUrl}" 
+                                   target="_blank" 
+                                   style="display: flex; flex-direction: column; align-items: center; gap: 0.75rem; background: rgba(255,255,255,0.15); backdrop-filter: blur(10px); color: white; padding: 1.5rem; text-decoration: none; border-radius: 0.75rem; font-weight: 600; transition: all 0.3s; border: 1px solid rgba(255,255,255,0.2);"
+                                   onmouseover="this.style.transform='translateY(-3px)'; this.style.boxShadow='0 15px 35px rgba(0,0,0,0.2)'"
+                                   onmouseout="this.style.transform='translateY(0)'; this.style.boxShadow='none'">
+                                    <div style="font-size: 1.8rem;">⚡</div>
+                                    <div>${submitResult.deployed ? 'Ver Transacción' : 'Ver Hash'}</div>
+                                    <div style="font-size: 0.8rem; opacity: 0.8; text-align: center;">${submitResult.deployed ? 'Detalles del deployment' : 'Hash de compilación'}</div>
+                                </a>
+                                
+                                <a href="https://stellar.expert/explorer/testnet" 
+                                   target="_blank" 
+                                   style="display: flex; flex-direction: column; align-items: center; gap: 0.75rem; background: rgba(255,255,255,0.15); backdrop-filter: blur(10px); color: white; padding: 1.5rem; text-decoration: none; border-radius: 0.75rem; font-weight: 600; transition: all 0.3s; border: 1px solid rgba(255,255,255,0.2);"
+                                   onmouseover="this.style.transform='translateY(-3px)'; this.style.boxShadow='0 15px 35px rgba(0,0,0,0.2)'"
+                                   onmouseout="this.style.transform='translateY(0)'; this.style.boxShadow='none'">
+                                    <div style="font-size: 1.8rem;">🌐</div>
+                                    <div>Explorar Red</div>
+                                    <div style="font-size: 0.8rem; opacity: 0.8; text-align: center;">Red completa de Stellar</div>
+                                </a>
+                            </div>
+                            
+                            <div style="margin-top: 1.5rem; padding: 1rem; background: rgba(255,255,255,0.1); border-radius: 0.5rem; font-size: 0.9rem; opacity: 0.9;">
+                                <strong>Hash:</strong> <code style="background: rgba(255,255,255,0.2); padding: 0.25rem 0.5rem; border-radius: 0.25rem; font-family: monospace;">${submitResult.hash}</code>
                             </div>
                         </div>
                         
-                        <div style="display: grid; grid-template-columns: repeat(auto-fit, minmax(200px, 1fr)); gap: 1rem; margin-bottom: 2rem;">
-                            <a href="https://github.com/stellar/soroban-cli" 
-                               target="_blank" 
-                               style="display: flex; align-items: center; justify-content: center; gap: 0.5rem; background: #6366f1; color: white; padding: 1rem; text-decoration: none; border-radius: 0.75rem; font-weight: 600; transition: transform 0.2s;">
-                                🛠️ Soroban CLI
-                            </a>
-                            <a href="https://soroban.stellar.org/" 
-                               target="_blank" 
-                               style="display: flex; align-items: center; justify-content: center; gap: 0.5rem; background: #10b981; color: white; padding: 1rem; text-decoration: none; border-radius: 0.75rem; font-weight: 600; transition: transform 0.2s;">
-                                📚 Docs Soroban
-                            </a>
-                            ${!submitResult.deployed ? `<button onclick="showDeploymentInstructions(${JSON.stringify(result.deployment?.deploymentInstructions || {}).replace(/"/g, '&quot;')})" 
-                                    style="display: flex; align-items: center; justify-content: center; gap: 0.5rem; background: #f59e0b; color: white; padding: 1rem; border: none; border-radius: 0.75rem; font-weight: 600; cursor: pointer; transition: transform 0.2s;">
-                                📋 Ver Instrucciones
-                            </button>` : ''}
-                        </div>
+                        <!-- Detalles del Contrato - Información compacta -->
+                        <details style="background: #f8fafc; border: 1px solid #e2e8f0; border-radius: 0.75rem; padding: 1rem; margin-bottom: 2rem; text-align: left;">
+                            <summary style="cursor: pointer; font-weight: 600; color: #374151; padding: 0.5rem;">📄 Detalles del Contrato</summary>
+                            <div style="display: grid; gap: 0.5rem; margin-top: 1rem; font-size: 0.9rem;">
+                                <div><strong>Nombre:</strong> ${contractData.name}</div>
+                                <div><strong>Símbolo:</strong> ${result.smartContract?.tokenSymbol || contractData.symbol}</div>
+                                ${submitResult.deployed ? `<div><strong>Dirección:</strong> <code style="font-size: 0.8rem; background: #f3f4f6; padding: 0.25rem 0.5rem; border-radius: 0.25rem;">${submitResult.contract_address}</code></div>` : ''}
+                                <div><strong>Suministro:</strong> ${(contractData.supply || 0).toLocaleString()}</div>
+                                <div><strong>Características:</strong> ${features || 'Smart Contract Básico'}</div>
+                                <div><strong>Estado:</strong> <span style="color: ${submitResult.deployed ? '#059669' : '#d97706'}; font-weight: 600;">${submitResult.deployed ? '✅ Desplegado en Testnet' : '⚠️ Requiere Deployment Manual'}</span></div>
+                            </div>
+                        </details>
                         
-                        <div style="display: grid; grid-template-columns: 1fr; gap: 1rem; margin-bottom: 2rem;">
-                            <button onclick="window.location.reload()" 
-                                    style="display: flex; align-items: center; justify-content: center; gap: 0.5rem; background: #6b7280; color: white; padding: 1rem; border: none; border-radius: 0.75rem; font-weight: 600; cursor: pointer; transition: transform 0.2s;">
-                                🔄 Crear Otro Contrato
-                            </button>
-                        </div>
+                        <!-- Herramientas adicionales - Elementos secundarios -->
+                        <details style="margin-bottom: 2rem;">
+                            <summary style="cursor: pointer; font-weight: 600; color: #6b7280; padding: 0.5rem;">🛠️ Herramientas y Documentación</summary>
+                            <div style="display: grid; grid-template-columns: repeat(auto-fit, minmax(200px, 1fr)); gap: 1rem; margin-top: 1rem;">
+                                <a href="https://github.com/stellar/soroban-cli" 
+                                   target="_blank" 
+                                   style="display: flex; align-items: center; justify-content: center; gap: 0.5rem; background: #6b7280; color: white; padding: 0.75rem; text-decoration: none; border-radius: 0.5rem; font-weight: 500; font-size: 0.9rem; transition: transform 0.2s;">
+                                    🛠️ Soroban CLI
+                                </a>
+                                <a href="https://soroban.stellar.org/" 
+                                   target="_blank" 
+                                   style="display: flex; align-items: center; justify-content: center; gap: 0.5rem; background: #6b7280; color: white; padding: 0.75rem; text-decoration: none; border-radius: 0.5rem; font-weight: 500; font-size: 0.9rem; transition: transform 0.2s;">
+                                    📚 Docs Soroban
+                                </a>
+                                ${!submitResult.deployed ? `<button onclick="showDeploymentInstructions(${JSON.stringify(result.deployment?.deploymentInstructions || {}).replace(/"/g, '&quot;')})" 
+                                        style="display: flex; align-items: center; justify-content: center; gap: 0.5rem; background: #f59e0b; color: white; padding: 0.75rem; border: none; border-radius: 0.5rem; font-weight: 500; cursor: pointer; font-size: 0.9rem; transition: transform 0.2s;">
+                                    📋 Ver Instrucciones
+                                </button>` : ''}
+                            </div>
+                        </details>
                         
-                        <div style="background: #eff6ff; border-radius: 0.75rem; padding: 1rem; font-size: 0.9rem; color: #1e40af;">
-                            <strong>💡 Próximos pasos:</strong><br>
-                            • Guarda la dirección del emisor para futuras interacciones<br>
-                            • Configura tu wallet para ver el nuevo token<br>
-                            • Comparte el contrato con tu comunidad
-                        </div>
+                        <!-- Botón para crear otro contrato -->
+                        <button onclick="window.location.reload()" 
+                                style="display: flex; align-items: center; justify-content: center; gap: 0.5rem; background: #10b981; color: white; padding: 1rem 2rem; border: none; border-radius: 0.75rem; font-weight: 600; cursor: pointer; transition: all 0.3s; margin: 0 auto;"
+                                onmouseover="this.style.transform='translateY(-2px)'; this.style.boxShadow='0 8px 20px rgba(16, 185, 129, 0.3)'"
+                                onmouseout="this.style.transform='translateY(0)'; this.style.boxShadow='none'">
+                            🔄 Crear Otro Smart Contract
+                        </button>
                     </div>
                 `;
             }
