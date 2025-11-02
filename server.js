@@ -12,7 +12,7 @@ const execAsync = util.promisify(exec);
 const StellarSdk = require('@stellar/stellar-sdk');
 
 const app = express();
-const PORT = 3000;
+const PORT = process.env.PORT || 3000;
 
 // FORZAR TESTNET EXPLÍCITAMENTE
 const server = new StellarSdk.Horizon.Server('https://horizon-testnet.stellar.org');

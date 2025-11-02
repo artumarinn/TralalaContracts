@@ -5,7 +5,9 @@
   "main": "server.js",
   "scripts": {
     "start": "node server.js",
-    "test-stellar": "node test-stellar.js"
+    "dev": "PORT=3001 node server.js",
+    "dev:3002": "PORT=3002 node server.js",
+    "dev:3003": "PORT=3003 node server.js"
   },
   "keywords": [
     "stellar",

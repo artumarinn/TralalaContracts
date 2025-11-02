@@ -89,8 +89,7 @@
                 <div class="smart-contract-container">
                     <div class="description-box">
                         <h2 class="wallets-title">⚙️ Configuración Avanzada del Smart Contract</h2>
-                        <p class="wallets-title">Configura las características avanzadas de tu smart contract. ¡Arrastra
-                            más bloques para añadir funcionalidades!</p>
+                        <p class="wallets-title">Arrastra más bloques para añadir funcionalidades y construir tu contrato.</p>
                     </div>
 
                     <!-- Preview del Código -->
@@ -110,11 +109,6 @@
                         <div class="validation-result hidden" id="validationResult">
                             <div id="validationMessage"></div>
                         </div>
-                    </div>
-
-                    <!-- Interfaz de Blockly Expandida -->
-                    <div class="blockly-advanced-container">
-                        <div id="blocklyDiv"></div>
                     </div>
                 </div>
             </div>
@@ -223,6 +217,8 @@
     <script src="https://cdn.jsdelivr.net/npm/@stellar/stellar-sdk@11.3.0/dist/stellar-sdk.min.js"></script>
     <script src="https://cdn.jsdelivr.net/npm/@stellar/freighter-api@1.7.0/build/index.min.js"></script>
     <script src="https://unpkg.com/albedo-sdk@^0.10.4/dist/albedo.min.js"></script>
+    <script src="rust-generator.js"></script>
+    <script src="blocks-definitions.js"></script>
     <script>
         // Estado global de la aplicación
         const appState = {
@@ -389,14 +385,20 @@
                     // Inicializar Blockly cuando se llega al paso 2
                     if (!blocklyWorkspace) {
                         initializeBlockly();
+                    } else {
+                        // Forzar re-render si ya existe
+                        blocklyWorkspace.render();
                     }
                     break;
                 case 3:
                     // Configuración avanzada de smart contracts
                     if (!blocklyWorkspace) {
                         initializeBlockly();
+                    } else {
+                        blocklyWorkspace.render();
                     }
-                    updateCodePreview();
+                    // Actualizar preview después de asegurar que Blockly esté listo
+                    setTimeout(() => updateCodePreview(), 100);
                     break;
                 case 4:
                     updateTokenSummary();
@@ -410,14 +412,41 @@
             const contractPreview = document.getElementById('contractPreview');
             if (!contractPreview) return;
 
-            const blocklyData = readBlocklyData();
-            if (!blocklyData || !blocklyData.name) {
-                contractPreview.textContent = '// Configura los bloques para ver el preview del código...';
+            // Validar que el workspace esté inicializado
+            if (!blocklyWorkspace) {
+                contractPreview.textContent = '// Blockly aún se está inicializando...';
+                console.warn('⚠️ Blockly workspace no está disponible');
                 return;
             }
 
-            const rustCode = generateAdvancedRustCode(blocklyData);
-            contractPreview.textContent = rustCode;
+            try {
+                // Primero intentar generar desde bloques con el nuevo generador
+                const contractBlock = blocklyWorkspace.getBlocksByType('contract_settings', false)[0];
+                if (contractBlock) {
+                    try {
+                        const generatedCode = rustGen.generateContract(contractBlock);
+                        contractPreview.textContent = generatedCode;
+                        console.log('✅ Código generado desde bloques correctamente');
+                        return;
+                    } catch (blockError) {
+                        console.warn('⚠️ Error generando desde bloques, usando fallback:', blockError);
+                    }
+                }
+
+                // Fallback: usar método anterior
+                const blocklyData = readBlocklyData();
+                if (!blocklyData || !blocklyData.name) {
+                    contractPreview.textContent = '// Configura el nombre de tu contrato para ver el preview...\n// Arrastra bloques desde la izquierda';
+                    return;
+                }
+
+                const rustCode = generateAdvancedRustCode(blocklyData);
+                contractPreview.textContent = rustCode;
+                console.log('✅ Preview actualizado con método fallback');
+            } catch (error) {
+                console.error('❌ Error actualizando preview:', error);
+                contractPreview.textContent = `// Error generando preview:\n// ${error.message}`;
+            }
         }
 
         // Función para generar código Rust avanzado
@@ -702,101 +731,98 @@ impl TokenContract {
                 return;
             }
 
-            // Definir bloques personalizados para Smart Contracts genéricos
-            Blockly.Blocks['contract_settings'] = {
-                init: function () {
-                    this.appendDummyInput()
-                        .appendField("🔮 Mi Smart Contract");
-                    this.appendStatementInput("SETTINGS")
-                        .setCheck(null);
-                    this.setColour(290);
-                    this.setTooltip("Bloque principal del contrato");
-                }
-            };
+            // Agregar bloque de settings para compatibilidad con código existente
+            if (!Blockly.Blocks['contract_settings']) {
+                Blockly.Blocks['contract_settings'] = {
+                    init: function() {
+                        this.appendDummyInput()
+                            .appendField("🔮 Mi Smart Contract");
+                        this.appendStatementInput("SETTINGS")
+                            .setCheck(null);
+                        this.setColour("#8E24AA");
+                        this.setTooltip("Bloque principal del contrato");
+                    }
+                };
+            }
 
-            Blockly.Blocks['contract_name'] = {
-                init: function () {
-                    this.appendDummyInput()
-                        .appendField("Nombre del Contrato")
-                        .appendField(new Blockly.FieldTextInput("MiContrato"), "NAME");
-                    this.setPreviousStatement(true, null);
-                    this.setNextStatement(true, null);
-                    this.setColour(190);
-                    this.setTooltip("Define el nombre de tu contrato");
-                }
-            };
-
-            Blockly.Blocks['contract_version'] = {
-                init: function () {
-                    this.appendDummyInput()
-                        .appendField("Versión")
-                        .appendField(new Blockly.FieldTextInput("0.1.0"), "VERSION");
-                    this.setPreviousStatement(true, null);
-                    this.setNextStatement(true, null);
-                    this.setColour(190);
-                    this.setTooltip("Define la versión de tu contrato");
-                }
-            };
-
-            Blockly.Blocks['admin_address'] = {
-                init: function () {
-                    this.appendDummyInput()
-                        .appendField("🔑 Administrador")
-                        .appendField(new Blockly.FieldTextInput('G...'), "ADDRESS");
-                    this.setPreviousStatement(true, null);
-                    this.setNextStatement(true, null);
-                    this.setColour(230);
-                    this.setTooltip("Define el administrador del contrato");
-                }
-            };
-
-            Blockly.Blocks['state_var'] = {
-                init: function () {
-                    this.appendDummyInput()
-                        .appendField("📦 Variable de estado")
-                        .appendField("nombre:")
-                        .appendField(new Blockly.FieldTextInput("contador"), "VAR_NAME")
-                        .appendField("tipo:")
-                        .appendField(new Blockly.FieldDropdown([["i32", "I32"], ["i128", "I128"], ["bool", "BOOL"], ["String", "STRING"], ["Address", "ADDRESS"]]), "VAR_TYPE");
-                    this.setPreviousStatement(true, null);
-                    this.setNextStatement(true, null);
-                    this.setColour(160);
-                    this.setTooltip("Define una variable de estado del contrato");
-                }
-            };
-
-            Blockly.Blocks['function_def'] = {
-                init: function () {
-                    this.appendDummyInput()
-                        .appendField("⚙️ Función")
-                        .appendField("nombre:")
-                        .appendField(new Blockly.FieldTextInput("mi_funcion"), "FN_NAME")
-                        .appendField("retorna:")
-                        .appendField(new Blockly.FieldDropdown([["void", "VOID"], ["i32", "I32"], ["i128", "I128"], ["bool", "BOOL"], ["String", "STRING"], ["Address", "ADDRESS"]]), "RET_TYPE");
-                    this.setPreviousStatement(true, null);
-                    this.setNextStatement(true, null);
-                    this.setColour(120);
-                    this.setTooltip("Define una función del contrato");
-                }
-            };
-
-            // Crear workspace de Blockly
+            // Crear workspace de Blockly con todas las categorías
             blocklyWorkspace = Blockly.inject('blocklyDiv', {
                 toolbox: `
                     <xml>
-                        <category name="🚀 Empezar">
-                            <block type="contract_settings"></block>
+                        <category name="🚀 Empezar" colour="#8E24AA">
+                            <block type="contract_init"></block>
+                            <block type="contract_metadata"></block>
                         </category>
-                        <category name="🎨 Propiedades">
+
+                        <category name="🎨 Propiedades" colour="#1E88E5">
                             <block type="contract_name"></block>
                             <block type="contract_version"></block>
+                            <block type="contract_owner"></block>
                             <block type="admin_address"></block>
+                            <block type="contract_description"></block>
                         </category>
-                        <category name="📦 Estado">
-                            <block type="state_var"></block>
+
+                        <category name="📦 Estado" colour="#5E35B1">
+                            <block type="state_variable"></block>
+                            <block type="state_map"></block>
+                            <block type="state_event"></block>
+                            <block type="event_parameter"></block>
                         </category>
-                        <category name="⚙️ Funciones">
-                            <block type="function_def"></block>
+
+                        <category name="⚙️ Funciones" colour="#FF8F00">
+                            <block type="function_declaration"></block>
+                            <block type="function_parameter"></block>
+                            <block type="function_return"></block>
+                        </category>
+
+                        <category name="🧠 Lógica" colour="#E91E63">
+                            <block type="if_statement"></block>
+                            <block type="comparison_operator"></block>
+                            <block type="logical_operator"></block>
+                            <block type="loop_while"></block>
+                            <block type="loop_for"></block>
+                        </category>
+
+                        <category name="🔢 Operaciones" colour="#4CAF50">
+                            <block type="arithmetic_operation"></block>
+                            <block type="variable_assignment"></block>
+                            <block type="increment_decrement"></block>
+                            <block type="number_literal"></block>
+                            <block type="string_literal"></block>
+                            <block type="boolean_literal"></block>
+                        </category>
+
+                        <category name="⭐ Stellar" colour="#FFC107">
+                            <block type="stellar_transfer"></block>
+                            <block type="stellar_payment"></block>
+                            <block type="stellar_trust_line"></block>
+                            <block type="stellar_require_auth"></block>
+                            <block type="stellar_context"></block>
+                        </category>
+
+                        <category name="💰 Token" colour="#7B1FA2">
+                            <block type="token_init"></block>
+                            <block type="token_mint"></block>
+                            <block type="token_burn"></block>
+                            <block type="token_transfer"></block>
+                            <block type="token_balance"></block>
+                            <block type="token_allowance"></block>
+                        </category>
+
+                        <category name="🏢 RWA" colour="#C62828">
+                            <block type="rwa_asset"></block>
+                            <block type="rwa_custody"></block>
+                            <block type="rwa_settlement"></block>
+                            <block type="rwa_compliance"></block>
+                            <block type="rwa_redemption"></block>
+                        </category>
+
+                        <category name="🔐 Seguridad" colour="#D32F2F">
+                            <block type="require_condition"></block>
+                            <block type="access_control"></block>
+                            <block type="role_based_check"></block>
+                            <block type="reentrancy_guard"></block>
+                            <block type="pause_functionality"></block>
                         </category>
                     </xml>
                 `,
@@ -812,6 +838,20 @@ impl TokenContract {
                 },
                 theme: Blockly.Themes.Modern
             });
+
+            // Agregar listeners para actualizar preview en tiempo real
+            blocklyWorkspace.addChangeListener(function(event) {
+                // Solo actualizar en step 3
+                if (appState.currentStep === 3) {
+                    // Usar debounce para evitar actualizaciones demasiado frecuentes
+                    clearTimeout(window.previewUpdateTimeout);
+                    window.previewUpdateTimeout = setTimeout(() => {
+                        updateCodePreview();
+                    }, 300);
+                }
+            });
+
+            console.log('✅ Blockly inicializado correctamente');
 
             // Crear bloques por defecto
             createDefaultBlocks();
@@ -834,9 +874,10 @@ impl TokenContract {
                 contractBlock.render();
                 contractBlock.moveBy(50, 50);
 
-                // Crear bloques básicos necesarios
+                // Crear bloques básicos sugeridos
                 const blocks = [];
 
+                // Bloque de nombre del contrato
                 const nameBlock = blocklyWorkspace.newBlock('contract_name');
                 if (nameBlock) {
                     nameBlock.initSvg();
@@ -845,14 +886,16 @@ impl TokenContract {
                     blocks.push(nameBlock);
                 }
 
+                // Bloque de versión
                 const versionBlock = blocklyWorkspace.newBlock('contract_version');
                 if (versionBlock) {
                     versionBlock.initSvg();
                     versionBlock.render();
-                    versionBlock.setFieldValue('0.1.0', 'VERSION');
+                    versionBlock.setFieldValue('1.0.0', 'VERSION');
                     blocks.push(versionBlock);
                 }
 
+                // Bloque de administrador
                 const adminBlock = blocklyWorkspace.newBlock('admin_address');
                 if (adminBlock) {
                     adminBlock.initSvg();
@@ -861,20 +904,23 @@ impl TokenContract {
                     blocks.push(adminBlock);
                 }
 
-                const stateVarBlock = blocklyWorkspace.newBlock('state_var');
+                // Bloque de variable de estado
+                const stateVarBlock = blocklyWorkspace.newBlock('state_variable');
                 if (stateVarBlock) {
                     stateVarBlock.initSvg();
                     stateVarBlock.render();
-                    stateVarBlock.setFieldValue('contador', 'VAR_NAME');
-                    stateVarBlock.setFieldValue('I32', 'VAR_TYPE');
+                    stateVarBlock.setFieldValue('totalSupply', 'VAR_NAME');
+                    stateVarBlock.setFieldValue('I128', 'VAR_TYPE');
+                    stateVarBlock.setFieldValue('0', 'INIT_VALUE');
                     blocks.push(stateVarBlock);
                 }
 
-                const fnBlock = blocklyWorkspace.newBlock('function_def');
+                // Bloque de función
+                const fnBlock = blocklyWorkspace.newBlock('function_declaration');
                 if (fnBlock) {
                     fnBlock.initSvg();
                     fnBlock.render();
-                    fnBlock.setFieldValue('incrementar', 'FN_NAME');
+                    fnBlock.setFieldValue('transfer', 'FN_NAME');
                     fnBlock.setFieldValue('VOID', 'RET_TYPE');
                     blocks.push(fnBlock);
                 }
@@ -882,7 +928,7 @@ impl TokenContract {
                 // Conectar todos los bloques de forma secuencial
                 setTimeout(() => {
                     try {
-                        console.log('🔗 Conectando bloques...');
+                        console.log('🔗 Conectando bloques por defecto...');
 
                         // Conectar el primer bloque al contrato
                         const settingsInput = contractBlock.getInput('SETTINGS');
@@ -903,7 +949,7 @@ impl TokenContract {
 
                         // Renderizar después de conectar
                         blocklyWorkspace.render();
-                        console.log('🎉 Bloques creados y conectados');
+                        console.log('✅ Bloques por defecto creados y conectados');
 
                     } catch (error) {
                         console.error('❌ Error conectando bloques:', error);

@@ -1,1 +1,0 @@
-/Users/matiasboldrini/Documents/hackathon/tralalerocontracts-app/tralala/dynamic-contracts/token_test_abb7e716/target/wasm32-unknown-unknown/release/token_test_abb7e716.wasm: /Users/matiasboldrini/Documents/hackathon/tralalerocontracts-app/tralala/dynamic-contracts/token_test_abb7e716/src/lib.rs
