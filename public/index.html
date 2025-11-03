@@ -160,7 +160,7 @@
             </div>
 
             <!-- Step 4: Review and Deploy -->
-            <div class="step-content" id="step4">
+            <div class="step-content" id="step4Content">
                 <div class="create-token-container">
                     <h2 class="step-title">🚀 Revisa y exporta tu Smart Contract</h2>
 
@@ -263,6 +263,7 @@
     <script src="https://cdn.jsdelivr.net/npm/@stellar/stellar-sdk@11.3.0/dist/stellar-sdk.min.js"></script>
     <script src="https://cdn.jsdelivr.net/npm/@stellar/freighter-api@1.7.0/build/index.min.js"></script>
     <script src="https://unpkg.com/albedo-sdk@^0.10.4/dist/albedo.min.js"></script>
+    <script src="compilation-progress.js"></script>
     <script src="blockly-templates.js"></script>
     <script src="rust-generator.js"></script>
     <script src="contract-validator.js"></script>
@@ -1439,6 +1440,12 @@ impl TokenContract {
                 let result;
                 if (response.ok) {
                     result = await response.json();
+
+                    // Si el servidor respondió con progressUrl, iniciar monitoreo
+                    if (result.contractId && result.progressUrl) {
+                        console.log('📊 Iniciando monitoreo de progreso para:', result.contractId);
+                        window.compilationProgressMonitor.start(result.contractId);
+                    }
                 } else {
                     // Fallback al endpoint original si el nuevo no existe aún
                     console.log('⚠️ Endpoint de smart contract no disponible, usando fallback...');

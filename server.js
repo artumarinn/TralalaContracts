@@ -243,6 +243,23 @@ app.post('/api/build-transaction', async (req, res) => {
 // ===== NUEVOS ENDPOINTS PARA SMART CONTRACTS =====
 
 // Endpoint para construir smart contract con template avanzado
+// Almacenar estado de compilaciones en progreso
+const compilationProgress = new Map();
+
+// Endpoint para obtener progreso de compilación
+app.get('/api/compilation-progress/:compilationId', (req, res) => {
+    const { compilationId } = req.params;
+    const progress = compilationProgress.get(compilationId);
+
+    if (!progress) {
+        return res.status(404).json({
+            error: 'Compilación no encontrada'
+        });
+    }
+
+    res.json(progress);
+});
+
 app.post('/api/build-smart-contract', async (req, res) => {
     try {
         console.log('🔧 Construyendo smart contract avanzado...');
@@ -408,13 +425,380 @@ mod tests {
 
         await fs.writeFile(path.join(contractDir, 'src', 'deploy.rs'), deployHelper);
 
+        // Registrar progreso de compilación y responder inmediatamente
+        compilationProgress.set(contractId, {
+            status: 'starting',
+            progress: 0,
+            message: 'Iniciando compilación...',
+            contractName: contractName,
+            timestamp: new Date()
+        });
+
+        // Responder inmediatamente con el contractId para que el cliente pueda monitorear progreso
+        res.json({
+            success: true,
+            message: 'Compilación iniciada',
+            contractId,
+            contractName,
+            progressUrl: `/api/compilation-progress/${contractId}`
+        });
+
+        // Compilar el contrato en segundo plano
+        (async () => {
+            try {
+                compilationProgress.set(contractId, {
+                    status: 'compiling',
+                    progress: 10,
+                    message: 'Compilando Rust a WebAssembly...',
+                    contractName: contractName,
+                    timestamp: new Date()
+                });
+
+                console.log('⚙️ Compilando contrato avanzado a WASM...');
+
+                const compileCommand = `cd "${contractDir}" && cargo build --target wasm32-unknown-unknown --release`;
+
+                try {
+                    const { stdout, stderr } = await execAsync(compileCommand, {
+                        timeout: 600000,
+                        maxBuffer: 10 * 1024 * 1024
+                    });
+                    console.log('✅ Compilación exitosa');
+                    if (stdout) console.log('STDOUT:', stdout);
+                    if (stderr) console.log('STDERR:', stderr);
+                } catch (compileError) {
+                    console.error('❌ Error en compilación:', compileError);
+                    compilationProgress.set(contractId, {
+                        status: 'error',
+                        progress: 0,
+                        message: `Error en compilación: ${compileError.message}`,
+                        contractName: contractName,
+                        error: true,
+                        timestamp: new Date()
+                    });
+                    return;
+                }
+
+                // Verificar que el WASM fue creado
+                const wasmPath = path.join(contractDir, 'target', 'wasm32-unknown-unknown', 'release', `${contractName}.wasm`);
+
+                compilationProgress.set(contractId, {
+                    status: 'checking',
+                    progress: 50,
+                    message: 'Verificando integridad del archivo...',
+                    contractName: contractName,
+                    timestamp: new Date()
+                });
+
+                try {
+                    await fs.access(wasmPath);
+                    console.log('✅ Archivo WASM generado correctamente');
+                } catch (accessError) {
+                    compilationProgress.set(contractId, {
+                        status: 'error',
+                        progress: 0,
+                        message: 'El archivo WASM no fue generado correctamente',
+                        contractName: contractName,
+                        error: true,
+                        timestamp: new Date()
+                    });
+                    return;
+                }
+
+                // Optimizar WASM si soroban-cli está disponible
+                compilationProgress.set(contractId, {
+                    status: 'optimizing',
+                    progress: 60,
+                    message: 'Optimizando WASM...',
+                    contractName: contractName,
+                    timestamp: new Date()
+                });
+
+                console.log('🎯 Optimizando WASM...');
+                try {
+                    const optimizeCommand = `cd "${contractDir}" && soroban contract optimize --wasm target/wasm32-unknown-unknown/release/${contractName}.wasm`;
+                    const { stdout: optimizeStdout } = await execAsync(optimizeCommand, { timeout: 120000 });
+                    console.log('✅ WASM optimizado');
+                } catch (optimizeError) {
+                    console.warn('⚠️ No se pudo optimizar WASM (continuando):', optimizeError.message);
+                }
+
+                // Guardar información del contrato compilado
+                compilationProgress.set(contractId, {
+                    status: 'saving',
+                    progress: 75,
+                    message: 'Guardando información del contrato...',
+                    contractName: contractName,
+                    timestamp: new Date()
+                });
+
+                const contractInfo = {
+                    contractId,
+                    contractName,
+                    contractData,
+                    templateData,
+                    userAddress,
+                    wasmPath,
+                    compiledAt: new Date().toISOString(),
+                    rustCode,
+                    features: templateData.features,
+                    hasAdvancedFeatures,
+                    templateUsed: templateFile
+                };
+
+                const compiledDir = path.join(__dirname, 'tralala', 'compiled');
+                await fse.ensureDir(compiledDir);
+                await fs.writeFile(
+                    path.join(compiledDir, `${contractId}.json`),
+                    JSON.stringify(contractInfo, null, 2)
+                );
+
+                console.log('🎉 Smart contract avanzado compilado exitosamente');
+
+                // Smart contract compilado exitosamente - Preparado para deployment manual
+                console.log('📤 Smart contract compilado y listo para deployment manual con Soroban CLI...');
+
+                // Leer el archivo WASM compilado para obtener información
+                const wasmBuffer = await fs.readFile(wasmPath);
+                console.log(`📦 WASM compilado: ${wasmBuffer.length} bytes`);
+
+                // Auto-deployment usando Stellar CLI según documentación oficial
+                compilationProgress.set(contractId, {
+                    status: 'deploying',
+                    progress: 80,
+                    message: 'Intentando auto-deployment a testnet...',
+                    contractName: contractName,
+                    timestamp: new Date()
+                });
+
+                console.log('🚀 Intentando auto-deployment a testnet usando Stellar CLI...');
+
+                let contractAddress = null;
+                let deploymentSuccessful = false;
+
+                try {
+                    // Primero verificar si hay una identity configurada
+                    const identityCheckCommand = 'stellar keys ls';
+                    console.log('🔍 Verificando identities disponibles...');
+
+                    let availableIdentity = null;
+                    try {
+                        const { stdout: identityStdout } = await execAsync(identityCheckCommand);
+                        if (identityStdout && identityStdout.trim()) {
+                            // Extraer el primer identity disponible
+                            const identities = identityStdout.trim().split('\n').filter(line => line.trim());
+                            if (identities.length > 0) {
+                                availableIdentity = identities[0].trim();
+                                console.log('✅ Identity encontrada:', availableIdentity);
+                            }
+                        }
+                    } catch (identityError) {
+                        console.log('ℹ️ No se pudieron listar identities, continuando con deployment manual');
+                    }
+
+                    if (availableIdentity) {
+                        // Comando de deployment usando la identity disponible
+                        const deployCommand = `stellar contract deploy --wasm "${wasmPath}" --network testnet --source ${availableIdentity}`;
+                        console.log('📤 Ejecutando deployment con identity:', deployCommand);
+
+                        const { stdout: deployStdout, stderr: deployStderr } = await execAsync(deployCommand);
+
+                        if (deployStdout && deployStdout.trim()) {
+                            contractAddress = deployStdout.trim();
+                            deploymentSuccessful = true;
+                            console.log('✅ Contrato desplegado exitosamente en:', contractAddress);
+                        } else {
+                            throw new Error('No se recibió dirección del contrato');
+                        }
+                    } else {
+                        throw new Error('No hay identity configurada para firmar transacciones');
+                    }
+
+                } catch (deployError) {
+                    console.warn('⚠️ Auto-deployment falló:', deployError.message);
+                    console.log('💡 Configurar identity: stellar keys generate [nombre]');
+                    console.log('💡 Fondear identity: stellar keys fund [nombre] --network testnet');
+                    console.log('💡 Para desplegar manualmente: stellar contract deploy --wasm ' + wasmPath + ' --network testnet --source [identity]');
+                }
+
+                // Actualizar estado final de compilación
+                compilationProgress.set(contractId, {
+                    status: 'completed',
+                    progress: 100,
+                    message: deploymentSuccessful ? 'Smart contract desplegado' : 'Smart contract compilado',
+                    contractName: contractName,
+                    contractAddress: contractAddress,
+                    deploymentSuccessful: deploymentSuccessful,
+                    timestamp: new Date()
+                });
+
+            } catch (backgroundError) {
+                console.error('❌ Error en compilación de fondo:', backgroundError);
+                compilationProgress.set(contractId, {
+                    status: 'error',
+                    progress: 0,
+                    message: `Error: ${backgroundError.message}`,
+                    contractName: contractName,
+                    error: true,
+                    timestamp: new Date()
+                });
+            }
+        })();
+
+        return; // Devolver la respuesta inmediata que ya se envió
+    } catch (error) {
+        console.error('❌ Error construyendo smart contract:', error);
+        res.status(500).json({
+            success: false,
+            error: 'Error construyendo smart contract',
+            details: error.message
+        });
+    }
+});
+
+// Handler alternativo - NO eliminar
+app.post('/api/build-smart-contract-blocking', async (req, res) => {
+    try {
+        console.log('🔧 Construyendo smart contract avanzado (bloqueante)...');
+        console.log('   Datos recibidos:', JSON.stringify(req.body, null, 2));
+
+        const { code, amount, userAddress, contractData } = req.body;
+
+        if (!contractData || !userAddress) {
+            throw new Error('Se requieren contractData y userAddress');
+        }
+
+        // Generar ID único para este contrato
+        const contractId = uuidv4();
+        const contractName = `${contractData.symbol.toLowerCase()}_advanced_${contractId.slice(0, 8)}`;
+
+        console.log(`📝 Generando contrato avanzado: ${contractName}`);
+
+        // Preparar datos para el template avanzado
+        const templateData = {
+            contract_name: contractData.name.replace(/\s+/g, ''),
+            token_name: contractData.name,
+            token_symbol: contractData.symbol,
+            token_decimals: contractData.decimals || 2,
+            initial_supply: contractData.supply || contractData.initialSupply,
+
+            // Características básicas
+            mint_enabled: contractData.features?.mintable || false,
+            burn_enabled: contractData.features?.burnable || false,
+            pausable_enabled: contractData.features?.pausable || false,
+            upgrade_enabled: contractData.features?.upgradeable || false,
+            access_control_enabled: contractData.features?.accessControl || false,
+
+            // Características avanzadas
+            features: {
+                stakeable: contractData.features?.stakeable || false,
+                governance: contractData.features?.governance || false,
+                timeLock: contractData.features?.timeLock || false
+            },
+
+            // Configuración de seguridad
+            security: contractData.security || {
+                transferLimit: 0,
+                whitelistEnabled: false,
+                freezeable: false
+            },
+
+            // Configuración económica
+            economics: contractData.economics || {
+                transactionFee: 0,
+                burnRate: 0,
+                stakingReward: 0
+            },
+
+            // Configuración de timelock
+            timeLockDays: contractData.timeLockDays || 30,
+
+            // Metadatos
+            admin_address: userAddress,
+            security_contact: contractData.metadata?.securityContact || '',
+            license: contractData.metadata?.license || 'MIT'
+        };
+
+        // Usar template avanzado si hay características especiales
+        const hasAdvancedFeatures = templateData.features.stakeable ||
+            templateData.features.governance ||
+            templateData.access_control_enabled ||
+            templateData.security.whitelistEnabled ||
+            templateData.security.freezeable ||
+            templateData.economics.transactionFee > 0;
+
+        const templateFile = hasAdvancedFeatures ? 'advanced_token.hbs' : 'simple_token.hbs';
+        const templatePath = path.join(__dirname, 'tralala', 'contracts', 'token-templates', templateFile);
+
+        console.log(`📋 Usando template: ${templateFile}`);
+        console.log(`🎯 Características detectadas:`, templateData.features);
+
+        const templateContent = await fs.readFile(templatePath, 'utf-8');
+        const template = handlebars.compile(templateContent);
+        const rustCode = template(templateData);
+
+        // Crear directorio para el contrato
+        const contractDir = path.join(__dirname, 'tralala', 'dynamic-contracts', contractName);
+        await fse.ensureDir(contractDir);
+        await fse.ensureDir(path.join(contractDir, 'src'));
+
+        // Crear Cargo.toml más completo para características avanzadas
+        const cargoToml = `[package]
+name = "${contractName}"
+version = "1.0.0"
+edition = "2021"
+authors = ["${userAddress}"]
+description = "Advanced token contract generated by Tralalero Contracts"
+license = "${templateData.license}"
+
+[workspace]
+
+[lib]
+crate-type = ["cdylib"]
+
+[dependencies]
+soroban-sdk = "21.0.0"
+
+[dev-dependencies]
+soroban-sdk = { version = "21.0.0", features = ["testutils"] }
+
+[features]
+default = []
+testutils = ["soroban-sdk/testutils"]
+${hasAdvancedFeatures ? 'advanced = []' : ''}
+
+[profile.release]
+opt-level = "z"
+overflow-checks = true
+debug = 0
+strip = "symbols"
+debug-assertions = false
+panic = "abort"
+codegen-units = 1
+lto = true
+
+[profile.release-with-logs]
+inherits = "release"
+debug-assertions = true
+
+[[bin]]
+name = "deploy"
+path = "src/deploy.rs"
+required-features = ["testutils"]`;
+
+        await fs.writeFile(path.join(contractDir, 'Cargo.toml'), cargoToml);
+        await fs.writeFile(path.join(contractDir, 'src', 'lib.rs'), rustCode);
+
         // Compilar el contrato
         console.log('⚙️ Compilando contrato avanzado a WASM...');
 
         const compileCommand = `cd "${contractDir}" && cargo build --target wasm32-unknown-unknown --release`;
 
         try {
-            const { stdout, stderr } = await execAsync(compileCommand);
+            const { stdout, stderr } = await execAsync(compileCommand, {
+                timeout: 600000,
+                maxBuffer: 10 * 1024 * 1024
+            });
             console.log('✅ Compilación exitosa');
             if (stdout) console.log('STDOUT:', stdout);
             if (stderr) console.log('STDERR:', stderr);
@@ -437,7 +821,7 @@ mod tests {
         console.log('🎯 Optimizando WASM...');
         try {
             const optimizeCommand = `cd "${contractDir}" && soroban contract optimize --wasm target/wasm32-unknown-unknown/release/${contractName}.wasm`;
-            const { stdout: optimizeStdout } = await execAsync(optimizeCommand);
+            const { stdout: optimizeStdout } = await execAsync(optimizeCommand, { timeout: 120000 });
             console.log('✅ WASM optimizado');
         } catch (optimizeError) {
             console.warn('⚠️ No se pudo optimizar WASM (continuando):', optimizeError.message);
@@ -467,63 +851,9 @@ mod tests {
 
         console.log('🎉 Smart contract avanzado compilado exitosamente');
 
-        // Smart contract compilado exitosamente - Preparado para deployment manual
-        console.log('📤 Smart contract compilado y listo para deployment manual con Soroban CLI...');
-
         // Leer el archivo WASM compilado para obtener información
         const wasmBuffer = await fs.readFile(wasmPath);
         console.log(`📦 WASM compilado: ${wasmBuffer.length} bytes`);
-
-        // Auto-deployment usando Stellar CLI según documentación oficial
-        console.log('🚀 Intentando auto-deployment a testnet usando Stellar CLI...');
-
-        let contractAddress = null;
-        let deploymentSuccessful = false;
-
-        try {
-            // Primero verificar si hay una identity configurada
-            const identityCheckCommand = 'stellar keys ls';
-            console.log('🔍 Verificando identities disponibles...');
-
-            let availableIdentity = null;
-            try {
-                const { stdout: identityStdout } = await execAsync(identityCheckCommand);
-                if (identityStdout && identityStdout.trim()) {
-                    // Extraer el primer identity disponible
-                    const identities = identityStdout.trim().split('\n').filter(line => line.trim());
-                    if (identities.length > 0) {
-                        availableIdentity = identities[0].trim();
-                        console.log('✅ Identity encontrada:', availableIdentity);
-                    }
-                }
-            } catch (identityError) {
-                console.log('ℹ️ No se pudieron listar identities, continuando con deployment manual');
-            }
-
-            if (availableIdentity) {
-                // Comando de deployment usando la identity disponible
-                const deployCommand = `stellar contract deploy --wasm "${wasmPath}" --network testnet --source ${availableIdentity}`;
-                console.log('📤 Ejecutando deployment con identity:', deployCommand);
-
-                const { stdout: deployStdout, stderr: deployStderr } = await execAsync(deployCommand);
-
-                if (deployStdout && deployStdout.trim()) {
-                    contractAddress = deployStdout.trim();
-                    deploymentSuccessful = true;
-                    console.log('✅ Contrato desplegado exitosamente en:', contractAddress);
-                } else {
-                    throw new Error('No se recibió dirección del contrato');
-                }
-            } else {
-                throw new Error('No hay identity configurada para firmar transacciones');
-            }
-
-        } catch (deployError) {
-            console.warn('⚠️ Auto-deployment falló:', deployError.message);
-            console.log('💡 Configurar identity: stellar keys generate [nombre]');
-            console.log('💡 Fondear identity: stellar keys fund [nombre] --network testnet');
-            console.log('💡 Para desplegar manualmente: stellar contract deploy --wasm ' + wasmPath + ' --network testnet --source [identity]');
-        }
 
         res.json({
             success: true,
