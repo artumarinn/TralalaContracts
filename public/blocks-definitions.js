@@ -452,6 +452,42 @@ Blockly.Blocks['stellar_context'] = {
 // CATEGORÍA 8: 💰 TOKEN (Operaciones de tokens)
 // ============================================================================
 
+Blockly.Blocks['token_symbol'] = {
+    init: function() {
+        this.appendDummyInput()
+            .appendField("💱 Símbolo del Token")
+            .appendField(new Blockly.FieldTextInput("TOKEN"), "SYMBOL");
+        this.setPreviousStatement(true, null);
+        this.setNextStatement(true, null);
+        this.setColour("#7B1FA2");
+        this.setTooltip("Define el símbolo único del token (máx 12 caracteres)");
+    }
+};
+
+Blockly.Blocks['token_supply'] = {
+    init: function() {
+        this.appendDummyInput()
+            .appendField("📊 Suministro Inicial")
+            .appendField(new Blockly.FieldNumber(1000, 0, Infinity, 1), "SUPPLY");
+        this.setPreviousStatement(true, null);
+        this.setNextStatement(true, null);
+        this.setColour("#7B1FA2");
+        this.setTooltip("Define la cantidad inicial de tokens a crear");
+    }
+};
+
+Blockly.Blocks['token_decimals'] = {
+    init: function() {
+        this.appendDummyInput()
+            .appendField("🔢 Decimales")
+            .appendField(new Blockly.FieldNumber(2, 0, 18, 1), "DECIMALS");
+        this.setPreviousStatement(true, null);
+        this.setNextStatement(true, null);
+        this.setColour("#7B1FA2");
+        this.setTooltip("Define la cantidad de decimales (0-18)");
+    }
+};
+
 Blockly.Blocks['token_init'] = {
     init: function() {
         this.appendDummyInput()

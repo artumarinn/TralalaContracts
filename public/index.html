@@ -40,11 +40,11 @@
                 </div>
                 <div class="step" data-step="2">
                     <div class="step-number">2</div>
-                    <div class="step-label">Configurar con Bloques</div>
+                    <div class="step-label">Seleccionar Plantilla</div>
                 </div>
                 <div class="step" data-step="3">
                     <div class="step-number">3</div>
-                    <div class="step-label">Configurar Smart Contract</div>
+                    <div class="step-label">Configurar con Bloques</div>
                 </div>
                 <div class="step" data-step="4">
                     <div class="step-number">4</div>
@@ -71,8 +71,54 @@
                 </div>
             </div>
 
-            <!-- Step 2: Token Configuration -->
+            <!-- Step 2: Template Selection -->
             <div class="step-content" id="step2">
+                <div class="templates-container">
+                    <div class="description-box">
+                        <h2 class="wallets-title">Elige una plantilla para comenzar</h2>
+                        <p class="wallets-title">Selecciona un caso de uso común que se adapte a tu necesidad. Puedes personalizarlo completamente con bloques.</p>
+                    </div>
+                    <div class="templates-grid">
+                        <div class="template-card" id="templateBasic" data-template="basic">
+                            <div class="template-icon">💰</div>
+                            <div class="template-name">Token Básico</div>
+                            <div class="template-desc">Un token fungible simple con funciones de transferencia</div>
+                            <ul class="template-features">
+                                <li>✓ Crear y transferir tokens</li>
+                                <li>✓ Consultar saldo</li>
+                                <li>✓ Aprobar transferencias</li>
+                            </ul>
+                        </div>
+                        <div class="template-card" id="templateRWA" data-template="rwa">
+                            <div class="template-icon">🏢</div>
+                            <div class="template-name">RWA (Activos Reales)</div>
+                            <div class="template-desc">Token respaldado por activos del mundo real</div>
+                            <ul class="template-features">
+                                <li>✓ Custodia de activos</li>
+                                <li>✓ Cumplimiento regulatorio</li>
+                                <li>✓ Redención de activos</li>
+                            </ul>
+                        </div>
+                        <div class="template-card" id="templateDeFi" data-template="defi">
+                            <div class="template-icon">🔄</div>
+                            <div class="template-name">DeFi (Finanzas Descentralizadas)</div>
+                            <div class="template-desc">Token con features avanzadas para aplicaciones DeFi</div>
+                            <ul class="template-features">
+                                <li>✓ Mint y Burn</li>
+                                <li>✓ Pausable</li>
+                                <li>✓ Control de acceso</li>
+                                <li>✓ Límites de transferencia</li>
+                            </ul>
+                        </div>
+                    </div>
+                    <div style="margin-top: 2rem; text-align: center; color: #6b7280;">
+                        <p>O crea un contrato personalizado desde cero →</p>
+                    </div>
+                </div>
+            </div>
+
+            <!-- Step 3: Smart Contract Configuration -->
+            <div class="step-content" id="step3">
                 <div class="blockly-container">
                     <div class="description-box">
                         <h2 class="wallets-title">¡Arrastra y conecta los bloques!</h2>
@@ -84,8 +130,8 @@
                 </div>
             </div>
 
-            <!-- Step 3: Smart Contract Configuration -->
-            <div class="step-content" id="step3">
+            <!-- Step 4: Smart Contract Configuration -->
+            <div class="step-content" id="step4">
                 <div class="smart-contract-container">
                     <div class="description-box">
                         <h2 class="wallets-title">⚙️ Configuración Avanzada del Smart Contract</h2>
@@ -217,6 +263,7 @@
     <script src="https://cdn.jsdelivr.net/npm/@stellar/stellar-sdk@11.3.0/dist/stellar-sdk.min.js"></script>
     <script src="https://cdn.jsdelivr.net/npm/@stellar/freighter-api@1.7.0/build/index.min.js"></script>
     <script src="https://unpkg.com/albedo-sdk@^0.10.4/dist/albedo.min.js"></script>
+    <script src="blockly-templates.js"></script>
     <script src="rust-generator.js"></script>
     <script src="contract-validator.js"></script>
     <script src="project-manager.js"></script>
@@ -229,6 +276,7 @@
             walletConnected: false,
             walletAddress: null,
             walletType: null,
+            selectedTemplate: null,
             contractCompiled: false,
             contractValidated: false,
             tokenData: {
@@ -384,7 +432,11 @@
         function updateStepContent() {
             switch (appState.currentStep) {
                 case 2:
-                    // Inicializar Blockly cuando se llega al paso 2
+                    // Agregar event listeners a las tarjetas de plantillas
+                    addTemplateListeners();
+                    break;
+                case 3:
+                    // Inicializar Blockly cuando se llega al paso 3
                     if (!blocklyWorkspace) {
                         initializeBlockly();
                     } else {
@@ -392,7 +444,7 @@
                         blocklyWorkspace.render();
                     }
                     break;
-                case 3:
+                case 4:
                     // Configuración avanzada de smart contracts
                     if (!blocklyWorkspace) {
                         initializeBlockly();
@@ -401,12 +453,38 @@
                     }
                     // Actualizar preview después de asegurar que Blockly esté listo
                     setTimeout(() => updateCodePreview(), 100);
-                    break;
-                case 4:
                     updateTokenSummary();
                     updateDeploymentPipeline();
                     break;
             }
+        }
+
+        function addTemplateListeners() {
+            const templateCards = document.querySelectorAll('.template-card');
+            templateCards.forEach(card => {
+                card.addEventListener('click', function() {
+                    // Remover selección anterior
+                    templateCards.forEach(c => c.classList.remove('selected'));
+                    // Agregar selección a la tarjeta actual
+                    this.classList.add('selected');
+
+                    const template = this.getAttribute('data-template');
+                    appState.selectedTemplate = template;
+                    console.log('📋 Plantilla seleccionada:', template);
+                    applyTemplate(template);
+                });
+            });
+        }
+
+        function applyTemplate(template) {
+            // Las plantillas se aplicarán cuando se inicialice Blockly en el paso 3
+            console.log('🎨 Aplicando plantilla:', template);
+
+            // Guardar la plantilla en appState para usarla cuando se inicialice Blockly
+            appState.selectedTemplate = template;
+
+            // Mostrar mensaje
+            showToast(`✅ Plantilla "${template.toUpperCase()}" seleccionada`, 'success');
         }
 
         // Función para actualizar el preview del código
@@ -454,15 +532,18 @@
         // Función para generar código Rust avanzado
         function generateAdvancedRustCode(data) {
             const features = [];
+            const dataFeatures = data.features || {};
+            const dataSecurity = data.security || {};
+            const dataEconomics = data.economics || {};
 
-            if (data.features.mintable) features.push('Mintable');
-            if (data.features.burnable) features.push('Burnable');
-            if (data.features.pausable) features.push('Pausable');
-            if (data.features.upgradeable) features.push('Upgradeable');
-            if (data.features.governance) features.push('Governance');
-            if (data.features.stakeable) features.push('Stakeable');
-            if (data.features.timeLock) features.push('TimeLock');
-            if (data.features.accessControl) features.push('AccessControl');
+            if (dataFeatures.mintable) features.push('Mintable');
+            if (dataFeatures.burnable) features.push('Burnable');
+            if (dataFeatures.pausable) features.push('Pausable');
+            if (dataFeatures.upgradeable) features.push('Upgradeable');
+            if (dataFeatures.governance) features.push('Governance');
+            if (dataFeatures.stakeable) features.push('Stakeable');
+            if (dataFeatures.timeLock) features.push('TimeLock');
+            if (dataFeatures.accessControl) features.push('AccessControl');
 
             return `// Smart Contract: ${data.name || 'Mi Token'}
 // Generado automáticamente por Tralalero Contracts
@@ -472,8 +553,8 @@ use soroban_sdk::{
     contract, contractimpl, Address, Env, String, Symbol, Map,
     token::{self, Interface as TokenInterface},
     auth::{Context, CustomAccountInterface},
-    ${data.features.governance ? 'governance::GovernanceInterface,' : ''}
-    ${data.features.stakeable ? 'staking::StakingInterface,' : ''}
+    ${dataFeatures.governance ? 'governance::GovernanceInterface,' : ''}
+    ${dataFeatures.stakeable ? 'staking::StakingInterface,' : ''}
 };
 
 // Constantes del contrato
@@ -486,8 +567,8 @@ const INITIAL_SUPPLY: i128 = ${data.supply || 1000};
 const ADMIN: Symbol = symbol_short!("ADMIN");
 const PAUSED: Symbol = symbol_short!("PAUSED");
 const TOTAL_SUPPLY: Symbol = symbol_short!("TOTAL_SUP");
-${data.security.transferLimit ? `const TRANSFER_LIMIT: Symbol = symbol_short!("TRANS_LIM");` : ''}
-${data.features.stakeable ? `const STAKING_POOL: Symbol = symbol_short!("STAKING");` : ''}
+${dataSecurity.transferLimit ? `const TRANSFER_LIMIT: Symbol = symbol_short!("TRANS_LIM");` : ''}
+${dataFeatures.stakeable ? `const STAKING_POOL: Symbol = symbol_short!("STAKING");` : ''}
 
 #[contract]
 pub struct TokenContract;
@@ -500,12 +581,12 @@ impl TokenContract {
         if env.storage().instance().has(&ADMIN) {
             panic!("Contract already initialized");
         }
-        
+
         env.storage().instance().set(&ADMIN, &admin);
         env.storage().instance().set(&TOTAL_SUPPLY, &INITIAL_SUPPLY);
-        ${data.features.pausable ? 'env.storage().instance().set(&PAUSED, &false);' : ''}
-        ${data.security.transferLimit ? `env.storage().instance().set(&TRANSFER_LIMIT, &${data.security.transferLimit});` : ''}
-        
+        ${dataFeatures.pausable ? 'env.storage().instance().set(&PAUSED, &false);' : ''}
+        ${dataSecurity.transferLimit ? `env.storage().instance().set(&TRANSFER_LIMIT, &${dataSecurity.transferLimit});` : ''}
+
         // Mint inicial al admin
         if INITIAL_SUPPLY > 0 {
             token::Client::new(&env, &env.current_contract_address())
@@ -517,54 +598,54 @@ impl TokenContract {
     pub fn name(env: Env) -> String {
         String::from_str(&env, TOKEN_NAME)
     }
-    
+
     pub fn symbol(env: Env) -> String {
         String::from_str(&env, TOKEN_SYMBOL)
     }
-    
+
     pub fn decimals(env: Env) -> u32 {
         DECIMALS
     }
 
-    ${data.features.mintable ? `
+    ${dataFeatures.mintable ? `
     /// Mint nuevos tokens (solo admin)
     pub fn mint(env: Env, to: Address, amount: i128) {
         Self::check_admin(&env);
-        ${data.features.pausable ? 'Self::check_not_paused(&env);' : ''}
-        
+        ${dataFeatures.pausable ? 'Self::check_not_paused(&env);' : ''}
+
         token::Client::new(&env, &env.current_contract_address())
             .mint(&to, &amount);
     }` : ''}
 
-    ${data.features.burnable ? `
+    ${dataFeatures.burnable ? `
     /// Burn tokens
     pub fn burn(env: Env, from: Address, amount: i128) {
         from.require_auth();
-        ${data.features.pausable ? 'Self::check_not_paused(&env);' : ''}
-        
+        ${dataFeatures.pausable ? 'Self::check_not_paused(&env);' : ''}
+
         token::Client::new(&env, &env.current_contract_address())
             .burn(&from, &amount);
     }` : ''}
 
-    ${data.features.pausable ? `
+    ${dataFeatures.pausable ? `
     /// Pausar el contrato (solo admin)
     pub fn pause(env: Env) {
         Self::check_admin(&env);
         env.storage().instance().set(&PAUSED, &true);
     }
-    
+
     /// Despausar el contrato (solo admin)
     pub fn unpause(env: Env) {
         Self::check_admin(&env);
         env.storage().instance().set(&PAUSED, &false);
     }` : ''}
 
-    ${data.features.stakeable ? `
+    ${dataFeatures.stakeable ? `
     /// Hacer staking de tokens
     pub fn stake(env: Env, from: Address, amount: i128) {
         from.require_auth();
         Self::check_not_paused(&env);
-        
+
         // Lógica de staking...
         // TODO: Implementar pool de staking
     }` : ''}
@@ -575,7 +656,7 @@ impl TokenContract {
         admin.require_auth();
     }
 
-    ${data.features.pausable ? `
+    ${dataFeatures.pausable ? `
     fn check_not_paused(env: &Env) {
         let paused: bool = env.storage().instance().get(&PAUSED).unwrap_or(false);
         if paused {
@@ -585,10 +666,10 @@ impl TokenContract {
 }
 
 // Características habilitadas: ${features.join(', ') || 'Ninguna'}
-// Límite de transferencia: ${data.security.transferLimit || 'Sin límite'}
-// Recompensa de staking: ${data.economics.stakingReward || 0}% anual
-// Fee de transacción: ${data.economics.transactionFee || 0}%
-// Burn rate: ${data.economics.burnRate || 0}%`;
+// Límite de transferencia: ${dataSecurity.transferLimit || 'Sin límite'}
+// Recompensa de staking: ${dataEconomics.stakingReward || 0}% anual
+// Fee de transacción: ${dataEconomics.transactionFee || 0}%
+// Burn rate: ${dataEconomics.burnRate || 0}%`;
         }
 
         // Función para validar el contrato
@@ -782,6 +863,9 @@ impl TokenContract {
                         </category>
 
                         <category name="💰 Token" colour="#7B1FA2">
+                            <block type="token_symbol"></block>
+                            <block type="token_supply"></block>
+                            <block type="token_decimals"></block>
                             <block type="token_init"></block>
                             <block type="token_mint"></block>
                             <block type="token_burn"></block>
@@ -956,10 +1040,44 @@ impl TokenContract {
 
             const data = {
                 name: '',
+                symbol: 'TOKEN',
+                supply: 1000,
+                decimals: 2,
                 version: '0.1.0',
                 admin: appState.walletAddress || '',
                 state: [],
-                functions: []
+                functions: [],
+                // Asegurar que siempre existan features, security, economics y metadata
+                features: {
+                    mintable: false,
+                    burnable: false,
+                    pausable: false,
+                    upgradeable: false,
+                    accessControl: false,
+                    governance: false,
+                    stakeable: false,
+                    timeLock: false,
+                    multiSig: false
+                },
+                security: {
+                    transferLimit: 0,
+                    dailyLimit: 0,
+                    whitelistEnabled: false,
+                    freezeable: false,
+                    recoverableKeys: false
+                },
+                economics: {
+                    transactionFee: 0,
+                    burnRate: 0,
+                    stakingReward: 0,
+                    inflationRate: 0
+                },
+                metadata: {
+                    license: 'MIT',
+                    description: '',
+                    website: '',
+                    logoUrl: ''
+                }
             };
 
             let currentBlock = contractBlock.getInputTargetBlock('SETTINGS');
@@ -976,7 +1094,17 @@ impl TokenContract {
                     case 'admin_address':
                         data.admin = currentBlock.getFieldValue('ADDRESS');
                         break;
+                    case 'token_symbol':
+                        data.symbol = currentBlock.getFieldValue('SYMBOL');
+                        break;
+                    case 'token_supply':
+                        data.supply = parseInt(currentBlock.getFieldValue('SUPPLY')) || 1000;
+                        break;
+                    case 'token_decimals':
+                        data.decimals = parseInt(currentBlock.getFieldValue('DECIMALS')) || 2;
+                        break;
                     case 'state_var':
+                    case 'state_variable':
                         data.state = data.state || [];
                         data.state.push({
                             name: currentBlock.getFieldValue('VAR_NAME'),
@@ -984,6 +1112,7 @@ impl TokenContract {
                         });
                         break;
                     case 'function_def':
+                    case 'function_declaration':
                         data.functions = data.functions || [];
                         data.functions.push({
                             name: currentBlock.getFieldValue('FN_NAME'),
@@ -1003,12 +1132,22 @@ impl TokenContract {
                 case 1:
                     return validateWalletConnection();
                 case 2:
-                    return validateTokenData();
+                    return validateTemplateSelection();
                 case 3:
-                    return true; // El paso 3 no requiere validación adicional
+                    return validateTokenData();
+                case 4:
+                    return true; // El paso 4 no requiere validación adicional
                 default:
                     return true;
             }
+        }
+
+        function validateTemplateSelection() {
+            if (!appState.selectedTemplate) {
+                showToast('Por favor, selecciona una plantilla para continuar', 'error');
+                return false;
+            }
+            return true;
         }
 
         function validateWalletConnection() {
@@ -1021,6 +1160,11 @@ impl TokenContract {
 
         function validateTokenData() {
             // Validación simple para smart contracts genéricos
+            if (!blocklyWorkspace) {
+                showToast('Blockly aún no se ha inicializado. Por favor espera...', 'error');
+                return false;
+            }
+
             const contractBlocks = blocklyWorkspace.getBlocksByType('contract_settings', false);
 
             if (contractBlocks.length === 0) {
@@ -1067,25 +1211,26 @@ impl TokenContract {
             // Actualizar elementos del resumen
             if (elements.summaryType) {
                 const typeLabels = { 'FUNGIBLE': 'Fungible', 'NON_FUNGIBLE': 'No Fungible', 'STABLECOIN': 'Stablecoin' };
-                elements.summaryType.textContent = typeLabels[blocklyData.tokenType] || blocklyData.tokenType;
+                elements.summaryType.textContent = typeLabels[blocklyData.tokenType] || blocklyData.tokenType || 'Smart Contract';
             }
             if (elements.summaryName) elements.summaryName.textContent = blocklyData.name || '-';
             if (elements.summarySymbol) elements.summarySymbol.textContent = blocklyData.symbol || '-';
             if (elements.summarySupply) elements.summarySupply.textContent = blocklyData.supply ? blocklyData.supply.toLocaleString() : '-';
 
-            // Mostrar características habilitadas
+            // Mostrar características habilitadas (con verificación segura)
             if (elements.summaryFeatures) {
                 const enabledFeatures = [];
-                if (blocklyData.features.mintable) enabledFeatures.push('Mintable');
-                if (blocklyData.features.burnable) enabledFeatures.push('Burnable');
-                if (blocklyData.features.pausable) enabledFeatures.push('Pausable');
-                if (blocklyData.features.upgradeable) enabledFeatures.push('Upgradeable');
-                if (blocklyData.features.accessControl) enabledFeatures.push('Control de Acceso');
+                const features = blocklyData.features || {};
+                if (features.mintable) enabledFeatures.push('Mintable');
+                if (features.burnable) enabledFeatures.push('Burnable');
+                if (features.pausable) enabledFeatures.push('Pausable');
+                if (features.upgradeable) enabledFeatures.push('Upgradeable');
+                if (features.accessControl) enabledFeatures.push('Control de Acceso');
 
                 elements.summaryFeatures.textContent = enabledFeatures.length > 0 ? enabledFeatures.join(', ') : 'Ninguna';
             }
 
-            if (elements.summaryLicense) elements.summaryLicense.textContent = blocklyData.license || '-';
+            if (elements.summaryLicense) elements.summaryLicense.textContent = blocklyData.license || blocklyData.metadata?.license || '-';
             if (elements.summaryAdmin) elements.summaryAdmin.textContent = appState.walletAddress ? appState.walletAddress.substring(0, 8) + '...' + appState.walletAddress.substring(appState.walletAddress.length - 8) : '-';
         }
 

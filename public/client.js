@@ -71,18 +71,26 @@ document.addEventListener("DOMContentLoaded", () => {
         }
     };
 
-    // --- 3. Toolbox ---
+    // --- 3. Toolbox (Mejorado) ---
     const toolbox = `
         <xml id="toolbox" style="display: none">
-            <category name="🚀 Empezar" categorystyle="start_category"><block type="contract_settings"></block></category>
-            <category name="🎨 Propiedades" categorystyle="property_category">
-                <block type="contract_name"></block><block type="contract_version"></block><block type="admin_address"></block>
+            <category name="🚀 Empezar" categorystyle="start_category">
+                <block type="contract_settings"></block>
             </category>
-            <category name="📦 Estado" categorystyle="rules_category">
-                <block type="state_var"></block>
+            <category name="🪙 Token" categorystyle="property_category">
+                <block type="token_properties"></block>
+                <block type="admin_config"></block>
+            </category>
+            <category name="✨ Características" categorystyle="powers_category">
+                <block type="feature_mintable"></block>
+                <block type="feature_burnable"></block>
+                <block type="feature_pausable"></block>
             </category>
             <category name="⚙️ Funciones" categorystyle="advanced_category">
-                <block type="function_def"></block>
+                <block type="transfer_function"></block>
+                <block type="balance_function"></block>
+                <block type="mint_function"></block>
+                <block type="burn_function"></block>
             </category>
         </xml>
     `;
@@ -92,9 +100,9 @@ document.addEventListener("DOMContentLoaded", () => {
         toolbox: toolbox, scrollbars: true, trashcan: true, renderer: 'zelos', theme: tralaleroTheme
     });
 
-    // --- 4.1. Crear Bloques por Defecto ---
+    // --- 4.1. Crear Bloques por Defecto (Mejorados) ---
     function createDefaultBlocks() {
-        console.log('🔄 Creando bloques por defecto...');
+        console.log('🔄 Creando bloques por defecto mejorados...');
 
         // Limpiar workspace
         blocklyWorkspace.clear();
@@ -111,54 +119,91 @@ document.addEventListener("DOMContentLoaded", () => {
             contractBlock.moveBy(50, 50);
             console.log('✅ Bloque de contrato creado');
 
-            // Crear bloques básicos necesarios
+            // Crear bloques mejorados
             const blocks = [];
 
-            const nameBlock = blocklyWorkspace.newBlock('contract_name');
-            if (nameBlock) {
-                nameBlock.initSvg();
-                nameBlock.render();
-                nameBlock.setFieldValue('MiContrato', 'NAME');
-                blocks.push(nameBlock);
-                console.log('✅ Bloque de nombre creado');
+            // Bloque de propiedades del token
+            const tokenPropsBlock = blocklyWorkspace.newBlock('token_properties');
+            if (tokenPropsBlock) {
+                tokenPropsBlock.initSvg();
+                tokenPropsBlock.render();
+                tokenPropsBlock.setFieldValue('MyToken', 'TOKEN_NAME');
+                tokenPropsBlock.setFieldValue('MTK', 'TOKEN_SYMBOL');
+                tokenPropsBlock.setFieldValue('6', 'DECIMALS');
+                tokenPropsBlock.setFieldValue('1000000', 'INITIAL_SUPPLY');
+                blocks.push(tokenPropsBlock);
+                console.log('✅ Bloque de propiedades del token creado');
             }
 
-            const versionBlock = blocklyWorkspace.newBlock('contract_version');
-            if (versionBlock) {
-                versionBlock.initSvg();
-                versionBlock.render();
-                versionBlock.setFieldValue('0.1.0', 'VERSION');
-                blocks.push(versionBlock);
-                console.log('✅ Bloque de versión creado');
-            }
-
-            const adminBlock = blocklyWorkspace.newBlock('admin_address');
+            // Bloque de administrador
+            const adminBlock = blocklyWorkspace.newBlock('admin_config');
             if (adminBlock) {
                 adminBlock.initSvg();
                 adminBlock.render();
-                adminBlock.setFieldValue('G...', 'ADDRESS');
+                adminBlock.setFieldValue('GBQQHZKDUU...', 'ADMIN');
                 blocks.push(adminBlock);
                 console.log('✅ Bloque de admin creado');
             }
 
-            const stateVarBlock = blocklyWorkspace.newBlock('state_var');
-            if (stateVarBlock) {
-                stateVarBlock.initSvg();
-                stateVarBlock.render();
-                stateVarBlock.setFieldValue('contador', 'VAR_NAME');
-                stateVarBlock.setFieldValue('I32', 'VAR_TYPE');
-                blocks.push(stateVarBlock);
-                console.log('✅ Bloque de variable de estado creado');
+            // Bloques de características
+            const mintableBlock = blocklyWorkspace.newBlock('feature_mintable');
+            if (mintableBlock) {
+                mintableBlock.initSvg();
+                mintableBlock.render();
+                mintableBlock.setFieldValue('FALSE', 'ENABLED');
+                blocks.push(mintableBlock);
+                console.log('✅ Bloque de mintable creado');
             }
 
-            const fnBlock = blocklyWorkspace.newBlock('function_def');
-            if (fnBlock) {
-                fnBlock.initSvg();
-                fnBlock.render();
-                fnBlock.setFieldValue('incrementar', 'FN_NAME');
-                fnBlock.setFieldValue('VOID', 'RET_TYPE');
-                blocks.push(fnBlock);
-                console.log('✅ Bloque de función creado');
+            const burnableBlock = blocklyWorkspace.newBlock('feature_burnable');
+            if (burnableBlock) {
+                burnableBlock.initSvg();
+                burnableBlock.render();
+                burnableBlock.setFieldValue('FALSE', 'ENABLED');
+                blocks.push(burnableBlock);
+                console.log('✅ Bloque de burnable creado');
+            }
+
+            const pausableBlock = blocklyWorkspace.newBlock('feature_pausable');
+            if (pausableBlock) {
+                pausableBlock.initSvg();
+                pausableBlock.render();
+                pausableBlock.setFieldValue('FALSE', 'ENABLED');
+                blocks.push(pausableBlock);
+                console.log('✅ Bloque de pausable creado');
+            }
+
+            // Bloques de funciones
+            const transferBlock = blocklyWorkspace.newBlock('transfer_function');
+            if (transferBlock) {
+                transferBlock.initSvg();
+                transferBlock.render();
+                blocks.push(transferBlock);
+                console.log('✅ Bloque de transfer creado');
+            }
+
+            const balanceBlock = blocklyWorkspace.newBlock('balance_function');
+            if (balanceBlock) {
+                balanceBlock.initSvg();
+                balanceBlock.render();
+                blocks.push(balanceBlock);
+                console.log('✅ Bloque de balance creado');
+            }
+
+            const mintBlock = blocklyWorkspace.newBlock('mint_function');
+            if (mintBlock) {
+                mintBlock.initSvg();
+                mintBlock.render();
+                blocks.push(mintBlock);
+                console.log('✅ Bloque de mint creado');
+            }
+
+            const burnBlock = blocklyWorkspace.newBlock('burn_function');
+            if (burnBlock) {
+                burnBlock.initSvg();
+                burnBlock.render();
+                blocks.push(burnBlock);
+                console.log('✅ Bloque de burn creado');
             }
 
             // Conectar todos los bloques de forma secuencial
@@ -301,8 +346,28 @@ document.addEventListener("DOMContentLoaded", () => {
         };
     }
 
-    // Función para generar código Rust como string (genérico)
+    // Función para generar código Rust usando las plantillas mejoradas
     function generateRustCodeString(data) {
+        // Si tenemos acceso a TokenCodeGenerator, usarlo
+        if (typeof TokenCodeGenerator !== 'undefined' && TokenCodeGenerator.generateRustCode) {
+            // Convertir la estructura de datos de bloques a la estructura esperada
+            const config = {
+                tokenName: data.name || "MyToken",
+                tokenSymbol: data.symbol || "MTK",
+                decimals: data.decimals || 6,
+                initialSupply: data.initialSupply || 1000000,
+                admin: data.admin || "GBQQHZKDUU...",
+                features: {
+                    mintable: data.mintable || false,
+                    burnable: data.burnable || false,
+                    pausable: data.pausable || false
+                },
+                functions: data.functions || []
+            };
+            return TokenCodeGenerator.generateRustCode(config);
+        }
+
+        // Fallback: código genérico si no está disponible TokenCodeGenerator
         const contractName = (data.name || 'MyContract').replace(/[^A-Za-z0-9_]/g, '');
         const stateDecls = (data.state || []).map(v => {
             const key = v.name.toUpperCase().replace(/[^A-Z0-9_]/g, '_');
