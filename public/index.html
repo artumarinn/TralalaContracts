@@ -218,6 +218,8 @@
     <script src="https://cdn.jsdelivr.net/npm/@stellar/freighter-api@1.7.0/build/index.min.js"></script>
     <script src="https://unpkg.com/albedo-sdk@^0.10.4/dist/albedo.min.js"></script>
     <script src="rust-generator.js"></script>
+    <script src="contract-validator.js"></script>
+    <script src="project-manager.js"></script>
     <script src="blocks-definitions.js"></script>
     <script>
         // Estado global de la aplicación
@@ -596,58 +598,37 @@ impl TokenContract {
 
             if (!validationResult || !validationMessage) return false;
 
-            // Validación básica para smart contracts genéricos
-            const contractBlocks = blocklyWorkspace.getBlocksByType('contract_settings', false);
-            const errors = [];
-            const warnings = [];
-
-            if (contractBlocks.length === 0) {
-                errors.push('❌ Falta el bloque principal "Mi Smart Contract"');
-            } else {
-                const contractBlock = contractBlocks[0];
-                let currentBlock = contractBlock.getInputTargetBlock('SETTINGS');
-                let hasName = false;
-
-                while (currentBlock) {
-                    if (currentBlock.type === 'contract_name') {
-                        const name = currentBlock.getFieldValue('NAME');
-                        if (name && name.trim() !== '') {
-                            hasName = true;
-                        }
-                    }
-                    currentBlock = currentBlock.getNextBlock();
-                }
-
-                if (!hasName) {
-                    errors.push('❌ El nombre del contrato es requerido');
-                }
-            }
-
-            // Mostrar resultados
-            validationResult.classList.remove('hidden');
-
-            if (errors.length > 0) {
+            if (!blocklyWorkspace) {
                 validationMessage.innerHTML = `
-                    <div style="color: #dc2626; font-weight: bold;">❌ Errores encontrados:</div>
-                    ${errors.map(error => `<div style="margin: 0.5rem 0;">${error}</div>`).join('')}
+                    <div style="color: #dc2626; font-weight: bold;">❌ Blockly no está inicializado</div>
                 `;
+                validationResult.classList.remove('hidden');
                 validationResult.style.backgroundColor = '#fef2f2';
                 validationResult.style.borderColor = '#dc2626';
                 appState.contractValidated = false;
                 return false;
+            }
+
+            // Usar el validador profesional
+            const report = validator.validate(blocklyWorkspace);
+
+            // Mostrar resultados
+            validationResult.classList.remove('hidden');
+            validationMessage.innerHTML = validator.toHTML();
+
+            if (!report.isValid) {
+                validationResult.style.backgroundColor = '#fef2f2';
+                validationResult.style.borderColor = '#dc2626';
+                appState.contractValidated = false;
+                return false;
+            } else if (report.warningCount > 0) {
+                validationResult.style.backgroundColor = '#fffbeb';
+                validationResult.style.borderColor = '#d97706';
+                appState.contractValidated = true;
+                return true;
             } else {
-                let message = '<div style="color: #059669; font-weight: bold;">✅ Contrato válido!</div>';
-
-                if (warnings.length > 0) {
-                    message += `
-                        <div style="color: #d97706; font-weight: bold; margin-top: 1rem;">⚠️ Advertencias:</div>
-                        ${warnings.map(warning => `<div style="margin: 0.5rem 0;">${warning}</div>`).join('')}
-                    `;
-                }
-
-                validationMessage.innerHTML = message;
-                validationResult.style.backgroundColor = warnings.length > 0 ? '#fffbeb' : '#f0fdf4';
-                validationResult.style.borderColor = warnings.length > 0 ? '#d97706' : '#059669';
+                validationResult.style.backgroundColor = '#f0fdf4';
+                validationResult.style.borderColor = '#059669';
                 appState.contractValidated = true;
                 return true;
             }
@@ -1549,6 +1530,66 @@ impl TokenContract {
             }
 
             showToast('🎉 ¡Smart Contract desplegado exitosamente!', 'success');
+        }
+
+        // Funciones para gestión de proyectos
+        function saveCurrentProject() {
+            try {
+                const projectName = prompt('Nombre del proyecto:', 'Mi Contrato');
+                if (!projectName) return;
+
+                projectManager.saveProject(projectName, blocklyWorkspace);
+                showToast(`✅ Proyecto '${projectName}' guardado`, 'success');
+            } catch (error) {
+                showToast(`❌ Error guardando proyecto: ${error.message}`, 'error');
+            }
+        }
+
+        function showProjectsModal() {
+            const modal = document.createElement('div');
+            modal.style.cssText = `
+                position: fixed;
+                top: 0;
+                left: 0;
+                width: 100%;
+                height: 100%;
+                background: rgba(0,0,0,0.7);
+                display: flex;
+                align-items: center;
+                justify-content: center;
+                z-index: 10000;
+            `;
+
+            modal.innerHTML = `
+                <div style="background: white; border-radius: 1rem; padding: 2rem; max-width: 600px; width: 90%; max-height: 80vh; overflow-y: auto;">
+                    <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 1.5rem;">
+                        <h3 style="margin: 0; color: #1f2937;">📁 Mis Proyectos</h3>
+                        <button onclick="this.closest('div').parentElement.remove()"
+                                style="background: #ef4444; color: white; border: none; padding: 0.5rem 1rem; border-radius: 0.5rem; cursor: pointer; font-weight: 600;">
+                            Cerrar
+                        </button>
+                    </div>
+
+                    <div style="margin-bottom: 1.5rem;">
+                        ${projectManager.getProjectsListHTML()}
+                    </div>
+
+                    <div style="padding-top: 1rem; border-top: 1px solid #e5e7eb;">
+                        <p style="margin: 0 0 0.5rem 0; font-size: 0.85rem; color: #6b7280;">
+                            Storage usado: ${(projectManager.getStorageInfo().storageUsed / 1024).toFixed(2)} KB / ${(projectManager.getStorageInfo().storageLimit / 1024 / 1024).toFixed(1)} MB
+                        </p>
+                        <button onclick="projectManager.clearAll(); location.reload();"
+                                style="background: #ef4444; color: white; border: none; padding: 0.5rem 1rem; border-radius: 0.5rem; cursor: pointer; font-size: 0.85rem;">
+                            🗑️ Borrar todos los proyectos
+                        </button>
+                    </div>
+                </div>
+            `;
+
+            document.body.appendChild(modal);
+            modal.addEventListener('click', (e) => {
+                if (e.target === modal) modal.remove();
+            });
         }
 
         // Event listeners
