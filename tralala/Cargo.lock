@@ -780,6 +780,41 @@ source = "registry+https://github.com/rust-lang/crates.io-index"
 checksum = "32a282da65faaf38286cf3be983213fcf1d2e2a58700e808f83f4ea9a4804bc0"
 
 [[package]]
+name = "mtk_advanced_2f27a3e7"
+version = "1.0.0"
+dependencies = [
+ "soroban-sdk",
+]
+
+[[package]]
+name = "mtk_advanced_8a62c62d"
+version = "1.0.0"
+dependencies = [
+ "soroban-sdk",
+]
+
+[[package]]
+name = "mtk_advanced_a7079dbe"
+version = "1.0.0"
+dependencies = [
+ "soroban-sdk",
+]
+
+[[package]]
+name = "mtk_advanced_e2d39b2c"
+version = "1.0.0"
+dependencies = [
+ "soroban-sdk",
+]
+
+[[package]]
+name = "mtk_advanced_e9ea30a3"
+version = "1.0.0"
+dependencies = [
+ "soroban-sdk",
+]
+
+[[package]]
 name = "num-bigint"
 version = "0.4.6"
 source = "registry+https://github.com/rust-lang/crates.io-index"
@@ -1487,6 +1522,20 @@ checksum = "30cfb0125f12d9c277f35663a0a33f8c30190f4e4574868a330595412d34ebf3"
 dependencies = [
  "num-conv",
  "time-core",
+]
+
+[[package]]
+name = "token_template_advanced"
+version = "1.0.0"
+dependencies = [
+ "soroban-sdk",
+]
+
+[[package]]
+name = "token_template_basic"
+version = "1.0.0"
+dependencies = [
+ "soroban-sdk",
 ]
 
 [[package]]

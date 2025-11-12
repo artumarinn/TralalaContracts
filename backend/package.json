@@ -1,0 +1,24 @@
+{
+  "name": "tralalero-contracts-backend",
+  "version": "1.0.0",
+  "description": "Backend for Tralalero Contracts - serves precompiled WASM templates",
+  "main": "api.js",
+  "scripts": {
+    "start": "node api.js",
+    "dev": "node api.js"
+  },
+  "keywords": [
+    "stellar",
+    "soroban",
+    "contracts",
+    "wasm"
+  ],
+  "author": "Tralalero Team",
+  "license": "MIT",
+  "dependencies": {
+    "express": "^4.19.2",
+    "fs-extra": "^11.2.0",
+    "uuid": "^9.0.1",
+    "@stellar/stellar-sdk": "^11.3.0"
+  }
+}

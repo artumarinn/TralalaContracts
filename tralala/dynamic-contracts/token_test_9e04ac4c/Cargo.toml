@@ -7,11 +7,11 @@ edition = "2021"
 crate-type = ["cdylib"]
 
 [dependencies]
-soroban-sdk = "23.0.1"
+soroban-sdk = { workspace = true }
 soroban-token-sdk = "23.0.1"
 
 [dev_dependencies]
-soroban-sdk = { version = "23.0.1", features = ["testutils"] }
+soroban-sdk = { workspace = true, features = ["testutils"] }
 
 [features]
 testutils = ["soroban-sdk/testutils"]
@@ -20,16 +20,3 @@ testutils = ["soroban-sdk/testutils"]
 name = "token_test_9e04ac4c"
 path = "src/lib.rs"
 
-[profile.release]
-opt-level = "z"
-overflow-checks = true
-debug = 0
-strip = "symbols"
-debug-assertions = false
-panic = "abort"
-codegen-units = 1
-lto = true
-
-[profile.release-with-logs]
-inherits = "release"
-debug-assertions = true

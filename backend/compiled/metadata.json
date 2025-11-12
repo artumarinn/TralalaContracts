@@ -1,0 +1,40 @@
+{
+  "version": "1.0.0",
+  "description": "Precompiled Tralalero Token Contract Templates",
+  "templates": [
+    {
+      "id": "token_basic",
+      "name": "Basic Token",
+      "description": "Simple token with transfer, mint, and burn capabilities",
+      "filename": "token_basic.wasm",
+      "size_bytes": 5120,
+      "features": [
+        "transfer",
+        "mint",
+        "burn",
+        "balance_query",
+        "total_supply"
+      ],
+      "compiled_at": "2025-11-12T11:07:00Z"
+    },
+    {
+      "id": "token_advanced",
+      "name": "Advanced Token",
+      "description": "Advanced token with pausable, access control, and enhanced error handling",
+      "filename": "token_advanced.wasm",
+      "size_bytes": 5939,
+      "features": [
+        "transfer",
+        "mint",
+        "burn",
+        "pause",
+        "unpause",
+        "balance_query",
+        "total_supply",
+        "admin_management"
+      ],
+      "compiled_at": "2025-11-12T11:07:00Z"
+    }
+  ],
+  "notes": "These are precompiled WASM binaries for fast contract deployment. No compilation required on request - templates return immediately as base64-encoded WASM."
+}

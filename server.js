@@ -14,6 +14,10 @@ const StellarSdk = require('@stellar/stellar-sdk');
 const app = express();
 const PORT = process.env.PORT || 3000;
 
+// Backend configuration for precompiled contracts
+const BACKEND_URL = process.env.BACKEND_URL || 'http://localhost:3001';
+const USE_BACKEND = process.env.USE_BACKEND !== 'false';
+
 // FORZAR TESTNET EXPLÍCITAMENTE
 const server = new StellarSdk.Horizon.Server('https://horizon-testnet.stellar.org');
 const networkPassphrase = StellarSdk.Networks.TESTNET;
@@ -21,6 +25,8 @@ const networkPassphrase = StellarSdk.Networks.TESTNET;
 // Verificar que estamos usando testnet
 console.log('🌐 Red configurada:', networkPassphrase);
 console.log('🔍 Server URL:', server.serverURL.toString());
+console.log('📦 Backend URL:', BACKEND_URL);
+console.log('🔌 Using precompiled backend:', USE_BACKEND);
 
 app.use(express.static(path.join(__dirname, 'public')));
 app.use(express.json());
@@ -262,7 +268,7 @@ app.get('/api/compilation-progress/:compilationId', (req, res) => {
 
 app.post('/api/build-smart-contract', async (req, res) => {
     try {
-        console.log('🔧 Construyendo smart contract avanzado...');
+        console.log('🔧 Compilando smart contract...');
         console.log('   Datos recibidos:', JSON.stringify(req.body, null, 2));
 
         const { code, amount, userAddress, contractData } = req.body;
@@ -270,6 +276,70 @@ app.post('/api/build-smart-contract', async (req, res) => {
         if (!contractData || !userAddress) {
             throw new Error('Se requieren contractData y userAddress');
         }
+
+        // If using precompiled backend, delegate to it
+        if (USE_BACKEND) {
+            console.log('📦 Delegating to precompiled backend:', BACKEND_URL);
+
+            // Determine template type based on features
+            const hasAdvancedFeatures = contractData.features?.pausable ||
+                                        contractData.features?.mintable ||
+                                        contractData.features?.burnable;
+            const templateType = hasAdvancedFeatures ? 'token_advanced' : 'token_basic';
+
+            console.log(`📋 Using template: ${templateType}`);
+
+            try {
+                // Call backend to get precompiled WASM
+                const backendResponse = await fetch(`${BACKEND_URL}/api/compile-contract`, {
+                    method: 'POST',
+                    headers: { 'Content-Type': 'application/json' },
+                    body: JSON.stringify({
+                        templateType: templateType,
+                        config: {
+                            name: contractData.name,
+                            symbol: contractData.symbol,
+                            decimals: contractData.decimals || 7,
+                            initialSupply: contractData.supply || contractData.initialSupply || 0
+                        }
+                    })
+                });
+
+                if (!backendResponse.ok) {
+                    const errorData = await backendResponse.json();
+                    throw new Error(`Backend error: ${errorData.error || backendResponse.statusText}`);
+                }
+
+                const backendData = await backendResponse.json();
+                console.log('✅ Got precompiled WASM from backend');
+                console.log(`📦 WASM size: ${backendData.wasmSize} bytes`);
+
+                // Return response to client with precompiled WASM
+                return res.json({
+                    success: true,
+                    message: 'Contrato compilado (precompilado)',
+                    contractId: backendData.contractId,
+                    contractName: backendData.templateType,
+                    wasmBase64: backendData.wasmBase64,
+                    wasmSize: backendData.wasmSize,
+                    compiledAt: backendData.compiledAt,
+                    templateType: backendData.templateType,
+                    isPrecompiled: true,
+                    progressUrl: `/api/compilation-progress/${backendData.contractId}`
+                });
+
+            } catch (backendError) {
+                console.error('❌ Backend error:', backendError);
+                return res.status(500).json({
+                    success: false,
+                    error: 'Error getting precompiled contract',
+                    details: backendError.message
+                });
+            }
+        }
+
+        // Fallback to original dynamic compilation if backend disabled
+        console.log('⚠️ Falling back to dynamic compilation (backend disabled)');
 
         // Generar ID único para este contrato
         const contractId = uuidv4();
@@ -346,6 +416,7 @@ app.post('/api/build-smart-contract', async (req, res) => {
         await fse.ensureDir(path.join(contractDir, 'src'));
 
         // Crear Cargo.toml más completo para características avanzadas
+        // Nota: Este cargo.toml heredará las dependencias y configuración del workspace
         const cargoToml = `[package]
 name = "${contractName}"
 version = "1.0.0"
@@ -354,35 +425,19 @@ authors = ["${userAddress}"]
 description = "Advanced token contract generated by Tralalero Contracts"
 license = "${templateData.license}"
 
-[workspace]
-
 [lib]
 crate-type = ["cdylib"]
 
 [dependencies]
-soroban-sdk = "21.0.0"
+soroban-sdk = { workspace = true }
 
 [dev-dependencies]
-soroban-sdk = { version = "21.0.0", features = ["testutils"] }
+soroban-sdk = { workspace = true, features = ["testutils"] }
 
 [features]
 default = []
 testutils = ["soroban-sdk/testutils"]
 ${hasAdvancedFeatures ? 'advanced = []' : ''}
-
-[profile.release]
-opt-level = "z"
-overflow-checks = true
-debug = 0
-strip = "symbols"
-debug-assertions = false
-panic = "abort"
-codegen-units = 1
-lto = true
-
-[profile.release-with-logs]
-inherits = "release"
-debug-assertions = true
 
 [[bin]]
 name = "deploy"
@@ -743,6 +798,7 @@ app.post('/api/build-smart-contract-blocking', async (req, res) => {
         await fse.ensureDir(path.join(contractDir, 'src'));
 
         // Crear Cargo.toml más completo para características avanzadas
+        // Nota: Este cargo.toml heredará las dependencias y configuración del workspace
         const cargoToml = `[package]
 name = "${contractName}"
 version = "1.0.0"
@@ -751,35 +807,19 @@ authors = ["${userAddress}"]
 description = "Advanced token contract generated by Tralalero Contracts"
 license = "${templateData.license}"
 
-[workspace]
-
 [lib]
 crate-type = ["cdylib"]
 
 [dependencies]
-soroban-sdk = "21.0.0"
+soroban-sdk = { workspace = true }
 
 [dev-dependencies]
-soroban-sdk = { version = "21.0.0", features = ["testutils"] }
+soroban-sdk = { workspace = true, features = ["testutils"] }
 
 [features]
 default = []
 testutils = ["soroban-sdk/testutils"]
 ${hasAdvancedFeatures ? 'advanced = []' : ''}
-
-[profile.release]
-opt-level = "z"
-overflow-checks = true
-debug = 0
-strip = "symbols"
-debug-assertions = false
-panic = "abort"
-codegen-units = 1
-lto = true
-
-[profile.release-with-logs]
-inherits = "release"
-debug-assertions = true
 
 [[bin]]
 name = "deploy"
@@ -984,14 +1024,14 @@ soroban-sdk = { version = "23.0.1", features = ["testutils"] }
 testutils = ["soroban-sdk/testutils"]
 
 [profile.release]
-opt-level = "z"
-overflow-checks = true
+opt-level = 2
+overflow-checks = false
 debug = 0
 strip = "symbols"
 debug-assertions = false
 panic = "abort"
-codegen-units = 1
-lto = true
+codegen-units = 256
+lto = "thin"
 
 [profile.release-with-logs]
 inherits = "release"
