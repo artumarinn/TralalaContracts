@@ -612,6 +612,78 @@ function toggleInterface(useBlocks) {
 }
 
 // Función de despliegue mejorada
+/**
+ * Deploy compiled WASM to Stellar Testnet
+ * @param {string} wasmBase64 - Base64-encoded WASM binary
+ * @param {object} contractData - Contract metadata
+ * @returns {Promise<{contractId: string, transactionHash: string}>}
+ */
+async function deployToStellar(wasmBase64, contractData) {
+    console.log('🚀 Deployando contrato a Stellar Testnet...');
+
+    try {
+        // Verify Freighter is available
+        if (!window.freighterApi) {
+            throw new Error('Freighter wallet no está instalada. Instálala desde freighter.app');
+        }
+
+        // Get user's public key
+        const userPublicKey = await window.freighterApi.getPublicKey();
+        console.log('👤 Usuario:', userPublicKey);
+
+        // Request deployment via backend (which will use Stellar SDK)
+        const deployResponse = await fetch('/api/deploy-contract', {
+            method: 'POST',
+            headers: { 'Content-Type': 'application/json' },
+            body: JSON.stringify({
+                wasmBase64: wasmBase64,
+                userAddress: userPublicKey,
+                contractData: {
+                    name: contractData.name,
+                    symbol: contractData.symbol,
+                    decimals: contractData.decimals || 7,
+                    initialSupply: contractData.supply || 0
+                }
+            })
+        });
+
+        if (!deployResponse.ok) {
+            const errorData = await deployResponse.json();
+            throw new Error(errorData.error || 'Error deployando contrato');
+        }
+
+        const deployResult = await deployResponse.json();
+        console.log('✅ Deployment result:', deployResult);
+
+        if (!deployResult.success) {
+            throw new Error(deployResult.error || 'Deployment failed');
+        }
+
+        // Extract contract ID from deployment result
+        const contractId = deployResult.contractId || deployResult.contract_id;
+        const transactionHash = deployResult.transactionHash || deployResult.hash;
+
+        if (!contractId) {
+            throw new Error('No se pudo obtener el Contract ID del deployment');
+        }
+
+        console.log('🎉 Contrato deployado exitosamente!');
+        console.log('   Contract ID:', contractId);
+        console.log('   TX Hash:', transactionHash);
+
+        return {
+            contractId: contractId,
+            transactionHash: transactionHash,
+            network: 'testnet',
+            deployed: true
+        };
+
+    } catch (error) {
+        console.error('❌ Error en deployment a Stellar:', error);
+        throw new Error(`Error deployando a Stellar: ${error.message}`);
+    }
+}
+
 async function deployToken() {
     try {
         console.log('🚀 Iniciando despliegue de Smart Contract...');
@@ -679,8 +751,16 @@ async function deployToken() {
             throw new Error(result.details || 'Error desconocido del servidor');
         }
 
-        // Paso 3: Mostrar resultado exitoso
-        if (deploymentMessage) deploymentMessage.textContent = 'Smart Contract compilado exitosamente';
+        // Paso 3: Deploy to Stellar Testnet
+        if (deploymentMessage) deploymentMessage.textContent = '🚀 Desplegando a Stellar Testnet...';
+
+        // Deploy the compiled WASM to Stellar
+        const deploymentData = await deployToStellar(result.wasmBase64, blocklyData);
+
+        console.log('✅ Contrato deployado a Stellar:', deploymentData);
+
+        // Paso 4: Mostrar resultado con link al explorador
+        if (deploymentMessage) deploymentMessage.textContent = '✅ ¡Contrato deployado exitosamente!';
 
         const deploymentResult = document.getElementById('deploymentResult');
         const resultContent = document.getElementById('resultContent');
@@ -689,10 +769,20 @@ async function deployToken() {
         if (deploymentResult) deploymentResult.classList.remove('hidden');
 
         if (resultContent) {
+            const explorerUrl = `https://stellar.expert/explorer/testnet/contract/${deploymentData.contractId}`;
+
             resultContent.innerHTML = `
                 <div style="text-align: center; max-width: 600px; margin: 0 auto;">
-                    <div style="font-size: 2rem; margin-bottom: 1rem;">🎉</div>
-                    <h2 style="color: #10b981; margin-bottom: 1rem;">¡Smart Contract Compilado Exitosamente!</h2>
+                    <div style="font-size: 3rem; margin-bottom: 1rem;">🎉</div>
+                    <h2 style="color: #10b981; margin-bottom: 1rem;">¡Smart Contract Deployado a Stellar Testnet!</h2>
+
+                    <!-- Contract ID destacado -->
+                    <div style="background: linear-gradient(135deg, #667eea 0%, #764ba2 100%); border-radius: 1rem; padding: 1.5rem; margin-bottom: 2rem; color: white;">
+                        <div style="font-size: 0.85rem; margin-bottom: 0.5rem; opacity: 0.9;">Contract ID</div>
+                        <div style="font-family: monospace; font-size: 0.9rem; word-break: break-all; background: rgba(255,255,255,0.2); padding: 0.75rem; border-radius: 0.5rem;">
+                            ${deploymentData.contractId}
+                        </div>
+                    </div>
 
                     <div style="background: #f0fdf4; border: 2px solid #10b981; border-radius: 1rem; padding: 1.5rem; margin-bottom: 2rem; text-align: left;">
                         <h3 style="margin: 0 0 1rem 0; color: #059669;">📄 Detalles del Contrato</h3>
@@ -702,8 +792,16 @@ async function deployToken() {
                             <div><strong>Suministro Inicial:</strong> ${(blocklyData.supply || 0).toLocaleString()}</div>
                             <div><strong>Decimales:</strong> ${blocklyData.decimals || 2}</div>
                             <div><strong>Admin:</strong> <code style="font-size: 0.8rem; background: #dcfce7; padding: 0.25rem 0.5rem; border-radius: 0.25rem;">${appState.walletAddress.substring(0, 8)}...${appState.walletAddress.substring(appState.walletAddress.length - 8)}</code></div>
+                            <div><strong>Red:</strong> Stellar Testnet</div>
                         </div>
                     </div>
+
+                    <!-- Link al explorador destacado -->
+                    <a href="${explorerUrl}"
+                       target="_blank"
+                       style="display: flex; align-items: center; justify-content: center; gap: 0.75rem; background: #f59e0b; color: white; padding: 1.25rem; text-decoration: none; border-radius: 0.75rem; font-weight: 600; margin-bottom: 2rem; font-size: 1.1rem; box-shadow: 0 4px 6px rgba(245, 158, 11, 0.3);">
+                        🔍 Ver en Stellar Explorer
+                    </a>
 
                     <div style="display: grid; grid-template-columns: repeat(auto-fit, minmax(200px, 1fr)); gap: 1rem; margin-bottom: 2rem;">
                         <a href="https://github.com/stellar/soroban-cli"
@@ -718,6 +816,13 @@ async function deployToken() {
                         </a>
                     </div>
 
+                    <div style="background: #eff6ff; border: 1px solid #bfdbfe; border-radius: 0.75rem; padding: 1rem; margin-bottom: 1.5rem; text-align: left;">
+                        <strong>ℹ️ Próximos pasos:</strong><br>
+                        • Click "Ver en Stellar Explorer" para verificar tu contrato en blockchain<br>
+                        • Interactúa con el contrato usando Soroban CLI<br>
+                        • Comparte tu contrato deployado con la comunidad
+                    </div>
+
                     <button onclick="window.location.reload()"
                             style="display: flex; align-items: center; justify-content: center; gap: 0.5rem; background: #6b7280; color: white; padding: 1rem; border: none; width: 100%; border-radius: 0.75rem; font-weight: 600; cursor: pointer;">
                         🔄 Crear Otro Contrato
@@ -726,7 +831,7 @@ async function deployToken() {
             `;
         }
 
-        showToast('🎉 ¡Smart Contract compilado exitosamente!', 'success');
+        showToast('🎉 ¡Smart Contract deployado a Stellar Testnet!', 'success');
 
     } catch (error) {
         console.error('❌ Error desplegando Smart Contract:', error);

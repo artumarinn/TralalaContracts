@@ -1,0 +1,513 @@
+#![no_std]
+//! {{token_name}} Token Contract
+//! Stellar Soroban Smart Contract
+//!
+//! Version: 2.0
+//! Type: Simple Token (Essential Features)
+//!
+//! Features:
+//! - Token metadata (name, symbol, decimals, supply)
+//! - Balance tracking and queries
+//! - Peer-to-peer transfers
+//! {{#if mint_enabled}}- Minting (admin only){{/if}}
+//! {{#if burn_enabled}}- Burning (token holder enabled){{/if}}
+//! {{#if pausable_enabled}}- Emergency pause mechanism (admin only){{/if}}
+//!
+//! This contract provides a solid foundation for a Stellar token with
+//! essential features and clean, maintainable code.
+
+use soroban_sdk::{
+    contract,
+    contractimpl,
+    Address,
+    Env,
+    String,
+    Symbol,
+    symbol_short,
+};
+
+// ============================================
+// STORAGE KEYS - Contract State Management
+// ============================================
+// All keys use 4-character codes for efficiency in Soroban
+
+/// Administrator address - has exclusive access to privileged functions
+const ADMIN_KEY: Symbol = symbol_short!("ADM");
+
+/// Token display name (e.g., "USD Coin")
+const NAME_KEY: Symbol = symbol_short!("NAME");
+
+/// Token trading symbol (e.g., "USDC")
+const SYMBOL_KEY: Symbol = symbol_short!("SYM");
+
+/// Decimal precision for token amounts (0-18, typically 6-8)
+const DECIMALS_KEY: Symbol = symbol_short!("DEC");
+
+/// Total token supply (can increase with minting or decrease with burning)
+const SUPPLY_KEY: Symbol = symbol_short!("SUPP");
+
+/// Individual account balances (persistent storage)
+const BALANCE_KEY: Symbol = symbol_short!("BAL");
+
+{{#if pausable_enabled}}
+/// Pause state - when true, no transfers allowed (admin controlled)
+const PAUSED_KEY: Symbol = symbol_short!("PAUSED");
+{{/if}}
+
+// ============================================
+// ERROR CODES - Contract Error Handling
+// ============================================
+// Meaningful error codes for debugging and user feedback
+
+#[derive(Clone, Debug, Copy, Eq, PartialEq, PartialOrd, Ord)]
+#[repr(u32)]
+pub enum TokenError {
+    /// Contract has already been initialized
+    AlreadyInitialized = 1,
+
+    /// Caller is not authorized for this operation
+    Unauthorized = 2,
+
+    /// Insufficient balance for transfer/burn operation
+    InsufficientBalance = 3,
+
+    /// Contract is paused, transfers not allowed
+    ContractPaused = 4,
+
+    /// Invalid amount (zero or negative)
+    InvalidAmount = 5,
+}
+
+// ============================================
+// CONTRACT STRUCT & IMPLEMENTATION
+// ============================================
+
+/// {{token_name}} Token Contract
+///
+/// This contract implements a standardized token on Stellar Soroban.
+/// All accounts start with zero balance unless they receive tokens.
+#[contract]
+pub struct {{contract_name}}Contract;
+
+#[contractimpl]
+impl {{contract_name}}Contract {
+    // ========================================
+    // INITIALIZATION
+    // ========================================
+
+    /// Initialize the token contract with metadata
+    ///
+    /// Must be called exactly once before any other contract function.
+    /// Sets up the token's metadata and allocates the initial supply.
+    ///
+    /// # Arguments
+    /// * `env` - Soroban environment context
+    /// * `admin` - Administrator address (will have privileged access)
+    /// * `name` - Token display name (e.g., "MyToken")
+    /// * `symbol` - Trading symbol (must be 1-12 characters)
+    /// * `decimals` - Decimal precision (0-18, standard is 6-8)
+    /// * `initial_supply` - Total tokens created at deployment
+    ///
+    /// # Returns
+    /// `Ok(())` if initialization succeeds
+    /// `Err(TokenError::AlreadyInitialized)` if called more than once
+    ///
+    /// # Security Notes
+    /// - This operation is idempotent (safe to check before calling)
+    /// - Initial supply is allocated to the admin account
+    /// - Admin address cannot be changed after initialization
+    pub fn initialize(
+        env: Env,
+        admin: Address,
+        name: String,
+        symbol: String,
+        decimals: u32,
+        initial_supply: i128,
+    ) -> Result<(), TokenError> {
+        // Verify contract is not already initialized
+        if env.storage().instance().has(&ADMIN_KEY) {
+            return Err(TokenError::AlreadyInitialized);
+        }
+
+        // Store token metadata in instance storage (immutable after init)
+        env.storage().instance().set(&ADMIN_KEY, &admin);
+        env.storage().instance().set(&NAME_KEY, &name);
+        env.storage().instance().set(&SYMBOL_KEY, &symbol);
+        env.storage().instance().set(&DECIMALS_KEY, &decimals);
+        env.storage().instance().set(&SUPPLY_KEY, &initial_supply);
+
+        {{#if pausable_enabled}}
+        // Initialize pause state as "not paused"
+        env.storage().instance().set(&PAUSED_KEY, &false);
+        {{/if}}
+
+        // Allocate initial supply to admin account
+        if initial_supply > 0 {
+            env.storage()
+                .persistent()
+                .set(&(BALANCE_KEY, &admin), &initial_supply);
+        }
+
+        Ok(())
+    }
+
+    // ========================================
+    // TOKEN METADATA QUERIES (Read-Only)
+    // ========================================
+
+    /// Get the token's display name
+    ///
+    /// # Example
+    /// Returns: "USD Coin"
+    pub fn name(env: Env) -> Result<String, TokenError> {
+        env.storage()
+            .instance()
+            .get(&NAME_KEY)
+            .ok_or(TokenError::Unauthorized)
+    }
+
+    /// Get the token's trading symbol
+    ///
+    /// # Example
+    /// Returns: "USDC"
+    pub fn symbol(env: Env) -> Result<String, TokenError> {
+        env.storage()
+            .instance()
+            .get(&SYMBOL_KEY)
+            .ok_or(TokenError::Unauthorized)
+    }
+
+    /// Get the token's decimal precision
+    ///
+    /// # Example
+    /// If decimals = 6, then 1,000,000 units = 1.0 token
+    pub fn decimals(env: Env) -> Result<u32, TokenError> {
+        env.storage()
+            .instance()
+            .get(&DECIMALS_KEY)
+            .ok_or(TokenError::Unauthorized)
+    }
+
+    /// Get total token supply
+    ///
+    /// Returns the total number of tokens in existence.
+    /// Increases when minting, decreases when burning.
+    pub fn total_supply(env: Env) -> Result<i128, TokenError> {
+        Ok(env.storage()
+            .instance()
+            .get(&SUPPLY_KEY)
+            .unwrap_or(0))
+    }
+
+    // ========================================
+    // BALANCE MANAGEMENT
+    // ========================================
+
+    /// Query the balance of an account
+    ///
+    /// # Arguments
+    /// * `id` - Account address to query
+    ///
+    /// # Returns
+    /// Token balance (0 if account has no tokens)
+    ///
+    /// # Notes
+    /// - This is a read-only query, no authentication required
+    /// - Accounts start with 0 balance
+    pub fn balance(env: Env, id: Address) -> Result<i128, TokenError> {
+        Ok(env.storage()
+            .persistent()
+            .get(&(BALANCE_KEY, &id))
+            .unwrap_or(0))
+    }
+
+    // ========================================
+    // TRANSFER OPERATIONS
+    // ========================================
+
+    /// Transfer tokens from one account to another
+    ///
+    /// # Arguments
+    /// * `from` - Sender account (must authorize this transaction)
+    /// * `to` - Recipient account
+    /// * `amount` - Number of tokens to transfer (must be > 0)
+    ///
+    /// # Returns
+    /// `Ok(())` if transfer succeeds
+    /// `Err(TokenError::InsufficientBalance)` if sender lacks balance
+    /// `Err(TokenError::ContractPaused)` if contract is paused
+    /// `Err(TokenError::InvalidAmount)` if amount <= 0
+    ///
+    /// # Security
+    /// - Sender must authorize the transaction (via Freighter)
+    /// - Atomic operation: either fully succeeds or fully fails
+    /// - Respects pause state if enabled
+    pub fn transfer(
+        env: Env,
+        from: Address,
+        to: Address,
+        amount: i128,
+    ) -> Result<(), TokenError> {
+        {{#if pausable_enabled}}
+        // Check if contract is paused
+        let paused = env.storage()
+            .instance()
+            .get::<_, bool>(&PAUSED_KEY)
+            .unwrap_or(false);
+        if paused {
+            return Err(TokenError::ContractPaused);
+        }
+        {{/if}}
+
+        // Require authorization from sender
+        from.require_auth();
+
+        // Validate transfer amount
+        if amount <= 0 {
+            return Err(TokenError::InvalidAmount);
+        }
+
+        // Get sender's current balance
+        let from_balance: i128 = env.storage()
+            .persistent()
+            .get(&(BALANCE_KEY, &from))
+            .unwrap_or(0);
+
+        // Verify sufficient balance
+        if from_balance < amount {
+            return Err(TokenError::InsufficientBalance);
+        }
+
+        // Get recipient's current balance
+        let to_balance: i128 = env.storage()
+            .persistent()
+            .get(&(BALANCE_KEY, &to))
+            .unwrap_or(0);
+
+        // Update balances atomically
+        env.storage()
+            .persistent()
+            .set(&(BALANCE_KEY, &from), &(from_balance - amount));
+        env.storage()
+            .persistent()
+            .set(&(BALANCE_KEY, &to), &(to_balance + amount));
+
+        Ok(())
+    }
+
+    {{#if mint_enabled}}
+    // ========================================
+    // MINTING (Admin Only)
+    // ========================================
+
+    /// Mint new tokens (admin only)
+    ///
+    /// Creates new tokens and allocates them to the specified account.
+    /// Only the admin can call this function.
+    ///
+    /// # Arguments
+    /// * `to` - Recipient of newly minted tokens
+    /// * `amount` - Number of tokens to create (must be > 0)
+    ///
+    /// # Returns
+    /// `Ok(())` if minting succeeds
+    /// `Err(TokenError::Unauthorized)` if caller is not admin
+    /// `Err(TokenError::InvalidAmount)` if amount <= 0
+    /// `Err(TokenError::ContractPaused)` if contract is paused
+    ///
+    /// # Effects
+    /// - Increases balance of recipient account
+    /// - Increases total supply
+    /// - No upper limit on total supply
+    pub fn mint(env: Env, to: Address, amount: i128) -> Result<(), TokenError> {
+        // Verify admin authorization
+        let admin: Address = env.storage()
+            .instance()
+            .get(&ADMIN_KEY)
+            .ok_or(TokenError::Unauthorized)?;
+        admin.require_auth();
+
+        {{#if pausable_enabled}}
+        // Check if contract is paused
+        let paused = env.storage()
+            .instance()
+            .get::<_, bool>(&PAUSED_KEY)
+            .unwrap_or(false);
+        if paused {
+            return Err(TokenError::ContractPaused);
+        }
+        {{/if}}
+
+        // Validate mint amount
+        if amount <= 0 {
+            return Err(TokenError::InvalidAmount);
+        }
+
+        // Get current state
+        let current_balance: i128 = env.storage()
+            .persistent()
+            .get(&(BALANCE_KEY, &to))
+            .unwrap_or(0);
+        let current_supply: i128 = env.storage()
+            .instance()
+            .get(&SUPPLY_KEY)
+            .unwrap_or(0);
+
+        // Update state atomically
+        env.storage()
+            .persistent()
+            .set(&(BALANCE_KEY, &to), &(current_balance + amount));
+        env.storage()
+            .instance()
+            .set(&SUPPLY_KEY, &(current_supply + amount));
+
+        Ok(())
+    }
+    {{/if}}
+
+    {{#if burn_enabled}}
+    // ========================================
+    // BURNING (Token Holder Enabled)
+    // ========================================
+
+    /// Burn tokens (destroy and remove from circulation)
+    ///
+    /// Permanently removes tokens from the account holder's balance
+    /// and decreases total supply. This operation is irreversible.
+    ///
+    /// # Arguments
+    /// * `from` - Account to burn tokens from (must authorize)
+    /// * `amount` - Number of tokens to destroy (must be > 0)
+    ///
+    /// # Returns
+    /// `Ok(())` if burn succeeds
+    /// `Err(TokenError::InsufficientBalance)` if account lacks balance
+    /// `Err(TokenError::InvalidAmount)` if amount <= 0
+    /// `Err(TokenError::ContractPaused)` if contract is paused
+    ///
+    /// # Security
+    /// - Account holder must authorize transaction
+    /// - Irreversible operation (cannot be undone)
+    /// - Respects pause state if enabled
+    pub fn burn(env: Env, from: Address, amount: i128) -> Result<(), TokenError> {
+        {{#if pausable_enabled}}
+        // Check if contract is paused
+        let paused = env.storage()
+            .instance()
+            .get::<_, bool>(&PAUSED_KEY)
+            .unwrap_or(false);
+        if paused {
+            return Err(TokenError::ContractPaused);
+        }
+        {{/if}}
+
+        // Require authorization from account holder
+        from.require_auth();
+
+        // Validate burn amount
+        if amount <= 0 {
+            return Err(TokenError::InvalidAmount);
+        }
+
+        // Get current state
+        let current_balance: i128 = env.storage()
+            .persistent()
+            .get(&(BALANCE_KEY, &from))
+            .unwrap_or(0);
+
+        // Verify sufficient balance
+        if current_balance < amount {
+            return Err(TokenError::InsufficientBalance);
+        }
+
+        let current_supply: i128 = env.storage()
+            .instance()
+            .get(&SUPPLY_KEY)
+            .unwrap_or(0);
+
+        // Update state atomically
+        env.storage()
+            .persistent()
+            .set(&(BALANCE_KEY, &from), &(current_balance - amount));
+        env.storage()
+            .instance()
+            .set(&SUPPLY_KEY, &(current_supply - amount));
+
+        Ok(())
+    }
+    {{/if}}
+
+    {{#if pausable_enabled}}
+    // ========================================
+    // PAUSE CONTROLS (Admin Only - Emergency)
+    // ========================================
+
+    /// Pause all token transfers (admin only)
+    ///
+    /// Emergency function to freeze all token transfers.
+    /// When paused, no one (including the admin) can transfer, mint, or burn tokens.
+    ///
+    /// Use cases:
+    /// - Security incident response
+    /// - System maintenance
+    /// - Regulatory compliance
+    /// - Bug fix deployment
+    ///
+    /// # Security
+    /// - Only admin can call
+    /// - Affects all operations including admin actions
+    /// - Intended for true emergencies only
+    pub fn pause(env: Env) -> Result<(), TokenError> {
+        let admin: Address = env.storage()
+            .instance()
+            .get(&ADMIN_KEY)
+            .ok_or(TokenError::Unauthorized)?;
+        admin.require_auth();
+
+        env.storage().instance().set(&PAUSED_KEY, &true);
+        Ok(())
+    }
+
+    /// Resume token transfers (admin only)
+    ///
+    /// Resumes normal contract operations after a pause.
+    /// All transfers, minting, and burning become active again.
+    pub fn unpause(env: Env) -> Result<(), TokenError> {
+        let admin: Address = env.storage()
+            .instance()
+            .get(&ADMIN_KEY)
+            .ok_or(TokenError::Unauthorized)?;
+        admin.require_auth();
+
+        env.storage().instance().set(&PAUSED_KEY, &false);
+        Ok(())
+    }
+
+    /// Check if contract is currently paused
+    ///
+    /// # Returns
+    /// `true` if transfers are frozen, `false` if active
+    pub fn is_paused(env: Env) -> Result<bool, TokenError> {
+        Ok(env.storage()
+            .instance()
+            .get::<_, bool>(&PAUSED_KEY)
+            .unwrap_or(false))
+    }
+    {{/if}}
+
+    // ========================================
+    // ADMIN UTILITIES
+    // ========================================
+
+    /// Get the contract administrator address
+    ///
+    /// The admin has exclusive access to:
+    /// {{#if mint_enabled}}- Minting new tokens{{/if}}
+    /// {{#if pausable_enabled}}- Pausing/unpausing transfers{{/if}}
+    pub fn admin(env: Env) -> Result<Address, TokenError> {
+        env.storage()
+            .instance()
+            .get(&ADMIN_KEY)
+            .ok_or(TokenError::Unauthorized)
+    }
+}
