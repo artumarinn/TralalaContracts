@@ -11,6 +11,15 @@ const execAsync = util.promisify(exec);
 // Reverting to original syntax with the NEW, CORRECT package name
 const StellarSdk = require('@stellar/stellar-sdk');
 
+// Import node-fetch for backend API calls (ESM module in CommonJS)
+// We'll lazy-load it since it's an ESM module
+let fetch;
+(async () => {
+    const nodeFetch = await import('node-fetch');
+    fetch = nodeFetch.default;
+    console.log('✅ node-fetch loaded');
+})();
+
 const app = express();
 const PORT = process.env.PORT || 3000;
 
@@ -29,7 +38,9 @@ console.log('📦 Backend URL:', BACKEND_URL);
 console.log('🔌 Using precompiled backend:', USE_BACKEND);
 
 app.use(express.static(path.join(__dirname, 'public')));
-app.use(express.json());
+// Increase body size limit for WASM base64 payloads (default is 100kb)
+// WASM files can be 5-10kb, which in base64 becomes ~7-14kb
+app.use(express.json({ limit: '10mb' }));
 
 app.post('/generate-code', async (req, res) => {
     try {
@@ -285,6 +296,19 @@ app.post('/api/build-smart-contract', async (req, res) => {
         // If using precompiled backend, delegate to it
         if (USE_BACKEND) {
             console.log('📦 Delegating to precompiled backend:', BACKEND_URL);
+
+            // Ensure fetch is loaded
+            if (!fetch) {
+                console.log('⏳ Waiting for fetch to load...');
+                await new Promise(resolve => {
+                    const checkFetch = setInterval(() => {
+                        if (fetch) {
+                            clearInterval(checkFetch);
+                            resolve();
+                        }
+                    }, 100);
+                });
+            }
 
             // Determine template type based on features
             const hasAdvancedFeatures = contractData.features?.pausable ||
@@ -1124,6 +1148,107 @@ debug-assertions = true`;
 
 // Endpoint para desplegar un smart contract
 app.post('/api/deploy-contract', async (req, res) => {
+    console.log('═══════════════════════════════════════');
+    console.log('🚀 DEPLOY ENDPOINT CALLED (FRONTEND SERVER - PROXYING TO BACKEND)');
+    console.log('═══════════════════════════════════════');
+    try {
+        console.log('📦 Proxying deploy request to backend:', BACKEND_URL);
+        console.log('   Request body keys:', Object.keys(req.body));
+        console.log('   wasmBase64 exists?', !!req.body.wasmBase64);
+        console.log('   wasmBase64 length:', req.body.wasmBase64?.length || 'MISSING');
+        console.log('   userAddress:', req.body.userAddress);
+        console.log('   contractData:', req.body.contractData);
+
+        // PROXY TO BACKEND: Forward the entire request to the backend
+        // Ensure fetch is loaded (already imported at top, but double-check)
+        if (!fetch) {
+            console.log('⏳ Waiting for fetch to load...');
+            await new Promise(resolve => {
+                const checkFetch = setInterval(() => {
+                    if (fetch) {
+                        clearInterval(checkFetch);
+                        resolve();
+                    }
+                }, 100);
+            });
+        }
+
+        const backendResponse = await fetch(`${BACKEND_URL}/api/deploy-contract`, {
+            method: 'POST',
+            headers: {
+                'Content-Type': 'application/json',
+            },
+            body: JSON.stringify(req.body)
+        });
+
+        if (!backendResponse.ok) {
+            const errorText = await backendResponse.text();
+            console.error('❌ Backend error:', errorText);
+            return res.status(backendResponse.status).json({
+                success: false,
+                error: errorText
+            });
+        }
+
+        const backendResult = await backendResponse.json();
+        console.log('✅ Backend response received');
+        console.log('   Has uploadTransactionXDR?', !!backendResult.uploadTransactionXDR);
+        console.log('   Has createTransactionXDR?', !!backendResult.createTransactionXDR);
+
+        // Forward backend response to frontend
+        return res.json(backendResult);
+
+    } catch (error) {
+        console.error('❌ Error proxying to backend:', error);
+        res.status(500).json({
+            success: false,
+            error: error.message || 'Internal server error'
+        });
+    }
+});
+
+/**
+ * POST /api/prepare-create-contract
+ *
+ * Proxy endpoint to prepare CREATE CONTRACT transaction after WASM upload
+ * Forwards request to backend server
+ */
+app.post('/api/prepare-create-contract', async (req, res) => {
+    try {
+        console.log('🔧 Proxying prepare-create-contract request to backend:', BACKEND_URL);
+        console.log('   Request body:', JSON.stringify(req.body, null, 2));
+
+        const backendResponse = await fetch(`${BACKEND_URL}/api/prepare-create-contract`, {
+            method: 'POST',
+            headers: {
+                'Content-Type': 'application/json'
+            },
+            body: JSON.stringify(req.body)
+        });
+
+        const responseData = await backendResponse.json();
+
+        console.log('✅ Backend prepare-create-contract response received');
+        console.log('   Success:', responseData.success);
+
+        // Forward backend response to frontend
+        res.status(backendResponse.status).json(responseData);
+
+    } catch (error) {
+        console.error('❌ Error proxying prepare-create-contract to backend:', error);
+        res.status(500).json({
+            success: false,
+            error: error.message || 'Internal server error proxying to backend'
+        });
+    }
+});
+
+// OLD IMPLEMENTATION - COMMENTED OUT FOR REFERENCE
+// Keep this as fallback if backend is not available
+app.post('/api/deploy-contract-old', async (req, res) => {
+    console.log('═══════════════════════════════════════');
+    console.log('🚀 DEPLOY ENDPOINT CALLED (OLD IMPLEMENTATION)');
+    console.log('═══════════════════════════════════════');
     try {
         console.log('🚀 Desplegando smart contract...');
         console.log('   Datos recibidos:', JSON.stringify(req.body, null, 2));
@@ -1141,16 +1266,24 @@ app.post('/api/deploy-contract', async (req, res) => {
 
                 // Deploy to Stellar Testnet
                 const network = networkPassphrase || StellarSdk.Networks.TESTNET;
-                const server = new StellarSdk.Horizon.Server('https://horizon-testnet.stellar.org');
 
-                console.log('📤 Desplegando a Stellar Testnet...');
+                // Compatibility layer: v14.x may use 'rpc' instead of 'SorobanRpc'
+                const SorobanRpc = StellarSdk.rpc || StellarSdk.SorobanRpc;
+                if (!SorobanRpc || !SorobanRpc.Server) {
+                    throw new Error('SorobanRpc.Server not available in current SDK version');
+                }
+
+                // IMPORTANT: Use Soroban RPC server for smart contract operations, NOT Horizon
+                const server = new SorobanRpc.Server('https://soroban-testnet.stellar.org');
+
+                console.log('📤 Desplegando a Stellar Testnet usando Soroban RPC...');
 
                 // Load user account
-                const sourceAccount = await server.loadAccount(userAddress);
+                const sourceAccount = await server.getAccount(userAddress);
 
                 // Upload contract WASM
-                const uploadTransaction = new StellarSdk.TransactionBuilder(sourceAccount, {
-                    fee: (100000).toString(), // Higher fee for contract deployment
+                let uploadTransaction = new StellarSdk.TransactionBuilder(sourceAccount, {
+                    fee: StellarSdk.BASE_FEE, // Will be adjusted by prepareTransaction
                     networkPassphrase: network,
                 })
                     .addOperation(StellarSdk.Operation.uploadContractWasm({
@@ -1159,15 +1292,23 @@ app.post('/api/deploy-contract', async (req, res) => {
                     .setTimeout(300) // 5 minutes
                     .build();
 
+                // CRITICAL: prepareTransaction() simulates and adds Soroban resource metadata
+                console.log('🔧 Preparing upload transaction (simulating and calculating resources)...');
+                uploadTransaction = await server.prepareTransaction(uploadTransaction);
+
                 // Get the hash of the uploaded WASM (this will be the contract code ID)
                 const wasmHash = StellarSdk.hash(wasmBuffer);
                 const wasmId = StellarSdk.StrKey.encodeContract(wasmHash);
 
                 console.log('✅ WASM Hash/ID:', wasmId);
 
+                // IMPORTANT: Increment sequence number for second transaction
+                // Both transactions use the same account, so they need different sequence numbers
+                sourceAccount.incrementSequenceNumber();
+
                 // Create the contract from uploaded WASM
-                const createContractTransaction = new StellarSdk.TransactionBuilder(sourceAccount, {
-                    fee: (100000).toString(),
+                let createContractTransaction = new StellarSdk.TransactionBuilder(sourceAccount, {
+                    fee: StellarSdk.BASE_FEE, // Will be adjusted by prepareTransaction
                     networkPassphrase: network,
                 })
                     .addOperation(StellarSdk.Operation.createCustomContract({
@@ -1176,6 +1317,10 @@ app.post('/api/deploy-contract', async (req, res) => {
                     }))
                     .setTimeout(300)
                     .build();
+
+                // CRITICAL: prepareTransaction() for the second transaction too
+                console.log('🔧 Preparing create contract transaction (simulating and calculating resources)...');
+                createContractTransaction = await server.prepareTransaction(createContractTransaction);
 
                 // NOTE: In production, these transactions should be signed by Freighter
                 // For now, we return the XDR for the user to sign
@@ -1235,7 +1380,15 @@ app.post('/api/deploy-contract', async (req, res) => {
 
         // Configurar red (testnet por defecto)
         const network = networkPassphrase || StellarSdk.Networks.TESTNET;
-        const server = new StellarSdk.Horizon.Server('https://horizon-testnet.stellar.org');
+
+        // Compatibility layer: v14.x may use 'rpc' instead of 'SorobanRpc'
+        const SorobanRpc = StellarSdk.rpc || StellarSdk.SorobanRpc;
+        if (!SorobanRpc || !SorobanRpc.Server) {
+            throw new Error('SorobanRpc.Server not available in current SDK version');
+        }
+
+        // Use Soroban RPC for contract operations
+        const server = new SorobanRpc.Server('https://soroban-testnet.stellar.org');
 
         console.log('📤 Desplegando contrato a red:', network);
 
@@ -1247,7 +1400,7 @@ app.post('/api/deploy-contract', async (req, res) => {
         const sourceKeypair = StellarSdk.Keypair.fromPublicKey(userAddress);
 
         // Cargar cuenta del usuario
-        const sourceAccount = await server.loadAccount(userAddress);
+        const sourceAccount = await server.getAccount(userAddress);
 
         // Construir transacción de deploy
         const deployTransaction = new StellarSdk.TransactionBuilder(sourceAccount, {

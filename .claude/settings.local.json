@@ -10,7 +10,9 @@
       "mcp__deepwiki__read_wiki_structure",
       "WebFetch(domain:github.com)",
       "WebFetch(domain:raw.githubusercontent.com)",
-      "WebFetch(domain:api.github.com)"
+      "WebFetch(domain:api.github.com)",
+      "WebSearch",
+      "WebFetch(domain:developers.stellar.org)"
     ],
     "deny": [],
     "ask": []

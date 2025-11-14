@@ -526,9 +526,19 @@
     </div>
 
     <!-- Scripts -->
-    <script src="https://cdn.jsdelivr.net/npm/@stellar/stellar-sdk@11.3.0/dist/stellar-sdk.min.js"></script>
+    <script src="https://cdn.jsdelivr.net/npm/@stellar/stellar-sdk@14.3.0/dist/stellar-sdk.min.js"></script>
     <script src="https://cdn.jsdelivr.net/npm/@stellar/freighter-api@1.7.0/build/index.min.js"></script>
     <script>
+        // Verify SDK loaded correctly (v14.3.0 - Protocol 24 support)
+        if (typeof StellarSdk !== 'undefined') {
+            console.log('✅ Stellar SDK v14.3.0 loaded (contract-interface)');
+            console.log('🔍 Available exports:', Object.keys(StellarSdk));
+            console.log('🔧 SorobanRpc.Server:', !!StellarSdk.SorobanRpc?.Server);
+            console.log('🔧 rpc.Server:', !!StellarSdk.rpc?.Server);
+        } else {
+            console.error('❌ Stellar SDK failed to load');
+        }
+
         // Estado global
         const state = {
             contractAddress: null,

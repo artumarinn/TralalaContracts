@@ -1,7 +1,7 @@
 # CLAUDE.md - Tralalero Contracts Development Guide
 
-**Last Updated:** 2025-11-12 (Hackathon Session 2)
-**Status:** ✅ Precompiled Architecture Ready
+**Last Updated:** 2025-11-14 (Session 3 - SDK Compatibility Fix)
+**Status:** 🔴 CRITICAL - XDR Version Mismatch (Deployment Blocked)
 
 This file provides guidance to Claude Code when working with this repository.
 
@@ -142,7 +142,7 @@ NEW (Precompiled):
 |-------|-----------|-------|
 | **Backend** | Express.js (Node.js) | Handles API requests and contract generation |
 | **Frontend** | Vanilla JavaScript + Blockly | Visual block-based contract editor |
-| **Blockchain** | Stellar SDK 11.3.0 | Transaction building and Horizon API |
+| **Blockchain** | Stellar SDK 12.3.0 | Transaction building and Soroban RPC API |
 | **Smart Contracts** | Rust + Soroban SDK 23.0.1 | Contract implementation compiled to WASM |
 | **Templating** | Handlebars | Blockly config → Rust code generation |
 | **Wallet Integration** | Freighter/xBull | User authentication and transaction signing |
@@ -467,37 +467,45 @@ cat target/debug/build/*/output  # Check build output
    - Created `TEMPLATE_IMPROVEMENTS_V2.md` - Template quality metrics
    - Updated `CLAUDE.md` - This file with current state
 
-### ⚠️ Known Issues / TODO
+### 🔴 CRITICAL ISSUE - Stellar SDK Version Mismatch
 
-#### Issue: Local Testing Gets Stuck
-**Status:** ⚠️ Needs Investigation
-- Frontend in 3002 gets stuck after compilation
-- Backend logs show WASM retrieved successfully
-- Progress bar stays at 0%
-- Frontend doesn't call `/api/deploy-contract`
-- **Likely cause:** Frontend deployment logic not triggering OR backend response format mismatch
+#### Issue: XDR Parsing Error (Deployment Blocked)
+**Status:** 🔴 CRITICAL - Blocks all deployments to Stellar Testnet
+**Discovered:** 2025-11-14
+**Error:** `XDR Read Error: unknown SorobanAuthorizedFunctionType member for value 2`
+**Location:** `deployToStellar()` in `public/index.html:1935`
 
-**Fix Needed:**
-1. Verify frontend receives `{success: true, compiled: true}` response
-2. Check browser console for JavaScript errors
-3. Verify `/api/deploy-contract` endpoint is being called
-4. Add more console.log statements to trace execution
+**Root Cause:**
+- **Browser SDK:** v12.3.0 (loaded from CDN) → Supports Protocol ~21
+- **Stellar Testnet:** Protocol 24 (as of Oct 2025) → Uses newer XDR definitions
+- **Node.js SDK:** v14.3.2 (installed) → Supports Protocol 24 ✅
+- **Result:** Browser SDK cannot parse XDR responses from Soroban RPC
 
-#### Issue: Deployment Endpoint
-**Status:** ⚠️ Simulated (Not Production-Ready)
-- Current implementation returns simulated Contract ID
-- Does NOT actually sign with Freighter
-- Does NOT submit transaction to Stellar
-- For demo purposes only
+**What Works:**
+1. ✅ WASM upload to Stellar (succeeds)
+2. ✅ Account loading from Horizon (succeeds)
+3. ✅ Transaction building locally (succeeds)
+4. ❌ Transaction preparation via `server.prepareTransaction()` **FAILS**
+   - Soroban RPC returns XDR with Protocol 24 enum values
+   - SDK v12.3.0 doesn't recognize enum value `2`
+   - Parsing fails before transaction can be signed
 
-**For Production:**
-```javascript
-// Would need:
-1. Get unsigned XDR from backend
-2. Sign with Freighter: freighterApi.signTransaction(xdr)
-3. Submit to Stellar: server.submitTransaction(signedTx)
-4. Get real contractId from result
-```
+**Impact:**
+- **Compilation:** ✅ Works (precompiled WASM)
+- **Deployment:** ❌ Completely blocked
+- **User Experience:** Can build contracts but cannot deploy to blockchain
+
+**Solution Required:**
+See `STELLAR_SDK_ANALYSIS_AND_PLAN.md` for comprehensive analysis and 3 implementation options:
+- **Option A (Recommended):** Use local SDK v14.3.2 from node_modules
+- **Option B:** Upgrade CDN to v14.3.0 (official recommendation)
+- **Option C:** Raw JSON-RPC workaround (complex, not recommended)
+
+**Files Affected:**
+- `public/index.html:340` - CDN script tag (v12.3.0)
+- `public/contract-interface.html:529` - CDN script tag (v12.3.0)
+- `package.json:22` - Node.js dependency (v14.3.2) ✅
+- `backend/package.json:22` - Backend dependency (v14.3.2) ✅
 
 ### 📊 Metrics Achieved
 
@@ -509,62 +517,124 @@ cat target/debug/build/*/output  # Check build output
 | Blockly UI | Intuitive | ✅ Comprehensive docs |
 | User verification | Easy | ✅ 1-click Explorer link |
 
-### 🎯 For Next Session
+### 🎯 Next Steps - URGENT SDK Fix Required
 
-**Priority 1 - Fix Local Testing:**
-1. Add debugging to deployToStellar() function
-2. Trace frontend request/response
-3. Verify backend returns correct format
-4. Test complete flow end-to-end
+**🔴 Priority 1 - Fix SDK Version Mismatch (BLOCKING):**
+1. **Review `STELLAR_SDK_ANALYSIS_AND_PLAN.md`** - Complete analysis of the problem
+2. **Choose implementation approach:**
+   - Option A: Serve local SDK v14.3.2 from node_modules (recommended)
+   - Option B: Upgrade CDN to v14.3.0
+   - Option C: JSON-RPC workaround (not recommended)
+3. **Test SDK v14 browser compatibility:**
+   - Run `test-sdk-versions.html` to verify `SorobanRpc.Server` exists
+   - Check if structure changed (`StellarSdk.rpc` vs `StellarSdk.SorobanRpc`)
+4. **Implement chosen solution:**
+   - Update script tags in HTML files
+   - Adjust code if SDK exports changed
+   - Test deployment flow end-to-end
 
-**Priority 2 - Production Deployment:**
-1. Integrate Freighter signing properly
-2. Submit real transactions to Stellar
-3. Get real contract IDs back
-4. Add error handling for failures
+**🟡 Priority 2 - Verify Deployment Works:**
+1. Test WASM upload with new SDK
+2. Test transaction preparation (should not throw XDR error)
+3. Integrate Freighter signing properly
+4. Submit real transactions to Stellar Testnet
+5. Verify contracts appear on Stellar Explorer
 
-**Priority 3 - Enhanced Features (Optional):**
+**🟢 Priority 3 - Enhanced Features (After Fix):**
 1. Add more contract templates (NFT, Marketplace, Governance)
 2. Support multiple Stellar networks (Testnet, Public)
 3. Contract interaction UI
 4. Transaction history tracking
 
-### 📁 New Files Created This Session
-- `PRECOMPILED_FIX.md` - Architecture fixes
-- `DEPLOYMENT_FLOW_COMPLETE.md` - Deployment guide
-- `TEMPLATE_IMPROVEMENTS_V2.md` - Template metrics
+### 📁 Files Created/Modified - Session 3 (Nov 14, 2025)
+
+**New Files:**
+- `STELLAR_SDK_ANALYSIS_AND_PLAN.md` - Comprehensive SDK version analysis and migration plan
+- `test-sdk-versions.html` - Automated SDK version compatibility tester
+
+**Files Deleted:**
+- All temporary .md documentation files (33 files removed for clarity)
+- Kept only: `CLAUDE.md` and `STELLAR_SDK_ANALYSIS_AND_PLAN.md`
+
+**Files Modified:**
+- `public/index.html:340` - Temporarily changed SDK from v14.3.2 to v12.3.0 (investigating issue)
+- `CLAUDE.md` - Updated with critical SDK issue and migration plan
+
+### 📁 Session 2 Files (Nov 12, 2025)
 - `tralala/contracts/token-templates/simple_token_v2.hbs` - Pro template
 - `backend/` directory (separate backend service)
-
-### 📝 Files Modified This Session
 - `public/blockly-templates.js` - Professional block definitions (+220 lines)
 - `public/stepper-client.js` - Deployment flow (+140 lines)
 - `server.js` - Deploy endpoint improvements (+80 lines)
-- `CLAUDE.md` - This documentation
 
-### 🏁 Current Status
+### 🏁 Current Status (Nov 14, 2025)
 
 **What Works:**
-- ✅ Blockly visual contract builder
-- ✅ Fast WASM compilation (precompiled)
-- ✅ Professional block UI with docs
-- ✅ Contract ID generation
-- ✅ Stellar Explorer link generation
-- ✅ Backend/frontend separation
+- ✅ Blockly visual contract builder (professional UI)
+- ✅ Fast WASM compilation (precompiled templates <100ms)
+- ✅ Professional block definitions with comprehensive tooltips
+- ✅ Backend/frontend separation (ports 3001/3002)
+- ✅ Freighter wallet connection
+- ✅ Template selection (token_basic, token_advanced)
+- ✅ WASM upload to Stellar Testnet (succeeds)
+- ✅ Account loading from Horizon (succeeds)
+- ✅ Transaction building (succeeds)
 
-**What Needs Work:**
-- ⚠️ Local testing gets stuck after compilation
-- ⚠️ Deployment endpoint is simulated (not real Stellar)
-- ⚠️ Missing Freighter signing integration
-- ⚠️ Missing actual transaction submission
+**🔴 CRITICAL - NOT Working:**
+- ❌ **Deployment to Stellar:** COMPLETELY BLOCKED
+  - Error: `XDR Read Error: unknown SorobanAuthorizedFunctionType member for value 2`
+  - Cause: Browser SDK v12.3.0 incompatible with Protocol 24
+  - Impact: Users cannot deploy contracts to blockchain
+  - Fix: Upgrade to SDK v14.x (see STELLAR_SDK_ANALYSIS_AND_PLAN.md)
+
+**Deployment Progress (When Error Occurs):**
+```
+Step 1: WASM Upload       → ✅ SUCCESS (hash: 56a96e51...)
+Step 2: Account Load      → ✅ SUCCESS
+Step 3: Build Transaction → ✅ SUCCESS
+Step 4: Prepare Tx (RPC)  → ❌ FAILS HERE (XDR parsing error)
+Step 5: Sign with Wallet  → ❌ Never reached
+Step 6: Submit to Stellar → ❌ Never reached
+```
 
 **Ready for Hackathon Demo?**
-- ✅ **Visually:** Yes - looks professional
-- ✅ **Functionally:** Partial - compilation works, deployment simulated
-- ⚠️ **Verified on Blockchain:** No - contracts not actually deployed
+- ✅ **Visually:** Yes - looks professional and polished
+- ⚠️ **Functionally:** No - deployment completely broken
+- ❌ **Verified on Blockchain:** No - SDK version mismatch blocks deployment
+- **Estimated Fix Time:** 20-30 minutes (Option A) or 10-15 minutes (Option B)
 
 ---
 
-**Last Updated:** 2025-11-12 22:00 UTC
-**Session Duration:** 3+ hours
-**Status:** Active Development
+## Session 3 Summary (Nov 14, 2025) - SDK Compatibility Investigation
+
+### 🔍 Investigation Completed
+
+**Discovery:** Critical SDK version mismatch blocking all deployments to Stellar Testnet.
+
+**Root Cause Analysis:**
+1. Browser uses SDK v12.3.0 (Protocol ~21 support)
+2. Stellar Testnet upgraded to Protocol 24 (Oct 2025)
+3. XDR definitions incompatible between versions
+4. `prepareTransaction()` fails when parsing RPC responses
+
+**Actions Taken:**
+1. ✅ Diagnosed XDR parsing error
+2. ✅ Researched Stellar SDK version history
+3. ✅ Analyzed all dependencies (NPM + CDN)
+4. ✅ Created comprehensive migration plan
+5. ✅ Built automated version testing tool
+6. ✅ Documented 3 migration options with pros/cons
+7. ✅ Cleaned up 33 temporary .md files
+
+**Documentation Created:**
+- `STELLAR_SDK_ANALYSIS_AND_PLAN.md` (comprehensive, 570 lines)
+- `test-sdk-versions.html` (automated testing)
+
+**Next Action Required:**
+Choose and implement SDK migration strategy (see plan document).
+
+---
+
+**Last Updated:** 2025-11-14 13:50 UTC
+**Session 3 Duration:** 2+ hours
+**Status:** 🔴 BLOCKED - Awaiting SDK Migration Decision

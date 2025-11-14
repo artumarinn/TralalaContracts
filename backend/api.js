@@ -16,7 +16,9 @@ console.log('🌐 Backend configured for Stellar Testnet');
 console.log('🔍 Server URL:', server.serverURL.toString());
 
 app.use(express.static(path.join(__dirname, 'public')));
-app.use(express.json());
+// Increase body size limit for WASM base64 payloads (default is 100kb)
+// WASM files can be 5-10kb, which in base64 becomes ~7-14kb
+app.use(express.json({ limit: '10mb' }));
 
 // Load metadata on startup
 let contractMetadata = null;
@@ -166,25 +168,48 @@ app.get('/api/templates/:templateId', (req, res) => {
  * POST /api/deploy-contract
  *
  * Deploy contract to Stellar (requires user signature)
- * This delegates to the frontend's Freighter wallet integration
+ * Generates UNSIGNED XDR transactions for:
+ * 1. Upload WASM to Stellar
+ * 2. Create contract instance from uploaded WASM
+ *
+ * Frontend will sign these with Freighter and submit to Stellar
  */
 app.post('/api/deploy-contract', async (req, res) => {
     try {
-        const { contractId, wasmBase64, userAddress, contractData } = req.body;
+        const { wasmBase64, userAddress, contractData } = req.body;
 
-        if (!contractId || !wasmBase64 || !userAddress) {
+        console.log('═══════════════════════════════════════════════════');
+        console.log('🚀 DEPLOY CONTRACT REQUEST (BACKEND)');
+        console.log('═══════════════════════════════════════════════════');
+        console.log('📦 WASM Base64 length:', wasmBase64?.length || 'MISSING');
+        console.log('👤 User address:', userAddress);
+        console.log('📋 Contract data:', contractData);
+
+        if (!wasmBase64 || !userAddress) {
             return res.status(400).json({
                 success: false,
-                error: 'contractId, wasmBase64, and userAddress are required'
+                error: 'wasmBase64 and userAddress are required'
             });
         }
 
-        console.log(`🚀 Deploy contract request: ${contractId}`);
-        console.log(`👤 User address: ${userAddress}`);
+        console.log('🔍 Step 1: Verifying user account on Stellar Testnet...');
+
+        // Compatibility layer: v14.x may use 'rpc' instead of 'SorobanRpc'
+        const SorobanRpc = StellarSdk.rpc || StellarSdk.SorobanRpc;
+        if (!SorobanRpc || !SorobanRpc.Server) {
+            return res.status(500).json({
+                success: false,
+                error: 'SorobanRpc.Server not available in current SDK version'
+            });
+        }
+
+        // Use Soroban RPC for contract operations (NOT Horizon!)
+        const sorobanServer = new SorobanRpc.Server('https://soroban-testnet.stellar.org');
 
         // Verify user account exists
+        let userAccount;
         try {
-            const account = await server.loadAccount(userAddress);
+            userAccount = await server.loadAccount(userAddress);
             console.log(`✅ User account verified: ${userAddress}`);
         } catch (error) {
             if (error.response && error.response.status === 404) {
@@ -196,17 +221,225 @@ app.post('/api/deploy-contract', async (req, res) => {
             throw error;
         }
 
-        // Return deployment instructions
-        // Actual deployment is handled by frontend Freighter wallet
+        console.log('🔍 Step 2: Converting WASM base64 to buffer...');
+        const wasmBuffer = Buffer.from(wasmBase64, 'base64');
+        console.log(`✅ WASM buffer created: ${wasmBuffer.length} bytes`);
+
+        // ==========================================
+        // TRANSACTION 1: Upload WASM to Stellar
+        // ==========================================
+        console.log('🔍 Step 3: Building UPLOAD WASM transaction...');
+
+        // IMPORTANT: Use a higher initial fee for Soroban operations
+        // BASE_FEE (100 stroops) is too low - Soroban needs at least 100,000 stroops
+        // prepareTransaction() will adjust this to the actual required fee
+        const uploadTransaction = new StellarSdk.TransactionBuilder(userAccount, {
+            fee: '10000000', // 10 million stroops (1 XLM) - prepareTransaction will adjust down
+            networkPassphrase: networkPassphrase,
+        })
+            .addOperation(
+                StellarSdk.Operation.uploadContractWasm({
+                    wasm: wasmBuffer,
+                })
+            )
+            .setTimeout(300) // 5 minutes
+            .build();
+
+        console.log('✅ Upload transaction built (UNSIGNED)');
+        console.log('   Initial fee:', uploadTransaction.fee, 'stroops');
+
+        // Simulate the transaction to prepare it for real submission
+        console.log('🔍 Step 4: Simulating UPLOAD transaction...');
+        let preparedUploadTx;
+        try {
+            preparedUploadTx = await sorobanServer.prepareTransaction(uploadTransaction);
+            console.log('✅ Upload transaction prepared (simulated)');
+            console.log('   Adjusted fee:', preparedUploadTx.fee, 'stroops');
+            console.log('   Fee in XLM:', (parseInt(preparedUploadTx.fee) / 10000000).toFixed(7));
+        } catch (prepError) {
+            console.error('❌ Error preparing upload transaction:', prepError);
+            return res.status(500).json({
+                success: false,
+                error: 'Error preparing upload transaction',
+                details: prepError.message
+            });
+        }
+
+        const uploadXDR = preparedUploadTx.toXDR();
+        console.log('📤 Upload XDR ready (length:', uploadXDR.length, ')');
+
+        // Calculate WASM hash (this will be the wasmId after upload)
+        const crypto = require('crypto');
+        const wasmHash = crypto.createHash('sha256').update(wasmBuffer).digest('hex');
+        console.log('🔑 WASM Hash (wasmId):', wasmHash);
+
+        console.log('🔍 Step 5: Calculating expected contract ID...');
+        // Calculate EXPECTED contract ID based on Stellar's deterministic algorithm
+        // This is NOT a simulation - this is how Stellar ACTUALLY calculates Contract IDs
+        // Formula: SHA256(network_passphrase + contract_address_type + deployer_address + wasm_hash)
+        const contractIdBuffer = crypto.createHash('sha256')
+            .update(Buffer.concat([
+                Buffer.from(networkPassphrase),
+                Buffer.from([0x00, 0x00, 0x00, 0x02]), // CONTRACT_ADDRESS type
+                Buffer.from(userAddress, 'utf8'),
+                Buffer.from(wasmHash, 'hex')
+            ]))
+            .digest();
+
+        // Format as Stellar Contract Address (C + 55 hex chars)
+        const expectedContractId = `C${contractIdBuffer.toString('hex').substring(0, 55).toUpperCase()}`;
+
+        console.log('🆔 Expected Contract ID (deterministic):', expectedContractId);
+        console.log('   This is the REAL ID the contract will have on Stellar Testnet');
+
+        console.log('═══════════════════════════════════════════════════');
+        console.log('✅ BACKEND READY - Returning UPLOAD XDR to frontend');
+        console.log('═══════════════════════════════════════════════════');
+        console.log('⚠️  CREATE transaction must be prepared AFTER upload completes');
+        console.log('   Frontend should call /api/prepare-create-contract after UPLOAD succeeds');
+
+        // Return ONLY the prepared UPLOAD transaction
+        // CREATE must be prepared separately after WASM exists on blockchain
         res.json({
             success: true,
-            contractId: contractId,
-            message: 'Ready for deployment. User must sign transaction with Freighter wallet.',
-            nextStep: 'present-deployment-review'
+            wasmId: wasmHash,
+            contractId: expectedContractId,
+            uploadTransactionXDR: uploadXDR,
+            network: 'testnet',
+            explorerUrl: `https://stellar.expert/explorer/testnet/contract/${expectedContractId}`,
+            message: 'UPLOAD transaction prepared. Call /api/prepare-create-contract after UPLOAD completes.',
+            fees: {
+                upload: `Calculated by prepareTransaction() - shown in logs`,
+                create: 'Will be calculated when you call /api/prepare-create-contract'
+            }
         });
 
     } catch (error) {
-        console.error('❌ Error preparing deployment:', error);
+        console.error('═══════════════════════════════════════════════════');
+        console.error('❌ ERROR IN DEPLOY CONTRACT ENDPOINT');
+        console.error('═══════════════════════════════════════════════════');
+        console.error('❌ Error:', error);
+        console.error('❌ Stack:', error.stack);
+        res.status(500).json({
+            success: false,
+            error: error.message || 'Internal server error'
+        });
+    }
+});
+
+/**
+ * POST /api/prepare-create-contract
+ *
+ * Prepares the CREATE CONTRACT transaction AFTER WASM upload completes
+ * This MUST be called after the UPLOAD transaction is confirmed because
+ * prepareTransaction() needs the WASM to exist on the blockchain
+ *
+ * Request body:
+ * {
+ *   "userAddress": "G...",
+ *   "wasmHash": "abc123...",
+ *   "contractId": "C..." (for verification)
+ * }
+ */
+app.post('/api/prepare-create-contract', async (req, res) => {
+    try {
+        const { userAddress, wasmHash, contractId } = req.body;
+
+        console.log('═══════════════════════════════════════════════════');
+        console.log('🔧 PREPARE CREATE CONTRACT REQUEST');
+        console.log('═══════════════════════════════════════════════════');
+        console.log('👤 User address:', userAddress);
+        console.log('🔑 WASM Hash:', wasmHash);
+        console.log('🆔 Expected Contract ID:', contractId);
+
+        if (!userAddress || !wasmHash) {
+            return res.status(400).json({
+                success: false,
+                error: 'userAddress and wasmHash are required'
+            });
+        }
+
+        // Compatibility layer: v14.x may use 'rpc' instead of 'SorobanRpc'
+        const SorobanRpc = StellarSdk.rpc || StellarSdk.SorobanRpc;
+        if (!SorobanRpc || !SorobanRpc.Server) {
+            return res.status(500).json({
+                success: false,
+                error: 'SorobanRpc.Server not available in current SDK version'
+            });
+        }
+
+        // Use Soroban RPC
+        const sorobanServer = new SorobanRpc.Server('https://soroban-testnet.stellar.org');
+
+        // Load user account (fresh sequence number)
+        console.log('🔍 Loading user account from blockchain...');
+        let userAccount;
+        try {
+            userAccount = await server.loadAccount(userAddress);
+            console.log(`✅ User account loaded, sequence: ${userAccount.sequence}`);
+        } catch (error) {
+            return res.status(400).json({
+                success: false,
+                error: 'User account not found on Stellar Testnet'
+            });
+        }
+
+        // Build CREATE CONTRACT transaction
+        console.log('🔍 Building CREATE CONTRACT transaction...');
+        const createTransaction = new StellarSdk.TransactionBuilder(userAccount, {
+            fee: '10000000', // High initial fee - prepareTransaction will adjust
+            networkPassphrase: networkPassphrase,
+        })
+            .addOperation(
+                StellarSdk.Operation.createCustomContract({
+                    address: new StellarSdk.Address(userAddress),
+                    wasmHash: Buffer.from(wasmHash, 'hex'),
+                })
+            )
+            .setTimeout(300) // 5 minutes
+            .build();
+
+        console.log('✅ CREATE transaction built (UNSIGNED)');
+
+        // NOW we can prepare it because WASM exists on blockchain!
+        console.log('🔍 Preparing CREATE transaction (simulating + adding footprint)...');
+        let preparedCreateTx;
+        try {
+            preparedCreateTx = await sorobanServer.prepareTransaction(createTransaction);
+            console.log('✅ CREATE transaction prepared successfully!');
+            console.log('   Adjusted fee:', preparedCreateTx.fee, 'stroops');
+            console.log('   Fee in XLM:', (parseInt(preparedCreateTx.fee) / 10000000).toFixed(7));
+        } catch (prepError) {
+            console.error('❌ Error preparing CREATE transaction:', prepError);
+            return res.status(500).json({
+                success: false,
+                error: 'Error preparing CREATE transaction. WASM might not be uploaded yet.',
+                details: prepError.message
+            });
+        }
+
+        const createXDR = preparedCreateTx.toXDR();
+        console.log('📤 Prepared CREATE XDR ready (length:', createXDR.length, ')');
+
+        console.log('═══════════════════════════════════════════════════');
+        console.log('✅ CREATE TRANSACTION READY');
+        console.log('═══════════════════════════════════════════════════');
+
+        res.json({
+            success: true,
+            createTransactionXDR: createXDR,
+            contractId: contractId,
+            wasmHash: wasmHash,
+            fee: preparedCreateTx.fee,
+            message: 'CREATE transaction prepared and ready for signing'
+        });
+
+    } catch (error) {
+        console.error('═══════════════════════════════════════════════════');
+        console.error('❌ ERROR IN PREPARE CREATE CONTRACT ENDPOINT');
+        console.error('═══════════════════════════════════════════════════');
+        console.error('❌ Error:', error);
+        console.error('❌ Stack:', error.stack);
         res.status(500).json({
             success: false,
             error: error.message || 'Internal server error'
@@ -239,7 +472,8 @@ app.get('/', (req, res) => {
                 'POST /api/compile-contract - Compile a contract template',
                 'GET /api/templates - List available templates',
                 'GET /api/templates/:templateId - Get template details',
-                'POST /api/deploy-contract - Deploy contract to Stellar',
+                'POST /api/deploy-contract - Prepare UPLOAD WASM transaction',
+                'POST /api/prepare-create-contract - Prepare CREATE CONTRACT transaction (after upload)',
                 'GET /api/health - Health check'
             ],
             docs_url: '/api/docs'

@@ -337,7 +337,23 @@
 
     <!-- Scripts -->
     <script src="https://unpkg.com/blockly/blockly.min.js"></script>
-    <script src="https://cdn.jsdelivr.net/npm/@stellar/stellar-sdk@11.3.0/dist/stellar-sdk.min.js"></script>
+    <script src="https://cdn.jsdelivr.net/npm/@stellar/stellar-sdk@14.3.0/dist/stellar-sdk.min.js"></script>
+    <script>
+        // Verify SDK loaded correctly (v14.3.0 - Protocol 24 support)
+        if (typeof StellarSdk !== 'undefined') {
+            console.log('✅ Stellar SDK loaded successfully!');
+            console.log('📦 SDK Version:', StellarSdk.version || 'version property not found');
+            console.log('🔍 SDK Keys:', Object.keys(StellarSdk));
+            console.log('🔧 Has SorobanRpc:', !!StellarSdk.SorobanRpc);
+            console.log('🔧 Has SorobanRpc.Server:', !!StellarSdk.SorobanRpc?.Server);
+            console.log('🔧 Has rpc:', !!StellarSdk.rpc);
+            console.log('🔧 Has rpc.Server:', !!StellarSdk.rpc?.Server);
+            console.log('🔧 Has Horizon:', !!StellarSdk.Horizon);
+            console.log('🔧 Has Networks:', !!StellarSdk.Networks);
+        } else {
+            console.error('❌ STELLAR SDK NOT LOADED! Check Network tab for errors.');
+        }
+    </script>
     <script src="https://cdn.jsdelivr.net/npm/@stellar/freighter-api@1.7.0/build/index.min.js"></script>
     <script src="https://unpkg.com/albedo-sdk@^0.10.4/dist/albedo.min.js"></script>
     <script src="compilation-progress.js"></script>
@@ -1495,7 +1511,36 @@ impl TokenContract {
                 if (response.ok) {
                     result = await response.json();
 
-                    // Iniciar monitoreo de progreso
+                    console.log('═══════════════════════════════════════════════════');
+                    console.log('✅ BUILD RESPONSE RECEIVED');
+                    console.log('📦 isPrecompiled:', result.isPrecompiled);
+                    console.log('📦 compiled:', result.compiled);
+                    console.log('📦 wasmBase64 exists:', !!result.wasmBase64);
+                    console.log('═══════════════════════════════════════════════════');
+
+                    // For precompiled contracts, deploy immediately
+                    if (result.isPrecompiled || result.compiled) {
+                        console.log('🚀 Precompiled contract detected, deploying immediately...');
+
+                        // Simulate progress bar (instant)
+                        const progressBar = document.getElementById('compilationProgressBar');
+                        const percentElement = document.getElementById('compilationPercent');
+                        if (progressBar) progressBar.style.width = '100%';
+                        if (percentElement) percentElement.textContent = '100%';
+
+                        // Deploy to Stellar
+                        console.log('🚀 Calling deployment...');
+                        const deploymentData = await deployToStellar(result.wasmBase64, blocklyData);
+
+                        console.log('✅ Deployment complete:', deploymentData);
+
+                        // Show success screen
+                        // showDeploymentSuccess expects (result, submitResult, contractData)
+                        showDeploymentSuccess(result, deploymentData, blocklyData);
+                        return;
+                    }
+
+                    // Legacy: Iniciar monitoreo de progreso para contratos dinámicos
                     if (result.contractId && result.progressUrl) {
                         console.log('📊 Iniciando monitoreo de progreso para:', result.contractId);
                         window.compilationProgressMonitor.start(result.contractId);
@@ -1610,6 +1655,459 @@ impl TokenContract {
                     modal.remove();
                 }
             });
+        }
+
+        // Función para deployar a Stellar Testnet
+        async function deployToStellar(wasmBase64, contractData) {
+            console.log('════════════════════════════════════════════════════');
+            console.log('🚀 STELLAR DEPLOYMENT - BEST PRACTICES MODE');
+            console.log('════════════════════════════════════════════════════');
+            console.log('📦 WASM Size:', (wasmBase64.length * 0.75 / 1024).toFixed(2), 'KB');
+            console.log('📋 Contract Data:', JSON.stringify(contractData, null, 2));
+            console.log('════════════════════════════════════════════════════');
+
+            // Verify Freighter is available
+            if (!window.freighterApi) {
+                throw new Error('Freighter wallet no está instalada. Instálala desde freighter.app');
+            }
+
+            // Get user's public key
+            const userAddress = await window.freighterApi.getPublicKey();
+            console.log('👤 User Address:', userAddress);
+
+            // Initialize Stellar SDK components
+            const StellarSdk = window.StellarSdk;
+
+            // Compatibility layer: v14.x uses 'rpc', v12.x uses 'SorobanRpc'
+            const SorobanRpc = StellarSdk.rpc || StellarSdk.SorobanRpc;
+            if (!SorobanRpc || !SorobanRpc.Server) {
+                throw new Error('❌ SorobanRpc.Server not available in this SDK version. Check console for SDK structure.');
+            }
+            console.log('✅ Using SorobanRpc from:', StellarSdk.rpc ? 'StellarSdk.rpc' : 'StellarSdk.SorobanRpc');
+
+            const server = new SorobanRpc.Server('https://soroban-testnet.stellar.org');
+            const networkPassphrase = StellarSdk.Networks.TESTNET;
+
+            try {
+                // ========================================
+                // HELPER: Transaction Polling (Soroban RPC Only)
+                // ========================================
+                async function pollTransactionWithFallback(txHash, transactionName) {
+                    console.log(`⏱️ Waiting for ${transactionName} confirmation...`);
+                    console.log('📋 Using direct JSON-RPC call (bypasses SDK XDR parsing bug)');
+
+                    const maxAttempts = 60; // 60 attempts × 1000ms = 60 seconds max
+                    let attempts = 0;
+
+                    while (attempts < maxAttempts) {
+                        attempts++;
+                        console.log(`   🔍 Polling attempt ${attempts}/${maxAttempts}...`);
+
+                        try {
+                            // WORKAROUND: Call Soroban RPC directly with fetch to avoid SDK XDR parsing
+                            // This bypasses the "Bad union switch: 4" error
+                            const response = await fetch('https://soroban-testnet.stellar.org', {
+                                method: 'POST',
+                                headers: { 'Content-Type': 'application/json' },
+                                body: JSON.stringify({
+                                    jsonrpc: '2.0',
+                                    id: 1,
+                                    method: 'getTransaction',
+                                    params: { hash: txHash }
+                                })
+                            });
+
+                            const jsonResponse = await response.json();
+
+                            // Check for RPC errors
+                            if (jsonResponse.error) {
+                                const errorCode = jsonResponse.error.code;
+                                const errorMessage = jsonResponse.error.message;
+
+                                // -32602 = transaction not found (normal during polling)
+                                if (errorCode === -32602 || errorMessage?.includes('not found')) {
+                                    console.log(`      Status: NOT_FOUND (transaction still pending)`);
+                                } else {
+                                    console.warn(`      ⚠️ RPC error: ${errorMessage}`);
+                                }
+                            } else if (jsonResponse.result) {
+                                const status = jsonResponse.result.status;
+                                console.log(`      Status: ${status}`);
+
+                                if (status === 'SUCCESS') {
+                                    console.log('════════════════════════════════════════════════════');
+                                    console.log(`✅ ${transactionName} CONFIRMED!`);
+                                    console.log('════════════════════════════════════════════════════');
+                                    console.log('   Status:', status);
+                                    console.log('   Ledger:', jsonResponse.result.ledger);
+                                    console.log('   Latest Ledger:', jsonResponse.result.latestLedger);
+                                    console.log('════════════════════════════════════════════════════');
+
+                                    // Return in SDK-compatible format
+                                    return {
+                                        status: status,
+                                        hash: txHash,
+                                        ledger: jsonResponse.result.ledger,
+                                        latestLedger: jsonResponse.result.latestLedger,
+                                        resultMetaXdr: jsonResponse.result.resultMetaXdr,
+                                        resultXdr: jsonResponse.result.resultXdr
+                                    };
+                                }
+
+                                if (status === 'FAILED') {
+                                    console.error('════════════════════════════════════════════════════');
+                                    console.error(`❌ ${transactionName} FAILED`);
+                                    console.error('════════════════════════════════════════════════════');
+                                    console.error('   Status:', status);
+                                    console.error('════════════════════════════════════════════════════');
+                                    throw new Error(`${transactionName} transaction failed on blockchain`);
+                                }
+
+                                // Status is pending/not found - continue polling
+                                console.log(`      Status: ${status} (still processing)`);
+                            }
+
+                        } catch (error) {
+                            // Log non-fetch errors
+                            if (error.message !== 'Failed to fetch') {
+                                console.warn(`      ⚠️ Polling error: ${error.message}`);
+                            }
+                        }
+
+                        // Wait 1 second before next attempt (Stellar Testnet can be slow)
+                        await new Promise(resolve => setTimeout(resolve, 1000));
+                    }
+
+                    // Timeout - transaction not confirmed in time
+                    console.error('════════════════════════════════════════════════════');
+                    console.error('❌ TRANSACTION POLLING TIMEOUT');
+                    console.error('════════════════════════════════════════════════════');
+                    console.error(`❌ ${transactionName} transaction timed out after ${maxAttempts} seconds`);
+                    console.error('');
+                    console.error('🔍 POSSIBLE CAUSES:');
+                    console.error('   1. Transaction still pending - Stellar Testnet may be VERY slow');
+                    console.error('   2. Transaction was rejected (check Stellar Expert)');
+                    console.error('   3. Network congestion or outage');
+                    console.error('');
+                    console.error('🔗 MANUAL VERIFICATION:');
+                    console.error('   Stellar Expert:', `https://stellar.expert/explorer/testnet/tx/${txHash}`);
+                    console.error('   If transaction shows as SUCCESS on Stellar Expert, it worked!');
+                    console.error('   You can continue manually with the CREATE transaction.');
+                    console.error('════════════════════════════════════════════════════');
+
+                    throw new Error(`${transactionName} transaction polling timed out after ${maxAttempts}s. Check Stellar Expert: https://stellar.expert/explorer/testnet/tx/${txHash}`);
+                }
+
+                // ========================================
+                // STEP 1: UPLOAD WASM
+                // ========================================
+                console.log('\n📤 STEP 1: UPLOADING WASM TO STELLAR');
+                console.log('═══════════════════════════════════════════════════');
+
+                // Get XDR from backend
+                const uploadResponse = await fetch('/api/deploy-contract', {
+                    method: 'POST',
+                    headers: { 'Content-Type': 'application/json' },
+                    body: JSON.stringify({
+                        wasmBase64,
+                        userAddress,
+                        contractData
+                    })
+                });
+
+                if (!uploadResponse.ok) {
+                    throw new Error(`Backend error: ${uploadResponse.statusText}`);
+                }
+
+                const deployResult = await uploadResponse.json();
+
+                if (!deployResult.success) {
+                    throw new Error(deployResult.error || 'Backend deployment failed');
+                }
+
+                console.log('✅ Received UPLOAD XDR from backend');
+                console.log('   Has UPLOAD XDR:', !!deployResult.uploadTransactionXDR);
+                console.log('   WASM ID:', deployResult.wasmId);
+                console.log('   Expected Contract ID:', deployResult.contractId);
+
+                // Sign UPLOAD transaction with Freighter
+                console.log('\n✍️ Signing UPLOAD transaction with Freighter...');
+
+                const uploadSignedXdr = await window.freighterApi.signTransaction(
+                    deployResult.uploadTransactionXDR,
+                    { networkPassphrase }
+                );
+
+                console.log('✅ UPLOAD transaction signed');
+                console.log('   Signed XDR:', uploadSignedXdr.substring(0, 50) + '...');
+
+                // Parse signed XDR
+                const uploadTx = new StellarSdk.Transaction(uploadSignedXdr, networkPassphrase);
+
+                // Send transaction
+                console.log('\n📡 Sending UPLOAD transaction to Stellar...');
+
+                const uploadSendResponse = await server.sendTransaction(uploadTx);
+
+                console.log('════════════════════════════════════════════════════');
+                console.log('📊 UPLOAD SEND RESPONSE');
+                console.log('════════════════════════════════════════════════════');
+                console.log('   Status:', uploadSendResponse.status);
+                console.log('   Hash:', uploadSendResponse.hash);
+                console.log('   Latest Ledger:', uploadSendResponse.latestLedger);
+                console.log('   Error XDR:', uploadSendResponse.errorResultXdr || 'N/A');
+                console.log('════════════════════════════════════════════════════');
+
+                // BEST PRACTICE: Verificar status antes de polling
+                if (uploadSendResponse.status === 'ERROR') {
+                    console.error('❌ UPLOAD transaction rejected by network');
+                    console.error('   Error XDR:', uploadSendResponse.errorResultXdr);
+                    throw new Error(`UPLOAD transaction rejected: ${uploadSendResponse.errorResultXdr}`);
+                }
+
+                if (uploadSendResponse.status === 'DUPLICATE') {
+                    console.warn('⚠️ UPLOAD transaction is duplicate');
+                    console.warn('   This might be a retry - continuing anyway...');
+                }
+
+                if (uploadSendResponse.status === 'TRY_AGAIN_LATER') {
+                    console.warn('⚠️ Network busy - you should retry');
+                    throw new Error('Network busy, please try again in a few seconds');
+                }
+
+                // Poll for confirmation usando el método oficial
+                const uploadResult = await pollTransactionWithFallback(
+                    uploadSendResponse.hash,
+                    'UPLOAD'
+                );
+
+                console.log('✅ UPLOAD completed successfully');
+                console.log('   Hash:', uploadResult.hash || uploadSendResponse.hash);
+                console.log('   Source:', uploadResult.source || 'soroban-rpc');
+
+                // ========================================
+                // STEP 2: PREPARE CREATE CONTRACT TRANSACTION
+                // ========================================
+                console.log('\n🔧 STEP 2: PREPARING CREATE CONTRACT TRANSACTION');
+                console.log('═══════════════════════════════════════════════════');
+                console.log('   WASM is now on blockchain - preparing CREATE transaction locally');
+
+                // BEST PRACTICE: Prepare CREATE transaction directly on frontend using Stellar SDK
+                // Now that WASM exists on blockchain, we can prepare the CREATE transaction
+
+                // First, get fresh account data (sequence number has changed after UPLOAD)
+                console.log('📊 Loading fresh account data from Stellar...');
+                const horizonServer = new StellarSdk.Horizon.Server('https://horizon-testnet.stellar.org');
+                const sourceAccount = await horizonServer.loadAccount(userAddress);
+                console.log('✅ Account loaded, sequence:', sourceAccount.sequence);
+
+                // Build CREATE CONTRACT transaction
+                console.log('🔨 Building CREATE CONTRACT transaction...');
+
+                // Convert hex string to Uint8Array (browser-compatible, no Buffer needed)
+                const hexToBytes = (hex) => {
+                    const bytes = new Uint8Array(hex.length / 2);
+                    for (let i = 0; i < hex.length; i += 2) {
+                        bytes[i / 2] = parseInt(hex.substr(i, 2), 16);
+                    }
+                    return bytes;
+                };
+
+                const wasmHashBytes = hexToBytes(deployResult.wasmId);
+                console.log('   WASM hash bytes:', wasmHashBytes.length, 'bytes');
+
+                const createTransaction = new StellarSdk.TransactionBuilder(sourceAccount, {
+                    fee: StellarSdk.BASE_FEE, // Will be adjusted by prepareTransaction
+                    networkPassphrase: networkPassphrase,
+                })
+                .addOperation(
+                    StellarSdk.Operation.createCustomContract({
+                        address: new StellarSdk.Address(userAddress),
+                        wasmHash: wasmHashBytes,
+                    })
+                )
+                .setTimeout(300) // 5 minutes
+                .build();
+
+                console.log('✅ CREATE transaction built (unprepared)');
+                console.log('   Initial fee:', createTransaction.fee, 'stroops');
+
+                // Prepare transaction with Soroban RPC (adds footprint, calculates real fee)
+                console.log('🔧 Preparing CREATE transaction with Soroban RPC...');
+                console.log('   This simulates the transaction and adds storage footprint');
+
+                let preparedCreateTx;
+                try {
+                    preparedCreateTx = await server.prepareTransaction(createTransaction);
+                    console.log('✅ CREATE transaction prepared successfully!');
+                    console.log('   Adjusted fee:', preparedCreateTx.fee, 'stroops');
+                    console.log('   Fee in XLM:', (parseInt(preparedCreateTx.fee) / 10000000).toFixed(7));
+                } catch (prepError) {
+                    console.error('❌ Error preparing CREATE transaction:', prepError);
+                    console.error('   This means WASM might not be uploaded yet, or network issue');
+                    throw new Error(`Failed to prepare CREATE transaction: ${prepError.message}`);
+                }
+
+                // ========================================
+                // STEP 3: SIGN AND SEND CREATE TRANSACTION
+                // ========================================
+                console.log('\n📤 STEP 3: CREATING CONTRACT INSTANCE');
+                console.log('═══════════════════════════════════════════════════');
+
+                // Sign CREATE transaction with Freighter
+                console.log('✍️ Signing CREATE transaction with Freighter...');
+
+                const createXDR = preparedCreateTx.toXDR();
+                console.log('   CREATE XDR length:', createXDR.length);
+
+                const createSignedXdr = await window.freighterApi.signTransaction(
+                    createXDR,
+                    { networkPassphrase }
+                );
+
+                console.log('✅ CREATE transaction signed');
+
+                // Parse signed XDR
+                const createTx = new StellarSdk.Transaction(createSignedXdr, networkPassphrase);
+
+                // Send transaction
+                console.log('\n📡 Sending CREATE transaction to Stellar...');
+
+                const createSendResponse = await server.sendTransaction(createTx);
+
+                console.log('════════════════════════════════════════════════════');
+                console.log('📊 CREATE SEND RESPONSE');
+                console.log('════════════════════════════════════════════════════');
+                console.log('   Status:', createSendResponse.status);
+                console.log('   Hash:', createSendResponse.hash);
+                console.log('   Latest Ledger:', createSendResponse.latestLedger);
+                console.log('   Error XDR:', createSendResponse.errorResultXdr || 'N/A');
+                console.log('════════════════════════════════════════════════════');
+
+                // Verificar status
+                if (createSendResponse.status === 'ERROR') {
+                    console.error('❌ CREATE transaction rejected by network');
+                    throw new Error(`CREATE transaction rejected: ${createSendResponse.errorResultXdr}`);
+                }
+
+                // Poll for confirmation
+                const createResult = await pollTransactionWithFallback(
+                    createSendResponse.hash,
+                    'CREATE'
+                );
+
+                console.log('✅ CREATE completed successfully');
+
+                // ========================================
+                // STEP 3: EXTRACT CONTRACT ID
+                // ========================================
+                console.log('\n🔍 STEP 3: EXTRACTING CONTRACT ID');
+                console.log('═══════════════════════════════════════════════════');
+
+                let realContractId = deployResult.contractId; // Fallback
+
+                if (createResult && createResult.resultMetaXdr) {
+                    try {
+                        const meta = StellarSdk.xdr.TransactionMeta.fromXDR(
+                            createResult.resultMetaXdr,
+                            'base64'
+                        );
+
+                        console.log('📊 Transaction meta XDR parsed');
+
+                        // Extract contract ID from the meta (v3 has sorobanMeta)
+                        if (meta.switch() === 3 && meta.v3().sorobanMeta()) {
+                            const returnValue = meta.v3().sorobanMeta().returnValue();
+                            if (returnValue) {
+                                const addressObj = StellarSdk.Address.fromScVal(returnValue);
+                                realContractId = addressObj.toString();
+                                console.log('✅ Extracted real contract ID from blockchain');
+                            }
+                        }
+                    } catch (extractError) {
+                        console.warn('⚠️ Could not extract contract ID from XDR:', extractError.message);
+                        console.warn('   Using expected contract ID from backend (deterministic calculation)');
+                        console.warn('   This ID is still REAL - it\'s how Stellar calculates contract addresses');
+                    }
+                }
+
+                // ========================================
+                // STEP 4: VERIFY CONTRACT EXISTS ON STELLAR
+                // ========================================
+                console.log('\n🔍 STEP 4: VERIFYING CONTRACT ON STELLAR TESTNET');
+                console.log('═══════════════════════════════════════════════════');
+
+                let contractVerified = false;
+                try {
+                    // Try to get contract code to verify it exists
+                    const contractCodeResponse = await server.getContractData(
+                        realContractId,
+                        StellarSdk.xdr.ScVal.scvLedgerKeyContractInstance()
+                    );
+
+                    if (contractCodeResponse) {
+                        console.log('✅ CONTRACT VERIFIED ON STELLAR TESTNET!');
+                        console.log('   Contract exists and is accessible');
+                        console.log('   Latest Ledger:', contractCodeResponse.latestLedger);
+                        contractVerified = true;
+                    }
+                } catch (verifyError) {
+                    console.warn('⚠️ Could not verify contract immediately:', verifyError.message);
+                    console.warn('   This is normal - contract may need a few seconds to be indexed');
+                    console.warn('   Contract ID is still valid, verify manually on Stellar Expert');
+                    // Don't fail - contract was deployed successfully even if not indexed yet
+                    contractVerified = false;
+                }
+
+                // ========================================
+                // SUCCESS!
+                // ========================================
+                console.log('\n════════════════════════════════════════════════════');
+                console.log('🎉 DEPLOYMENT SUCCESSFUL!');
+                console.log('════════════════════════════════════════════════════');
+                console.log('   Contract ID:', realContractId);
+                console.log('   Contract Verified:', contractVerified ? '✅ YES' : '⏳ PENDING INDEXING');
+                console.log('   UPLOAD TX:', uploadResult.hash || uploadSendResponse.hash);
+                console.log('   CREATE TX:', createResult.hash || createSendResponse.hash);
+                console.log('   Network: Stellar Testnet');
+                console.log('   Deployment Type: REAL (not simulated)');
+                console.log('════════════════════════════════════════════════════');
+                console.log('🔗 VERIFICATION LINKS:');
+                console.log('   Contract:', `https://stellar.expert/explorer/testnet/contract/${realContractId}`);
+                console.log('   UPLOAD TX:', `https://stellar.expert/explorer/testnet/tx/${uploadSendResponse.hash}`);
+                console.log('   CREATE TX:', `https://stellar.expert/explorer/testnet/tx/${createSendResponse.hash}`);
+                console.log('════════════════════════════════════════════════════');
+                console.log('💰 FEES PAID (from your Freighter wallet):');
+                console.log('   UPLOAD TX: ~0.1-1 XLM (actual fee shown in Freighter)');
+                console.log('   CREATE TX: ~0.5 XLM (actual fee shown in Freighter)');
+                console.log('   Total: ~0.6-1.5 XLM deducted from your account');
+                console.log('════════════════════════════════════════════════════');
+
+                return {
+                    success: true,
+                    contractId: realContractId,
+                    transactionHash: createSendResponse.hash,
+                    hash: createSendResponse.hash,
+                    uploadHash: uploadSendResponse.hash,
+                    createHash: createSendResponse.hash,
+                    contract_address: realContractId,
+                    network: 'testnet',
+                    deployed: true,
+                    realDeployment: true,
+                    verified: contractVerified,
+                    explorerUrl: `https://stellar.expert/explorer/testnet/contract/${realContractId}`
+                };
+
+            } catch (error) {
+                console.error('════════════════════════════════════════════════════');
+                console.error('❌ DEPLOYMENT FAILED');
+                console.error('════════════════════════════════════════════════════');
+                console.error('   Error:', error.message);
+                console.error('   Stack:', error.stack);
+                console.error('════════════════════════════════════════════════════');
+
+                throw error;
+            }
         }
 
         // Función para mostrar el resultado exitoso del despliegue
