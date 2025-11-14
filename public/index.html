@@ -50,6 +50,10 @@
                     <div class="step-number">4</div>
                     <div class="step-label">Revisar y Desplegar</div>
                 </div>
+                <div class="step" data-step="5">
+                    <div class="step-number">5</div>
+                    <div class="step-label">Resultados</div>
+                </div>
             </div>
 
             <!-- Step Content -->
@@ -160,7 +164,8 @@
             </div>
 
             <!-- Step 4.5: Compilación en Progreso (Minimalista) -->
-            <div class="step-content" id="compilationStep">
+            <!-- NOT a step-content! Shown/hidden manually during deployment -->
+            <div id="compilationStep" style="display: none;">
                 <div style="
                     display: flex;
                     flex-direction: column;
@@ -237,7 +242,8 @@
             </div>
 
             <!-- Step 4: Review and Deploy -->
-            <div class="step-content" id="step4Content">
+            <!-- NOT a step-content! Shown/hidden manually during deployment -->
+            <div id="step4Content" style="display: none;">
                 <div class="create-token-container">
                     <h2 class="step-title">🚀 Revisa y exporta tu Smart Contract</h2>
 
@@ -326,6 +332,26 @@
                 </div>
             </div>
 
+            <!-- Step 5: Deployment Results -->
+            <div class="step-content" id="step5">
+                <div class="results-container">
+                    <div class="description-box" style="text-align: center;">
+                        <h2 class="step-title" style="color: #10b981; font-size: 2rem; margin-bottom: 1rem;">🎉 ¡Deployment Exitoso!</h2>
+                        <p style="font-size: 1.1rem; color: #6b7280;">Tu contrato ha sido desplegado en Stellar Testnet</p>
+                    </div>
+
+                    <div id="deploymentResults" style="max-width: 800px; margin: 2rem auto;">
+                        <!-- Content will be injected here by showDeploymentResults() -->
+                    </div>
+
+                    <div class="stepper-navigation" style="margin-top: 2rem;">
+                        <button class="btn btn-primary" onclick="window.location.reload()" style="width: 100%; max-width: 300px;">
+                            🔄 Crear Otro Contrato
+                        </button>
+                    </div>
+                </div>
+            </div>
+
             <!-- Navigation Buttons -->
             <div class="stepper-navigation">
                 <button class="btn btn-secondary" id="prevBtn" disabled>Anterior</button>
@@ -366,7 +392,7 @@
         // Estado global de la aplicación
         const appState = {
             currentStep: 1,
-            totalSteps: 4,
+            totalSteps: 5, // 5 steps: 1=Connect, 2=Template, 3=Blockly, 4=Deploy, 5=Results
             walletConnected: false,
             walletAddress: null,
             walletType: null,
@@ -1535,8 +1561,14 @@ impl TokenContract {
                         console.log('✅ Deployment complete:', deploymentData);
 
                         // Show success screen
+                        console.log('🎨 Calling showDeploymentSuccess...');
+                        console.log('   result (compilation):', result);
+                        console.log('   deploymentData:', deploymentData);
+                        console.log('   blocklyData:', blocklyData);
+
                         // showDeploymentSuccess expects (result, submitResult, contractData)
                         showDeploymentSuccess(result, deploymentData, blocklyData);
+                        console.log('✅ showDeploymentSuccess returned');
                         return;
                     }
 
@@ -2004,31 +2036,75 @@ impl TokenContract {
                 console.log('\n🔍 STEP 3: EXTRACTING CONTRACT ID');
                 console.log('═══════════════════════════════════════════════════');
 
-                let realContractId = deployResult.contractId; // Fallback
+                let realContractId = null; // Will be extracted from XDR
+
+                // IMPORTANT: Extract contract ID from CREATE transaction response XDR
+                console.log('🔍 Checking CREATE result for contract ID...');
+                console.log('   Has createResult:', !!createResult);
+                console.log('   Has resultMetaXdr:', !!createResult?.resultMetaXdr);
 
                 if (createResult && createResult.resultMetaXdr) {
                     try {
+                        console.log('📋 Parsing transaction meta XDR...');
                         const meta = StellarSdk.xdr.TransactionMeta.fromXDR(
                             createResult.resultMetaXdr,
                             'base64'
                         );
 
-                        console.log('📊 Transaction meta XDR parsed');
+                        console.log('✅ Transaction meta XDR parsed successfully');
+                        console.log('   Meta version:', meta.switch());
 
-                        // Extract contract ID from the meta (v3 has sorobanMeta)
-                        if (meta.switch() === 3 && meta.v3().sorobanMeta()) {
-                            const returnValue = meta.v3().sorobanMeta().returnValue();
+                        // Extract contract ID from the meta (v3 and v4 have sorobanMeta)
+                        const metaVersion = meta.switch();
+                        let sorobanMeta = null;
+
+                        if (metaVersion === 3) {
+                            console.log('   Meta is v3 (Soroban transaction)');
+                            sorobanMeta = meta.v3().sorobanMeta();
+                        } else if (metaVersion === 4) {
+                            console.log('   Meta is v4 (Soroban transaction - Protocol 24+)');
+                            // Meta v4 has the same structure as v3 for sorobanMeta
+                            sorobanMeta = meta.v4().sorobanMeta();
+                        } else {
+                            console.warn('⚠️ Unexpected meta version:', metaVersion);
+                        }
+
+                        if (sorobanMeta) {
+                            console.log('   ✅ Soroban meta found');
+                            const returnValue = sorobanMeta.returnValue();
+
                             if (returnValue) {
+                                console.log('   ✅ Return value found, extracting address...');
+
+                                // Extract address using SDK's Address class and encode to StrKey format
                                 const addressObj = StellarSdk.Address.fromScVal(returnValue);
-                                realContractId = addressObj.toString();
-                                console.log('✅ Extracted real contract ID from blockchain');
+
+                                // CRITICAL: Use StrKey.encodeContract to get proper C... format (not hex!)
+                                const contractIdBytes = addressObj.toBuffer();
+                                realContractId = StellarSdk.StrKey.encodeContract(contractIdBytes);
+
+                                console.log('✅ EXTRACTED REAL CONTRACT ID FROM BLOCKCHAIN:');
+                                console.log('   Contract ID:', realContractId);
+                                console.log('   Format: StrKey (C + base32 encoding)');
+                                console.log('   Length:', realContractId.length, 'chars');
+                            } else {
+                                console.warn('⚠️ Return value is null/undefined');
                             }
+                        } else {
+                            console.warn('⚠️ Soroban meta is null/undefined');
                         }
                     } catch (extractError) {
-                        console.warn('⚠️ Could not extract contract ID from XDR:', extractError.message);
-                        console.warn('   Using expected contract ID from backend (deterministic calculation)');
-                        console.warn('   This ID is still REAL - it\'s how Stellar calculates contract addresses');
+                        console.error('❌ FAILED TO EXTRACT CONTRACT ID FROM XDR');
+                        console.error('   Error:', extractError.message);
+                        console.error('   Stack:', extractError.stack);
                     }
+                }
+
+                // Fallback: if extraction failed, use backend's expected ID (may be wrong format)
+                if (!realContractId || realContractId === 'PENDING_EXTRACTION_FROM_BLOCKCHAIN') {
+                    console.warn('⚠️ Could not extract contract ID from XDR response');
+                    console.warn('   This should not happen - check transaction meta structure');
+                    realContractId = deployResult.contractId; // Last resort fallback
                 }
 
                 // ========================================
@@ -2110,16 +2186,61 @@ impl TokenContract {
             }
         }
 
-        // Función para mostrar el resultado exitoso del despliegue
+        // Función para avanzar al Paso 5 y mostrar resultados del deployment
         function showDeploymentSuccess(result, submitResult, contractData) {
-            const deploymentPipeline = document.getElementById('deploymentPipeline');
-            const deploymentResult = document.getElementById('deploymentResult');
+            console.log('═══════════════════════════════════════════════════');
+            console.log('🎨 ADVANCING TO STEP 5: DEPLOYMENT RESULTS');
+            console.log('═══════════════════════════════════════════════════');
+            console.log('   result:', result);
+            console.log('   submitResult:', submitResult);
+            console.log('   contractData:', contractData);
 
-            if (deploymentPipeline) deploymentPipeline.style.display = 'none';
-            if (deploymentResult) {
-                deploymentResult.classList.remove('hidden');
+            // CRITICAL: Hide compilation progress UI (if it was shown)
+            const compilationStep = document.getElementById('compilationStep');
+            const step4Content = document.getElementById('step4Content');
+            if (compilationStep) {
+                compilationStep.style.display = 'none';
+                console.log('✅ compilationStep hidden');
+            }
+            if (step4Content) {
+                step4Content.style.display = 'none';
+                console.log('✅ step4Content hidden');
+            }
 
-                const features = Object.keys(contractData.features || {})
+            // Verify Contract ID format before displaying
+            console.log('🔍 Verifying Contract ID format...');
+            console.log('   Current contractId:', submitResult.contractId);
+            console.log('   Length:', submitResult.contractId?.length);
+            console.log('   Starts with C:', submitResult.contractId?.startsWith('C'));
+
+            // Check if Contract ID is in hex format (invalid) instead of StrKey format
+            if (submitResult.contractId && submitResult.contractId.length === 57) {
+                // Hex format: C + 56 hex chars (invalid for Stellar)
+                console.warn('⚠️ CONTRACT ID APPEARS TO BE IN HEX FORMAT!');
+                console.warn('   This format is NOT valid for Stellar Explorer');
+                console.warn('   Expected: StrKey format (C + base32, ~56-63 chars)');
+                console.warn('   Got:', submitResult.contractId);
+            } else if (submitResult.contractId && submitResult.contractId.length >= 56 && submitResult.contractId.length <= 63) {
+                console.log('✅ Contract ID appears to be in StrKey format');
+            } else {
+                console.error('❌ Contract ID has unexpected format/length');
+            }
+
+            // Advance to Step 5
+            goToStep(5);
+
+            // Get the results container in Step 5
+            const resultsContainer = document.getElementById('deploymentResults');
+
+            if (!resultsContainer) {
+                console.error('❌ deploymentResults container not found!');
+                return;
+            }
+
+            console.log('✅ Found deploymentResults container, injecting content...');
+
+            // Prepare features list
+            const features = Object.keys(contractData.features || {})
                     .filter(f => contractData.features[f])
                     .map(f => {
                         const names = {
@@ -2135,62 +2256,65 @@ impl TokenContract {
                         return names[f] || f;
                     }).join(', ');
 
-                elements.resultContent.innerHTML = `
-                    <div style="text-align: center; max-width: 600px; margin: 0 auto;">
-                        <div style="font-size: 2rem; margin-bottom: 1rem;">🎉</div>
-                        <h2 style="color: #10b981; margin-bottom: 1rem;">${submitResult.deployed ? '¡Smart Contract Desplegado Exitosamente!' : '¡Smart Contract Compilado Exitosamente!'}</h2>
+            // Inject the deployment results HTML
+            resultsContainer.innerHTML = `
+                    <div style="text-align: center; max-width: 700px; margin: 0 auto;">
                         
                         <div style="background: #f0fdf4; border: 2px solid #10b981; border-radius: 1rem; padding: 1.5rem; margin-bottom: 2rem; text-align: left;">
                             <h3 style="margin: 0 0 1rem 0; color: #059669;">📄 Detalles del Contrato</h3>
                             <div style="display: grid; gap: 0.75rem;">
-                                <div><strong>Nombre:</strong> ${contractData.name}</div>
-                                <div><strong>Símbolo:</strong> ${result.smartContract?.tokenSymbol || contractData.symbol}</div>
-                                <div><strong>Contrato ID:</strong> ${result.smartContract?.contractId || 'Generado'}</div>
-                                ${submitResult.deployed ? `<div><strong>Dirección del Contrato:</strong> <code style="font-size: 0.8rem; background: #dcfce7; padding: 0.25rem 0.5rem; border-radius: 0.25rem;">${submitResult.contract_address}</code></div>` : ''}
-                                <div><strong>WASM Size:</strong> ${result.wasmSize ? `${Math.round(result.wasmSize / 1024)} KB` : 'N/A'}</div>
-                                <div><strong>Template:</strong> ${result.smartContract?.templateUsed || 'Avanzado'}</div>
+                                <div><strong>Nombre:</strong> ${contractData.name || 'N/A'}</div>
+                                <div><strong>Símbolo:</strong> ${contractData.symbol || 'N/A'}</div>
                                 <div><strong>Suministro Inicial:</strong> ${(contractData.supply || 0).toLocaleString()}</div>
+                                <div><strong>Decimales:</strong> ${contractData.decimals || 0}</div>
                                 <div><strong>Características:</strong> ${features || 'Smart Contract Básico'}</div>
-                                <div><strong>${submitResult.deployed ? 'Hash de Deployment' : 'Hash de Compilación'}:</strong> <code style="font-size: 0.8rem; background: #dcfce7; padding: 0.25rem 0.5rem; border-radius: 0.25rem;">${submitResult.hash}</code></div>
-                                <div><strong>Estado:</strong> <span style="color: ${submitResult.deployed ? '#059669' : '#d97706'}; font-weight: 600;">${submitResult.deployed ? '✅ Desplegado en Testnet' : '⚠️ Requiere Deployment Manual'}</span></div>
                             </div>
                         </div>
-                        
-                        <div style="display: grid; grid-template-columns: repeat(auto-fit, minmax(200px, 1fr)); gap: 1rem; margin-bottom: 2rem;">
-                            <a href="https://github.com/stellar/soroban-cli" 
-                               target="_blank" 
-                               style="display: flex; align-items: center; justify-content: center; gap: 0.5rem; background: #6366f1; color: white; padding: 1rem; text-decoration: none; border-radius: 0.75rem; font-weight: 600; transition: transform 0.2s;">
+
+                        <!-- Contract ID Section -->
+                        <div style="background: white; border: 3px solid #10b981; border-radius: 1rem; padding: 1.5rem; margin-bottom: 1.5rem;">
+                            <div style="font-weight: bold; color: #059669; margin-bottom: 0.75rem; font-size: 1.1rem;">🔗 Contract ID</div>
+                            <code style="font-size: 0.85rem; background: #dcfce7; padding: 1rem; border-radius: 0.5rem; display: block; word-break: break-all; font-family: 'Courier New', monospace; line-height: 1.5;">${submitResult.contractId || submitResult.contract_address || 'Extracting...'}</code>
+                            <a href="${submitResult.explorerUrl || ''}" target="_blank" style="display: inline-flex; align-items: center; justify-content: center; gap: 0.5rem; background: #6366f1; color: white; padding: 0.75rem 1.5rem; text-decoration: none; border-radius: 0.5rem; font-weight: 600; margin-top: 1rem; width: 100%; transition: background 0.2s;" onmouseover="this.style.background='#4f46e5'" onmouseout="this.style.background='#6366f1'">
+                                🔍 Ver Contrato en Stellar Explorer
+                                <span style="font-size: 0.9rem;">↗</span>
+                            </a>
+                        </div>
+
+                        <!-- Transaction Hashes -->
+                        <div style="background: #eff6ff; border: 2px solid #3b82f6; border-radius: 1rem; padding: 1.5rem; margin-bottom: 1.5rem; text-align: left;">
+                            <h3 style="margin: 0 0 1rem 0; color: #1e40af;">📋 Transaction Hashes</h3>
+                            <div style="display: grid; gap: 0.75rem;">
+                                ${submitResult.uploadHash ? `
+                                    <div>
+                                        <strong style="display: block; margin-bottom: 0.25rem;">UPLOAD TX:</strong>
+                                        <a href="https://stellar.expert/explorer/testnet/tx/${submitResult.uploadHash}" target="_blank" style="color: #2563eb; text-decoration: underline; font-size: 0.85rem; word-break: break-all; font-family: monospace;">${submitResult.uploadHash}</a>
+                                    </div>
+                                ` : ''}
+                                <div>
+                                    <strong style="display: block; margin-bottom: 0.25rem;">CREATE TX:</strong>
+                                    <a href="https://stellar.expert/explorer/testnet/tx/${submitResult.hash || submitResult.createHash}" target="_blank" style="color: #2563eb; text-decoration: underline; font-size: 0.85rem; word-break: break-all; font-family: monospace;">${submitResult.hash || submitResult.createHash || 'N/A'}</a>
+                                </div>
+                                <div style="margin-top: 0.5rem; padding-top: 0.75rem; border-top: 1px solid #bfdbfe;">
+                                    <strong>Estado:</strong> <span style="color: #059669; font-weight: 600;">✅ Desplegado en Stellar Testnet</span>
+                                </div>
+                            </div>
+                        </div>
+
+                        <!-- Resources -->
+                        <div style="display: grid; grid-template-columns: repeat(auto-fit, minmax(200px, 1fr)); gap: 1rem;">
+                            <a href="https://github.com/stellar/soroban-cli" target="_blank" style="display: flex; align-items: center; justify-content: center; gap: 0.5rem; background: #6366f1; color: white; padding: 1rem; text-decoration: none; border-radius: 0.75rem; font-weight: 600; transition: transform 0.2s;" onmouseover="this.style.transform='scale(1.02)'" onmouseout="this.style.transform='scale(1)'">
                                 🛠️ Soroban CLI
                             </a>
-                            <a href="https://soroban.stellar.org/" 
-                               target="_blank" 
-                               style="display: flex; align-items: center; justify-content: center; gap: 0.5rem; background: #10b981; color: white; padding: 1rem; text-decoration: none; border-radius: 0.75rem; font-weight: 600; transition: transform 0.2s;">
+                            <a href="https://soroban.stellar.org/" target="_blank" style="display: flex; align-items: center; justify-content: center; gap: 0.5rem; background: #10b981; color: white; padding: 1rem; text-decoration: none; border-radius: 0.75rem; font-weight: 600; transition: transform 0.2s;" onmouseover="this.style.transform='scale(1.02)'" onmouseout="this.style.transform='scale(1)'">
                                 📚 Docs Soroban
                             </a>
-                            ${!submitResult.deployed ? `<button onclick="showDeploymentInstructions(${JSON.stringify(result.deployment?.deploymentInstructions || {}).replace(/"/g, '&quot;')})" 
-                                    style="display: flex; align-items: center; justify-content: center; gap: 0.5rem; background: #f59e0b; color: white; padding: 1rem; border: none; border-radius: 0.75rem; font-weight: 600; cursor: pointer; transition: transform 0.2s;">
-                                📋 Ver Instrucciones
-                            </button>` : ''}
-                        </div>
-                        
-                        <div style="display: grid; grid-template-columns: 1fr; gap: 1rem; margin-bottom: 2rem;">
-                            <button onclick="window.location.reload()" 
-                                    style="display: flex; align-items: center; justify-content: center; gap: 0.5rem; background: #6b7280; color: white; padding: 1rem; border: none; border-radius: 0.75rem; font-weight: 600; cursor: pointer; transition: transform 0.2s;">
-                                🔄 Crear Otro Contrato
-                            </button>
-                        </div>
-                        
-                        <div style="background: #eff6ff; border-radius: 0.75rem; padding: 1rem; font-size: 0.9rem; color: #1e40af;">
-                            <strong>💡 Próximos pasos:</strong><br>
-                            • Guarda la dirección del emisor para futuras interacciones<br>
-                            • Configura tu wallet para ver el nuevo token<br>
-                            • Comparte el contrato con tu comunidad
-                        </div>
                     </div>
                 `;
-            }
 
-            showToast('🎉 ¡Smart Contract desplegado exitosamente!', 'success');
+            console.log('✅ Deployment results injected into Step 5');
+            console.log('✅ DEPLOYMENT SUCCESS COMPLETE');
+            console.log('═══════════════════════════════════════════════════');
         }
 
         // Funciones para gestión de proyectos

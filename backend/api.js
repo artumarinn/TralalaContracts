@@ -273,24 +273,14 @@ app.post('/api/deploy-contract', async (req, res) => {
         const wasmHash = crypto.createHash('sha256').update(wasmBuffer).digest('hex');
         console.log('🔑 WASM Hash (wasmId):', wasmHash);
 
-        console.log('🔍 Step 5: Calculating expected contract ID...');
-        // Calculate EXPECTED contract ID based on Stellar's deterministic algorithm
-        // This is NOT a simulation - this is how Stellar ACTUALLY calculates Contract IDs
-        // Formula: SHA256(network_passphrase + contract_address_type + deployer_address + wasm_hash)
-        const contractIdBuffer = crypto.createHash('sha256')
-            .update(Buffer.concat([
-                Buffer.from(networkPassphrase),
-                Buffer.from([0x00, 0x00, 0x00, 0x02]), // CONTRACT_ADDRESS type
-                Buffer.from(userAddress, 'utf8'),
-                Buffer.from(wasmHash, 'hex')
-            ]))
-            .digest();
+        console.log('🔍 Step 5: Contract ID calculation...');
+        // NOTE: Contract ID will be extracted from CREATE transaction response
+        // The frontend will parse the transaction meta XDR to get the real contract address
+        // This ensures correct StrKey format (C + base32 encoding)
+        const expectedContractId = 'PENDING_EXTRACTION_FROM_BLOCKCHAIN';
 
-        // Format as Stellar Contract Address (C + 55 hex chars)
-        const expectedContractId = `C${contractIdBuffer.toString('hex').substring(0, 55).toUpperCase()}`;
-
-        console.log('🆔 Expected Contract ID (deterministic):', expectedContractId);
-        console.log('   This is the REAL ID the contract will have on Stellar Testnet');
+        console.log('🆔 Contract ID: Will be extracted from CREATE transaction response');
+        console.log('   Frontend will parse transaction meta XDR for accurate StrKey address');
 
         console.log('═══════════════════════════════════════════════════');
         console.log('✅ BACKEND READY - Returning UPLOAD XDR to frontend');
