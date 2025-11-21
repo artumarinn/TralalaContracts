@@ -411,7 +411,7 @@ function validateBlocksData() {
 function addTemplateListeners() {
     const templateCards = document.querySelectorAll('.template-card');
     templateCards.forEach(card => {
-        card.addEventListener('click', function() {
+        card.addEventListener('click', function () {
             // Remover selección anterior
             templateCards.forEach(c => c.classList.remove('selected'));
             // Agregar selección a la tarjeta actual
@@ -436,19 +436,32 @@ async function connectWallet(walletType) {
     try {
         showToast('Conectando wallet...', 'info');
 
-        let address;
-
-        if (walletType === 'FREIGHTER' || !walletType) {
-            // Usar Freighter directamente
-            if (!window.freighterApi) {
-                throw new Error('Freighter no está instalado. Ve a freighter.app para instalarlo.');
-            }
-
-            address = await window.freighterApi.getPublicKey();
-            appState.walletType = 'FREIGHTER';
-        } else {
-            throw new Error(`Wallet tipo ${walletType} no soportado aún`);
+        if (!window.WalletAdapter) {
+            throw new Error('WalletAdapter no disponible en la página');
         }
+
+        const normalize = (t) => {
+            if (!t) return undefined;
+            const map = { 'FREIGHTER': 'freighter', 'XBULL': 'xbull', 'ALBEDO': 'albedo', 'RABET': 'rabet' };
+            return map[t] || t.toLowerCase();
+        };
+
+        const id = normalize(walletType);
+
+        let wallet;
+        try {
+            wallet = await window.WalletAdapter.connect(id);
+        } catch (err) {
+            console.warn('No se pudo conectar al wallet solicitado, intentando el primero disponible:', err.message);
+            wallet = await window.WalletAdapter.connect();
+        }
+
+        const address = wallet?.publicKey;
+        if (!address) throw new Error('No se obtuvo la clave pública de la wallet');
+
+        // Normalize appState.walletType to the existing keys expected by getWalletName
+        const typeMap = { 'freighter': 'FREIGHTER', 'xbull': 'XBULL', 'albedo': 'ALBEDO', 'rabet': 'RABET' };
+        appState.walletType = typeMap[wallet.id] || (wallet.name || wallet.id || 'FREIGHTER');
 
         appState.walletConnected = true;
         appState.walletAddress = address;
@@ -471,8 +484,19 @@ async function connectWallet(walletType) {
         // Actualizar interfaces de funding
         updateFundingInterface();
 
-        // Obtener balance inicial
-        await updateBalance();
+        // Obtener balance inicial usando adapter helper si está disponible
+        if (window.WalletAdapter && typeof window.WalletAdapter.getBalance === 'function') {
+            try {
+                const bal = await window.WalletAdapter.getBalance(address);
+                appState.currentBalance = bal;
+                appState.hasXLM = bal >= 5;
+                if (elements.currentBalance) elements.currentBalance.textContent = `${bal.toFixed(2)} XLM`;
+            } catch (e) {
+                console.warn('No se pudo obtener balance via WalletAdapter:', e.message);
+            }
+        } else {
+            await updateBalance();
+        }
 
         showToast('Wallet conectado exitosamente', 'success');
 

@@ -80,7 +80,8 @@
                 <div class="templates-container">
                     <div class="description-box">
                         <h2 class="wallets-title">Elige una plantilla para comenzar</h2>
-                        <p class="wallets-title">Selecciona un caso de uso común que se adapte a tu necesidad. Puedes personalizarlo completamente con bloques.</p>
+                        <p class="wallets-title">Selecciona un caso de uso común que se adapte a tu necesidad. Puedes
+                            personalizarlo completamente con bloques.</p>
                     </div>
                     <div class="templates-grid">
                         <div class="template-card" id="templateBasic" data-template="basic">
@@ -139,7 +140,8 @@
                 <div class="smart-contract-container">
                     <div class="description-box">
                         <h2 class="wallets-title">⚙️ Configuración Avanzada del Smart Contract</h2>
-                        <p class="wallets-title">Arrastra más bloques para añadir funcionalidades y construir tu contrato.</p>
+                        <p class="wallets-title">Arrastra más bloques para añadir funcionalidades y construir tu
+                            contrato.</p>
                     </div>
 
                     <!-- Preview del Código -->
@@ -336,8 +338,10 @@
             <div class="step-content" id="step5">
                 <div class="results-container">
                     <div class="description-box" style="text-align: center;">
-                        <h2 class="step-title" style="color: #10b981; font-size: 2rem; margin-bottom: 1rem;">🎉 ¡Deployment Exitoso!</h2>
-                        <p style="font-size: 1.1rem; color: #6b7280;">Tu contrato ha sido desplegado en Stellar Testnet</p>
+                        <h2 class="step-title" style="color: #10b981; font-size: 2rem; margin-bottom: 1rem;">🎉
+                            ¡Deployment Exitoso!</h2>
+                        <p style="font-size: 1.1rem; color: #6b7280;">Tu contrato ha sido desplegado en Stellar Testnet
+                        </p>
                     </div>
 
                     <div id="deploymentResults" style="max-width: 800px; margin: 2rem auto;">
@@ -345,7 +349,8 @@
                     </div>
 
                     <div class="stepper-navigation" style="margin-top: 2rem;">
-                        <button class="btn btn-primary" onclick="window.location.reload()" style="width: 100%; max-width: 300px;">
+                        <button class="btn btn-primary" onclick="window.location.reload()"
+                            style="width: 100%; max-width: 300px;">
                             🔄 Crear Otro Contrato
                         </button>
                     </div>
@@ -382,6 +387,7 @@
     </script>
     <script src="https://cdn.jsdelivr.net/npm/@stellar/freighter-api@1.7.0/build/index.min.js"></script>
     <script src="https://unpkg.com/albedo-sdk@^0.10.4/dist/albedo.min.js"></script>
+    <script src="/wallet-adapter.js"></script>
     <script src="compilation-progress.js"></script>
     <script src="blockly-templates.js"></script>
     <script src="rust-generator.js"></script>
@@ -582,7 +588,7 @@
         function addTemplateListeners() {
             const templateCards = document.querySelectorAll('.template-card');
             templateCards.forEach(card => {
-                card.addEventListener('click', function() {
+                card.addEventListener('click', function () {
                     // Remover selección anterior
                     templateCards.forEach(c => c.classList.remove('selected'));
                     // Agregar selección a la tarjeta actual
@@ -916,7 +922,7 @@ impl TokenContract {
             // Agregar bloque de settings para compatibilidad con código existente
             if (!Blockly.Blocks['contract_settings']) {
                 Blockly.Blocks['contract_settings'] = {
-                    init: function() {
+                    init: function () {
                         this.appendDummyInput()
                             .appendField("🔮 Mi Smart Contract");
                         this.appendStatementInput("SETTINGS")
@@ -1025,7 +1031,7 @@ impl TokenContract {
             });
 
             // Agregar listeners para actualizar preview en tiempo real
-            blocklyWorkspace.addChangeListener(function(event) {
+            blocklyWorkspace.addChangeListener(function (event) {
                 // Solo actualizar en step 3
                 if (appState.currentStep === 3) {
                     // Usar debounce para evitar actualizaciones demasiado frecuentes
@@ -1409,59 +1415,50 @@ impl TokenContract {
             }, 3000);
         }
 
-        // Funciones de conexión de wallet
+        // Funciones de conexión de wallet (usa WalletAdapter para no hardcodear Freighter)
         async function connectWallet(walletType) {
             try {
                 showToast('Conectando wallet...', 'info');
 
-                let address;
-
-                if (walletType === 'Freighter') {
-                    if (!window.freighterApi) {
-                        // Redirigir a la página de instalación de Freighter
-                        window.open('https://freighter.app/', '_blank');
-                        showToast('Freighter no está instalado. Abriendo página de instalación...', 'info');
-                        return;
-                    }
-
-                    address = await window.freighterApi.getPublicKey();
-                    appState.walletType = 'Freighter';
-                } else if (walletType === 'Albedo') {
-                    if (!(window.albedo && window.albedo.publicKey)) {
-                        window.open('https://albedo.link/', '_blank');
-                        showToast('Albedo no está instalado/disponible. Abriendo página...', 'info');
-                        return;
-                    }
-                    const res = await window.albedo.publicKey({
-                        // Albedo funciona sin extensión, solicitar clave pública
-                        intent: 'public_key'
-                    });
-                    address = res.pubkey;
-                    appState.walletType = 'Albedo';
-                } else if (walletType === 'xBull') {
-                    if (!window.xBullApi) {
-                        // Redirigir a la página de instalación de xBull
-                        window.open('https://xbull.app/', '_blank');
-                        showToast('xBull no está instalado. Abriendo página de instalación...', 'info');
-                        return;
-                    }
-                    // Implementar conexión con xBull cuando esté disponible
-                    throw new Error('xBull wallet no está disponible en este momento');
-                } else if (walletType === 'Rabet') {
-                    if (!window.rabetApi) {
-                        // Redirigir a la página de instalación de Rabet
-                        window.open('https://rabet.io/', '_blank');
-                        showToast('Rabet no está instalado. Abriendo página de instalación...', 'info');
-                        return;
-                    }
-                    // Implementar conexión con Rabet cuando esté disponible
-                    throw new Error('Rabet wallet no está disponible en este momento');
-                } else {
-                    throw new Error(`${walletType} wallet no está disponible en este momento`);
+                if (!window.WalletAdapter) {
+                    throw new Error('WalletAdapter no está cargado en la página');
                 }
+
+                // Map UI labels to adapter ids
+                const normalize = (label) => {
+                    if (!label) return undefined;
+                    const map = { 'Freighter': 'freighter', 'Albedo': 'albedo', 'xBull': 'xbull', 'Rabet': 'rabet' };
+                    return map[label] || label.toLowerCase();
+                };
+
+                const id = normalize(walletType);
+
+                // Try to connect to the requested wallet; fallback to first available
+                let wallet;
+                try {
+                    wallet = await window.WalletAdapter.connect(id);
+                } catch (err) {
+                    // fallback: try connecting to first detected wallet
+                    console.warn('No se pudo conectar al wallet solicitado, intentando el primero disponible:', err.message);
+                    wallet = await window.WalletAdapter.connect();
+                }
+
+                const address = wallet?.publicKey;
+                if (!address) throw new Error('No se obtuvo la clave pública de la wallet');
 
                 appState.walletConnected = true;
                 appState.walletAddress = address;
+                appState.walletType = wallet.name || wallet.id || walletType;
+
+                // Try to update balance using WalletAdapter helper
+                if (window.WalletAdapter.getBalance) {
+                    try {
+                        const bal = await window.WalletAdapter.getBalance(address);
+                        appState.currentBalance = bal || 0;
+                    } catch (e) {
+                        console.warn('No se pudo obtener balance via WalletAdapter:', e.message);
+                    }
+                }
 
                 showToast('Wallet conectado exitosamente', 'success');
 
@@ -1952,14 +1949,14 @@ impl TokenContract {
                     fee: StellarSdk.BASE_FEE, // Will be adjusted by prepareTransaction
                     networkPassphrase: networkPassphrase,
                 })
-                .addOperation(
-                    StellarSdk.Operation.createCustomContract({
-                        address: new StellarSdk.Address(userAddress),
-                        wasmHash: wasmHashBytes,
-                    })
-                )
-                .setTimeout(300) // 5 minutes
-                .build();
+                    .addOperation(
+                        StellarSdk.Operation.createCustomContract({
+                            address: new StellarSdk.Address(userAddress),
+                            wasmHash: wasmHashBytes,
+                        })
+                    )
+                    .setTimeout(300) // 5 minutes
+                    .build();
 
                 console.log('✅ CREATE transaction built (unprepared)');
                 console.log('   Initial fee:', createTransaction.fee, 'stroops');
@@ -2241,20 +2238,20 @@ impl TokenContract {
 
             // Prepare features list
             const features = Object.keys(contractData.features || {})
-                    .filter(f => contractData.features[f])
-                    .map(f => {
-                        const names = {
-                            'mintable': 'Mintable',
-                            'burnable': 'Burnable',
-                            'pausable': 'Pausable',
-                            'upgradeable': 'Upgradeable',
-                            'governance': 'Governance',
-                            'stakeable': 'Stakeable',
-                            'timeLock': 'Time Lock',
-                            'accessControl': 'Control de Acceso'
-                        };
-                        return names[f] || f;
-                    }).join(', ');
+                .filter(f => contractData.features[f])
+                .map(f => {
+                    const names = {
+                        'mintable': 'Mintable',
+                        'burnable': 'Burnable',
+                        'pausable': 'Pausable',
+                        'upgradeable': 'Upgradeable',
+                        'governance': 'Governance',
+                        'stakeable': 'Stakeable',
+                        'timeLock': 'Time Lock',
+                        'accessControl': 'Control de Acceso'
+                    };
+                    return names[f] || f;
+                }).join(', ');
 
             // Inject the deployment results HTML
             resultsContainer.innerHTML = `
