@@ -538,7 +538,11 @@ class RustGenerator {
         let toCode = to ? this.fromBlock(to) : 'to_address';
         let amountCode = amount ? this.fromBlock(amount) : '0';
 
-        return `// Mint: ${toCode} recibe ${amountCode} tokens`;
+        // Mint tokens - increment balance
+        return `// Mint tokens to ${toCode}
+let balance_key = symbol_short!("BAL");
+let current: i128 = env.storage().persistent().get(&(&${toCode}, &balance_key)).unwrap_or(0);
+env.storage().persistent().set(&(&${toCode}, &balance_key), &(current + ${amountCode}));`;
     }
 
     block_token_burn(block) {
@@ -888,9 +892,24 @@ class RustGenerator {
     buildContract(stateVars = [], functions = [], events = []) {
         let rust = '';
 
-        // Agregar imports (siempre incluir al menos los básicos)
-        if (!Array.from(this.imports).some(i => i.includes('contract, contractimpl'))) {
-            this.addImport('use soroban_sdk::{contract, contractimpl, Address, Env};');
+        // Agregar imports básicos siempre
+        // Usamos un solo import consolidado para evitar duplicados
+        this.imports.clear();
+        this.addImport('use soroban_sdk::{contract, contractimpl, Address, Env, Symbol, symbol_short};');
+
+        // Agregar imports adicionales si hay funciones que los necesitan
+        const allCode = [...stateVars, ...functions, ...events].join('\n');
+        if (allCode.includes('Map<') || allCode.includes('Map::<')) {
+            this.addImport('use soroban_sdk::Map;');
+        }
+        if (allCode.includes('Vec<') || allCode.includes('Vec::<')) {
+            this.addImport('use soroban_sdk::Vec;');
+        }
+        if (allCode.includes('String::')) {
+            this.addImport('use soroban_sdk::String;');
+        }
+        if (allCode.includes('Bytes::') || allCode.includes('Bytes>')) {
+            this.addImport('use soroban_sdk::Bytes;');
         }
 
         // Deduplicar y ordenar imports
