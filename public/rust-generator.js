@@ -47,7 +47,24 @@ class RustGenerator {
     block_contract_init(block) {
         this.addImport('use soroban_sdk::{contract, contractimpl, Address, Env};');
         this.addImport('use soroban_sdk::{Symbol, symbol_short};');
-        return '// Contrato Soroban inicializado\n#![no_std]\n';
+
+        // Procesar el body si existe
+        let bodyCode = '';
+        const bodyBlock = block.getInputTargetBlock('BODY');
+        if (bodyBlock) {
+            this.indentation++;
+            let currentStatement = bodyBlock;
+            while (currentStatement) {
+                const statement = this.fromBlock(currentStatement);
+                if (statement && statement.trim()) {
+                    bodyCode += this.indent(statement) + '\n';
+                }
+                currentStatement = currentStatement.getNextBlock();
+            }
+            this.indentation--;
+        }
+
+        return '// Contrato Soroban inicializado\n#![no_std]\n' + bodyCode;
     }
 
     block_contract_metadata(block) {
@@ -132,7 +149,25 @@ class RustGenerator {
 
     block_state_event(block) {
         const eventName = block.getFieldValue('EVENT_NAME');
-        return `// Evento: ${eventName}`;
+
+        // Procesar parámetros del evento
+        let params = [];
+        const paramsBlock = block.getInputTargetBlock('PARAMS');
+        if (paramsBlock) {
+            let currentParam = paramsBlock;
+            while (currentParam) {
+                if (currentParam.type === 'event_parameter') {
+                    const paramCode = this.fromBlock(currentParam);
+                    if (paramCode && paramCode.trim()) {
+                        params.push(paramCode);
+                    }
+                }
+                currentParam = currentParam.getNextBlock();
+            }
+        }
+
+        const paramList = params.length > 0 ? `(${params.join(', ')})` : '()';
+        return `// Evento ${eventName}${paramList}`;
     }
 
     // ========== FUNCIONES ==========
@@ -154,7 +189,43 @@ class RustGenerator {
 
         const rustRetType = typeMap[retType] || retType;
 
-        return `pub fn ${fnName}(env: Env) -> ${rustRetType} {\n    // TODO: Implementar función\n}`;
+        // Procesar parámetros
+        let params = ['env: Env'];
+        const paramsBlock = block.getInputTargetBlock('PARAMS');
+        if (paramsBlock) {
+            let currentParam = paramsBlock;
+            while (currentParam) {
+                if (currentParam.type === 'function_parameter') {
+                    const paramCode = this.fromBlock(currentParam);
+                    if (paramCode && paramCode.trim()) {
+                        params.push(paramCode);
+                    }
+                }
+                currentParam = currentParam.getNextBlock();
+            }
+        }
+
+        // Procesar body
+        let bodyCode = '    // TODO: Implementar función';
+        const bodyBlock = block.getInputTargetBlock('BODY');
+        if (bodyBlock) {
+            bodyCode = '';
+            this.indentation = 1;
+            let currentStatement = bodyBlock;
+            while (currentStatement) {
+                const statement = this.fromBlock(currentStatement);
+                if (statement && statement.trim()) {
+                    bodyCode += this.indent(statement) + '\n';
+                }
+                currentStatement = currentStatement.getNextBlock();
+            }
+            this.indentation = 0;
+            // Remove trailing newline
+            bodyCode = bodyCode.replace(/\n$/, '');
+        }
+
+        const paramList = params.join(', ');
+        return `pub fn ${fnName}(${paramList}) -> ${rustRetType} {\n${bodyCode}\n    }`;
     }
 
     block_function_parameter(block) {
@@ -168,6 +239,24 @@ class RustGenerator {
             'STRING': 'String',
             'ADDRESS': 'Address',
             'BYTES': 'soroban_sdk::Bytes',
+            'VEC': 'Vec'
+        };
+
+        const rustType = typeMap[paramType] || paramType;
+        return `${paramName}: ${rustType}`;
+    }
+
+    block_event_parameter(block) {
+        const paramName = block.getFieldValue('PARAM_NAME');
+        const paramType = block.getFieldValue('PARAM_TYPE');
+
+        const typeMap = {
+            'I32': 'i32',
+            'I128': 'i128',
+            'BOOL': 'bool',
+            'STRING': 'String',
+            'ADDRESS': 'Address',
+            'BYTES': 'Bytes',
             'VEC': 'Vec'
         };
 
@@ -380,8 +469,10 @@ class RustGenerator {
 
         let destCode = destination ? this.fromBlock(destination) : 'destination';
         let amountCode = amount ? this.fromBlock(amount) : '0';
+        let assetCodeStr = assetCode ? this.fromBlock(assetCode) : '"USDC"';
+        let assetIssuerStr = assetIssuer ? this.fromBlock(assetIssuer) : 'issuer_address';
 
-        return `// Pago a ${destCode} de ${amountCode}`;
+        return `// Pago a ${destCode} de ${amountCode} ${assetCodeStr} (Emisor: ${assetIssuerStr})`;
     }
 
     block_stellar_require_auth(block) {
@@ -390,6 +481,36 @@ class RustGenerator {
         let addrCode = address ? this.fromBlock(address) : 'account';
 
         return `${addrCode}.require_auth();`;
+    }
+
+    block_stellar_trust_line(block) {
+        this.addImport('use soroban_sdk::{Symbol, symbol_short};');
+
+        const account = block.getInputTargetBlock('ACCOUNT');
+        const assetCode = block.getInputTargetBlock('ASSET_CODE');
+        const assetIssuer = block.getInputTargetBlock('ASSET_ISSUER');
+        const limit = block.getInputTargetBlock('LIMIT');
+
+        let accountCode = account ? this.fromBlock(account) : 'account';
+        let assetCodeStr = assetCode ? this.fromBlock(assetCode) : '"USDC"';
+        let assetIssuerStr = assetIssuer ? this.fromBlock(assetIssuer) : 'issuer';
+        let limitCode = limit ? this.fromBlock(limit) : '1_000_000_000';
+
+        return `// Establecer línea de confianza\n// Cuenta: ${accountCode}, Asset: ${assetCodeStr}, Límite: ${limitCode}`;
+    }
+
+    block_stellar_context(block) {
+        const context = block.getFieldValue('CONTEXT');
+
+        const contextMap = {
+            'CURRENT_CONTRACT': 'env.current_contract_address()',
+            'LEDGER': 'env.ledger().sequence()',
+            'TIMESTAMP': 'env.ledger().timestamp()',
+            'INVOKER': 'env.invoker()'
+        };
+
+        const contextCode = contextMap[context] || 'env.current_contract_address()';
+        return contextCode;
     }
 
     // ========== TOKEN ==========
@@ -402,7 +523,12 @@ class RustGenerator {
         const decimals = block.getInputTargetBlock('DECIMALS');
         const supply = block.getInputTargetBlock('SUPPLY');
 
-        return `// Token inicializado\n// Nombre, Símbolo, Decimales, Suministro`;
+        let nameCode = name ? this.fromBlock(name) : '"Token"';
+        let symbolCode = symbol ? this.fromBlock(symbol) : '"TOK"';
+        let decimalsCode = decimals ? this.fromBlock(decimals) : '7';
+        let supplyCode = supply ? this.fromBlock(supply) : '1_000_000';
+
+        return `pub fn initialize(env: Env, name: String, symbol: String, decimals: u32, initial_supply: i128) {\n    // Token: ${nameCode}\n    // Symbol: ${symbolCode}\n    // Decimals: ${decimalsCode}\n    // Initial Supply: ${supplyCode}\n}`;
     }
 
     block_token_mint(block) {
@@ -423,6 +549,62 @@ class RustGenerator {
         let amountCode = amount ? this.fromBlock(amount) : '0';
 
         return `// Burn: Se queman ${amountCode} tokens de ${fromCode}`;
+    }
+
+    block_token_transfer(block) {
+        const from = block.getInputTargetBlock('FROM');
+        const to = block.getInputTargetBlock('TO');
+        const amount = block.getInputTargetBlock('AMOUNT');
+
+        let fromCode = from ? this.fromBlock(from) : 'from_address';
+        let toCode = to ? this.fromBlock(to) : 'to_address';
+        let amountCode = amount ? this.fromBlock(amount) : '0';
+
+        return `TokenClient::new(&env, &token_id).transfer(&${fromCode}, &${toCode}, &${amountCode});`;
+    }
+
+    block_token_balance(block) {
+        const account = block.getInputTargetBlock('ACCOUNT');
+
+        let accountCode = account ? this.fromBlock(account) : 'account';
+
+        return `TokenClient::new(&env, &token_id).balance(&${accountCode})`;
+    }
+
+    block_token_allowance(block) {
+        const owner = block.getInputTargetBlock('OWNER');
+        const spender = block.getInputTargetBlock('SPENDER');
+        const amount = block.getInputTargetBlock('AMOUNT');
+
+        let ownerCode = owner ? this.fromBlock(owner) : 'owner';
+        let spenderCode = spender ? this.fromBlock(spender) : 'spender';
+        let amountCode = amount ? this.fromBlock(amount) : '0';
+
+        return `TokenClient::new(&env, &token_id).approve(&${ownerCode}, &${spenderCode}, &${amountCode}, &10_000);`;
+    }
+
+    block_token_symbol(block) {
+        const symbol = block.getInputTargetBlock('SYMBOL');
+
+        let symbolCode = symbol ? this.fromBlock(symbol) : '"TOK"';
+
+        return `let symbol = Symbol::new(&env, ${symbolCode});`;
+    }
+
+    block_token_supply(block) {
+        const supply = block.getInputTargetBlock('SUPPLY');
+
+        let supplyCode = supply ? this.fromBlock(supply) : '1_000_000';
+
+        return `TokenClient::new(&env, &token_id).total_supply()`;
+    }
+
+    block_token_decimals(block) {
+        const decimals = block.getInputTargetBlock('DECIMALS');
+
+        let decimalsCode = decimals ? this.fromBlock(decimals) : '7';
+
+        return `TokenClient::new(&env, &token_id).decimals()`;
     }
 
     // ========== RWA (REAL WORLD ASSETS) ==========
@@ -571,10 +753,76 @@ class RustGenerator {
     block_access_control(block) {
         const address = block.getInputTargetBlock('ADDRESS');
         const role = block.getFieldValue('ROLE');
+        const bodyBlock = block.getInputTargetBlock('BODY');
 
         let addrCode = address ? this.fromBlock(address) : 'invoker';
+        let code = `${addrCode}.require_auth();\n`;
 
-        return `// Control de acceso para ${role}\n${addrCode}.require_auth();`;
+        // Procesar el body si existe
+        if (bodyBlock) {
+            this.indentation++;
+            let currentStatement = bodyBlock;
+            while (currentStatement) {
+                const statement = this.fromBlock(currentStatement);
+                if (statement && statement.trim()) {
+                    code += this.indent(statement) + '\n';
+                }
+                currentStatement = currentStatement.getNextBlock();
+            }
+            this.indentation--;
+        }
+
+        return code.replace(/\n$/, '');
+    }
+
+    block_role_based_check(block) {
+        const address = block.getInputTargetBlock('ADDRESS');
+        const role = block.getFieldValue('ROLE');
+
+        let addressCode = address ? this.fromBlock(address) : 'account';
+
+        return `// Verificar rol: ${role}\nif check_role(&env, &${addressCode}, "${role}") { /* authorized */ }`;
+    }
+
+    block_reentrancy_guard(block) {
+        this.addImport('use soroban_sdk::Symbol;');
+
+        const bodyBlock = block.getInputTargetBlock('BODY');
+
+        let code = 'let guard_key = symbol_short!("REENT");\n';
+        code += 'if env.storage().temporary().has(&guard_key) { panic!("Reentrancy detected"); }\n';
+        code += 'env.storage().temporary().set(&guard_key, &true);\n';
+
+        // Procesar el body si existe
+        if (bodyBlock) {
+            this.indentation++;
+            let currentStatement = bodyBlock;
+            while (currentStatement) {
+                const statement = this.fromBlock(currentStatement);
+                if (statement && statement.trim()) {
+                    code += this.indent(statement) + '\n';
+                }
+                currentStatement = currentStatement.getNextBlock();
+            }
+            this.indentation--;
+        }
+
+        code += 'env.storage().temporary().remove(&guard_key);';
+
+        return code.replace(/\n$/, '');
+    }
+
+    block_pause_functionality(block) {
+        const action = block.getFieldValue('ACTION');
+
+        const actionMap = {
+            'PAUSE': 'env.storage().persistent().set(&symbol_short!("PAUSED"), &true);',
+            'UNPAUSE': 'env.storage().persistent().set(&symbol_short!("PAUSED"), &false);',
+            'CHECK': 'let is_paused = env.storage().persistent().get::<bool>(&symbol_short!("PAUSED")).unwrap_or(false);'
+        };
+
+        const actionCode = actionMap[action] || 'env.storage().persistent().set(&symbol_short!("PAUSED"), &true);';
+        return `// ${action} contrato\n${actionCode}`;
     }
 
     // ========== LITERALES ==========
