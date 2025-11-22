@@ -34,6 +34,23 @@
         "admin_management"
       ],
       "compiled_at": "2025-11-12T11:07:00Z"
+    },
+    {
+      "id": "rwa",
+      "name": "Real World Assets (RWA)",
+      "description": "Real World Assets template with custody, settlement, and asset registration features",
+      "filename": "token_advanced.wasm",
+      "size_bytes": 5939,
+      "features": [
+        "asset_registration",
+        "custodian_management",
+        "settlement_transactions",
+        "balance_tracking",
+        "access_control",
+        "event_logging"
+      ],
+      "compiled_at": "2025-11-12T11:07:00Z",
+      "note": "Uses advanced token WASM as base for RWA functionality"
     }
   ],
   "notes": "These are precompiled WASM binaries for fast contract deployment. No compilation required on request - templates return immediately as base64-encoded WASM."

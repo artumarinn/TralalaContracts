@@ -79,9 +79,8 @@
             <div class="step-content" id="step2">
                 <div class="templates-container">
                     <div class="description-box">
-                        <h2 class="wallets-title">Elige una plantilla para comenzar</h2>
-                        <p class="wallets-title">Selecciona un caso de uso común que se adapte a tu necesidad. Puedes
-                            personalizarlo completamente con bloques.</p>
+                        <h2 style="font-size: 1.5rem; font-weight: 700; margin-bottom: 0.5rem; color: #1f2937;">Elige una Plantilla para Comenzar</h2>
+                        <p style="font-size: 1rem; color: #6b7280; margin: 0;">Selecciona un caso de uso común que se adapte a tu necesidad. Puedes personalizarlo completamente con bloques después.</p>
                     </div>
                     <div class="templates-grid">
                         <div class="template-card" id="templateBasic" data-template="basic">
@@ -115,9 +114,6 @@
                                 <li>✓ Límites de transferencia</li>
                             </ul>
                         </div>
-                    </div>
-                    <div style="margin-top: 2rem; text-align: center; color: #6b7280;">
-                        <p>O crea un contrato personalizado desde cero →</p>
                     </div>
                 </div>
             </div>
@@ -160,6 +156,9 @@
                         </div>
                         <div class="validation-result hidden" id="validationResult">
                             <div id="validationMessage"></div>
+                        </div>
+                        <div class="validation-result hidden" id="preDeploymentValidation">
+                            <div id="preDeploymentValidationMessage"></div>
                         </div>
                     </div>
                 </div>
@@ -603,15 +602,29 @@
         }
 
         function applyTemplate(template) {
-            // Las plantillas se aplicarán cuando se inicialice Blockly en el paso 3
             console.log('🎨 Aplicando plantilla:', template);
 
-            // Guardar la plantilla en appState para usarla cuando se inicialice Blockly
+            // Guardar la plantilla en appState
             appState.selectedTemplate = template;
+
+            // Switch Blockly template dynamically
+            if (typeof window.switchTemplate === 'function') {
+                console.log('🔄 Switching Blockly template to:', template);
+                window.switchTemplate(template);
+            } else {
+                console.warn('⚠️ switchTemplate function not available yet');
+            }
 
             // Mostrar mensaje
             showToast(`✅ Plantilla "${template.toUpperCase()}" seleccionada`, 'success');
         }
+
+        // Función para cambiar dinámicamente los bloques por defecto según la plantilla
+        window.switchTemplate = function(templateName) {
+            console.log(`🔄 Switching Blockly blocks to template: ${templateName}`);
+            appState.selectedTemplate = templateName;
+            createDefaultBlocks();
+        };
 
         // Función para actualizar el preview del código
         function updateCodePreview() {
@@ -1051,6 +1064,8 @@ impl TokenContract {
         function createDefaultBlocks() {
             if (!blocklyWorkspace) return;
 
+            console.log(`🔄 Creating default blocks for template: ${appState.selectedTemplate || 'basic'}`);
+
             // Limpiar workspace
             blocklyWorkspace.clear();
 
@@ -1065,55 +1080,143 @@ impl TokenContract {
                 contractBlock.render();
                 contractBlock.moveBy(50, 50);
 
-                // Crear bloques básicos sugeridos
+                // Crear bloques básicos sugeridos según la plantilla
                 const blocks = [];
+                const template = appState.selectedTemplate || 'basic';
 
-                // Bloque de nombre del contrato
-                const nameBlock = blocklyWorkspace.newBlock('contract_name');
-                if (nameBlock) {
-                    nameBlock.initSvg();
-                    nameBlock.render();
-                    nameBlock.setFieldValue('MiContrato', 'NAME');
-                    blocks.push(nameBlock);
-                }
+                if (template === 'rwa') {
+                    // Bloques para RWA
+                    // Primero agregar el bloque de nombre del contrato
+                    const nameBlock = blocklyWorkspace.newBlock('contract_name');
+                    if (nameBlock) {
+                        nameBlock.initSvg();
+                        nameBlock.render();
+                        nameBlock.setFieldValue('RWAContract', 'NAME');
+                        blocks.push(nameBlock);
+                        console.log('✅ Contract name block created');
+                    }
 
-                // Bloque de versión
-                const versionBlock = blocklyWorkspace.newBlock('contract_version');
-                if (versionBlock) {
-                    versionBlock.initSvg();
-                    versionBlock.render();
-                    versionBlock.setFieldValue('1.0.0', 'VERSION');
-                    blocks.push(versionBlock);
-                }
+                    // Agregar bloque de administrador
+                    const adminBlock = blocklyWorkspace.newBlock('admin_address');
+                    if (adminBlock) {
+                        adminBlock.initSvg();
+                        adminBlock.render();
+                        adminBlock.setFieldValue('GAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAWHF', 'ADDRESS');
+                        blocks.push(adminBlock);
+                        console.log('✅ Admin address block created');
+                    }
 
-                // Bloque de administrador
-                const adminBlock = blocklyWorkspace.newBlock('admin_address');
-                if (adminBlock) {
-                    adminBlock.initSvg();
-                    adminBlock.render();
-                    adminBlock.setFieldValue('G...', 'ADDRESS');
-                    blocks.push(adminBlock);
-                }
+                    const rwaAsset = blocklyWorkspace.newBlock('rwa_asset');
+                    if (rwaAsset) {
+                        rwaAsset.initSvg();
+                        rwaAsset.render();
+                        blocks.push(rwaAsset);
+                        console.log('✅ RWA asset block created');
+                    }
 
-                // Bloque de variable de estado
-                const stateVarBlock = blocklyWorkspace.newBlock('state_variable');
-                if (stateVarBlock) {
-                    stateVarBlock.initSvg();
-                    stateVarBlock.render();
-                    stateVarBlock.setFieldValue('totalSupply', 'VAR_NAME');
-                    stateVarBlock.setFieldValue('I128', 'VAR_TYPE');
-                    stateVarBlock.setFieldValue('0', 'INIT_VALUE');
-                    blocks.push(stateVarBlock);
-                }
+                    const rwaCustody = blocklyWorkspace.newBlock('rwa_custody');
+                    if (rwaCustody) {
+                        rwaCustody.initSvg();
+                        rwaCustody.render();
+                        blocks.push(rwaCustody);
+                        console.log('✅ RWA custody block created');
+                    }
 
-                // Bloque de función
-                const fnBlock = blocklyWorkspace.newBlock('function_declaration');
-                if (fnBlock) {
-                    fnBlock.initSvg();
-                    fnBlock.render();
-                    fnBlock.setFieldValue('transfer', 'FN_NAME');
-                    fnBlock.setFieldValue('VOID', 'RET_TYPE');
-                    blocks.push(fnBlock);
+                    const rwaSettlement = blocklyWorkspace.newBlock('rwa_settlement');
+                    if (rwaSettlement) {
+                        rwaSettlement.initSvg();
+                        rwaSettlement.render();
+                        blocks.push(rwaSettlement);
+                        console.log('✅ RWA settlement block created');
+                    }
+
+                } else if (template === 'defi') {
+                    // Bloques para DeFi
+                    const nameBlock = blocklyWorkspace.newBlock('contract_name');
+                    if (nameBlock) {
+                        nameBlock.initSvg();
+                        nameBlock.render();
+                        nameBlock.setFieldValue('DefiToken', 'NAME');
+                        blocks.push(nameBlock);
+                    }
+
+                    const stateVarBlock = blocklyWorkspace.newBlock('state_variable');
+                    if (stateVarBlock) {
+                        stateVarBlock.initSvg();
+                        stateVarBlock.render();
+                        stateVarBlock.setFieldValue('totalSupply', 'VAR_NAME');
+                        stateVarBlock.setFieldValue('I128', 'VAR_TYPE');
+                        stateVarBlock.setFieldValue('0', 'INIT_VALUE');
+                        blocks.push(stateVarBlock);
+                    }
+
+                    const mintFn = blocklyWorkspace.newBlock('function_declaration');
+                    if (mintFn) {
+                        mintFn.initSvg();
+                        mintFn.render();
+                        mintFn.setFieldValue('mint', 'FN_NAME');
+                        mintFn.setFieldValue('VOID', 'RET_TYPE');
+                        blocks.push(mintFn);
+                    }
+
+                    const burnFn = blocklyWorkspace.newBlock('function_declaration');
+                    if (burnFn) {
+                        burnFn.initSvg();
+                        burnFn.render();
+                        burnFn.setFieldValue('burn', 'FN_NAME');
+                        burnFn.setFieldValue('VOID', 'RET_TYPE');
+                        blocks.push(burnFn);
+                    }
+
+                } else {
+                    // Bloques básicos por defecto
+                    // Bloque de nombre del contrato
+                    const nameBlock = blocklyWorkspace.newBlock('contract_name');
+                    if (nameBlock) {
+                        nameBlock.initSvg();
+                        nameBlock.render();
+                        nameBlock.setFieldValue('MiContrato', 'NAME');
+                        blocks.push(nameBlock);
+                    }
+
+                    // Bloque de versión
+                    const versionBlock = blocklyWorkspace.newBlock('contract_version');
+                    if (versionBlock) {
+                        versionBlock.initSvg();
+                        versionBlock.render();
+                        versionBlock.setFieldValue('1.0.0', 'VERSION');
+                        blocks.push(versionBlock);
+                    }
+
+                    // Bloque de administrador
+                    const adminBlock = blocklyWorkspace.newBlock('admin_address');
+                    if (adminBlock) {
+                        adminBlock.initSvg();
+                        adminBlock.render();
+                        adminBlock.setFieldValue('G...', 'ADDRESS');
+                        blocks.push(adminBlock);
+                    }
+
+                    // Bloque de variable de estado
+                    const stateVarBlock = blocklyWorkspace.newBlock('state_variable');
+                    if (stateVarBlock) {
+                        stateVarBlock.initSvg();
+                        stateVarBlock.render();
+                        stateVarBlock.setFieldValue('totalSupply', 'VAR_NAME');
+                        stateVarBlock.setFieldValue('I128', 'VAR_TYPE');
+                        stateVarBlock.setFieldValue('0', 'INIT_VALUE');
+                        blocks.push(stateVarBlock);
+                    }
+
+                    // Bloque de función
+                    const fnBlock = blocklyWorkspace.newBlock('function_declaration');
+                    if (fnBlock) {
+                        fnBlock.initSvg();
+                        fnBlock.render();
+                        fnBlock.setFieldValue('transfer', 'FN_NAME');
+                        fnBlock.setFieldValue('VOID', 'RET_TYPE');
+                        blocks.push(fnBlock);
+                    }
                 }
 
                 // Conectar todos los bloques de forma secuencial
@@ -1525,7 +1628,8 @@ impl TokenContract {
                             security: blocklyData.security,
                             economics: blocklyData.economics,
                             metadata: blocklyData.metadata,
-                            rustCode: rustCode
+                            rustCode: rustCode,
+                            templateType: appState.selectedTemplate
                         }
                     }),
                 });
@@ -2255,58 +2359,73 @@ impl TokenContract {
 
             // Inject the deployment results HTML
             resultsContainer.innerHTML = `
-                    <div style="text-align: center; max-width: 700px; margin: 0 auto;">
-                        
-                        <div style="background: #f0fdf4; border: 2px solid #10b981; border-radius: 1rem; padding: 1.5rem; margin-bottom: 2rem; text-align: left;">
-                            <h3 style="margin: 0 0 1rem 0; color: #059669;">📄 Detalles del Contrato</h3>
-                            <div style="display: grid; gap: 0.75rem;">
-                                <div><strong>Nombre:</strong> ${contractData.name || 'N/A'}</div>
-                                <div><strong>Símbolo:</strong> ${contractData.symbol || 'N/A'}</div>
-                                <div><strong>Suministro Inicial:</strong> ${(contractData.supply || 0).toLocaleString()}</div>
-                                <div><strong>Decimales:</strong> ${contractData.decimals || 0}</div>
-                                <div><strong>Características:</strong> ${features || 'Smart Contract Básico'}</div>
+                        <!-- Contract Details Card -->
+                        <div class="result-card success">
+                            <h3>📄 Detalles del Contrato</h3>
+                            <div class="result-item">
+                                <strong>Nombre:</strong>
+                                <span class="result-item-value">${contractData.name || 'N/A'}</span>
+                            </div>
+                            <div class="result-item">
+                                <strong>Símbolo:</strong>
+                                <span class="result-item-value">${contractData.symbol || 'N/A'}</span>
+                            </div>
+                            <div class="result-item">
+                                <strong>Suministro Inicial:</strong>
+                                <span class="result-item-value">${(contractData.supply || 0).toLocaleString()}</span>
+                            </div>
+                            <div class="result-item">
+                                <strong>Decimales:</strong>
+                                <span class="result-item-value">${contractData.decimals || 0}</span>
+                            </div>
+                            <div class="result-item">
+                                <strong>Características:</strong>
+                                <span class="result-item-value">${features || 'Smart Contract Básico'}</span>
                             </div>
                         </div>
 
                         <!-- Contract ID Section -->
-                        <div style="background: white; border: 3px solid #10b981; border-radius: 1rem; padding: 1.5rem; margin-bottom: 1.5rem;">
-                            <div style="font-weight: bold; color: #059669; margin-bottom: 0.75rem; font-size: 1.1rem;">🔗 Contract ID</div>
-                            <code style="font-size: 0.85rem; background: #dcfce7; padding: 1rem; border-radius: 0.5rem; display: block; word-break: break-all; font-family: 'Courier New', monospace; line-height: 1.5;">${submitResult.contractId || submitResult.contract_address || 'Extracting...'}</code>
-                            <a href="${submitResult.explorerUrl || ''}" target="_blank" style="display: inline-flex; align-items: center; justify-content: center; gap: 0.5rem; background: #6366f1; color: white; padding: 0.75rem 1.5rem; text-decoration: none; border-radius: 0.5rem; font-weight: 600; margin-top: 1rem; width: 100%; transition: background 0.2s;" onmouseover="this.style.background='#4f46e5'" onmouseout="this.style.background='#6366f1'">
+                        <div class="contract-id-section">
+                            <div class="contract-id-label">🔗 Contract ID</div>
+                            <code class="contract-id-code">${submitResult.contractId || submitResult.contract_address || 'Extracting...'}</code>
+                            <a href="${submitResult.explorerUrl || ''}" target="_blank" class="explorer-link">
                                 🔍 Ver Contrato en Stellar Explorer
-                                <span style="font-size: 0.9rem;">↗</span>
+                                <span class="explorer-arrow">↗</span>
                             </a>
                         </div>
 
                         <!-- Transaction Hashes -->
-                        <div style="background: #eff6ff; border: 2px solid #3b82f6; border-radius: 1rem; padding: 1.5rem; margin-bottom: 1.5rem; text-align: left;">
-                            <h3 style="margin: 0 0 1rem 0; color: #1e40af;">📋 Transaction Hashes</h3>
-                            <div style="display: grid; gap: 0.75rem;">
-                                ${submitResult.uploadHash ? `
-                                    <div>
-                                        <strong style="display: block; margin-bottom: 0.25rem;">UPLOAD TX:</strong>
-                                        <a href="https://stellar.expert/explorer/testnet/tx/${submitResult.uploadHash}" target="_blank" style="color: #2563eb; text-decoration: underline; font-size: 0.85rem; word-break: break-all; font-family: monospace;">${submitResult.uploadHash}</a>
-                                    </div>
-                                ` : ''}
-                                <div>
-                                    <strong style="display: block; margin-bottom: 0.25rem;">CREATE TX:</strong>
-                                    <a href="https://stellar.expert/explorer/testnet/tx/${submitResult.hash || submitResult.createHash}" target="_blank" style="color: #2563eb; text-decoration: underline; font-size: 0.85rem; word-break: break-all; font-family: monospace;">${submitResult.hash || submitResult.createHash || 'N/A'}</a>
+                        <div class="result-card info">
+                            <h3>📋 Transaction Hashes</h3>
+                            ${submitResult.uploadHash ? `
+                                <div class="result-item">
+                                    <strong>UPLOAD TX:</strong>
+                                    <span class="result-item-value">
+                                        <a href="https://stellar.expert/explorer/testnet/tx/${submitResult.uploadHash}" target="_blank" class="transaction-link">${submitResult.uploadHash}</a>
+                                    </span>
                                 </div>
-                                <div style="margin-top: 0.5rem; padding-top: 0.75rem; border-top: 1px solid #bfdbfe;">
-                                    <strong>Estado:</strong> <span style="color: #059669; font-weight: 600;">✅ Desplegado en Stellar Testnet</span>
-                                </div>
+                            ` : ''}
+                            <div class="result-item">
+                                <strong>CREATE TX:</strong>
+                                <span class="result-item-value">
+                                    <a href="https://stellar.expert/explorer/testnet/tx/${submitResult.hash || submitResult.createHash}" target="_blank" class="transaction-link">${submitResult.hash || submitResult.createHash || 'N/A'}</a>
+                                </span>
+                            </div>
+                            <div style="margin-top: 0.75rem; padding-top: 0.75rem; border-top: 1px solid #bfdbfe;">
+                                <strong>Estado:</strong>
+                                <span class="status-badge success" style="float: right;">✅ Desplegado en Stellar Testnet</span>
                             </div>
                         </div>
 
                         <!-- Resources -->
-                        <div style="display: grid; grid-template-columns: repeat(auto-fit, minmax(200px, 1fr)); gap: 1rem;">
-                            <a href="https://github.com/stellar/soroban-cli" target="_blank" style="display: flex; align-items: center; justify-content: center; gap: 0.5rem; background: #6366f1; color: white; padding: 1rem; text-decoration: none; border-radius: 0.75rem; font-weight: 600; transition: transform 0.2s;" onmouseover="this.style.transform='scale(1.02)'" onmouseout="this.style.transform='scale(1)'">
+                        <div class="resources-grid">
+                            <a href="https://github.com/stellar/soroban-cli" target="_blank" class="resource-link">
                                 🛠️ Soroban CLI
                             </a>
-                            <a href="https://soroban.stellar.org/" target="_blank" style="display: flex; align-items: center; justify-content: center; gap: 0.5rem; background: #10b981; color: white; padding: 1rem; text-decoration: none; border-radius: 0.75rem; font-weight: 600; transition: transform 0.2s;" onmouseover="this.style.transform='scale(1.02)'" onmouseout="this.style.transform='scale(1)'">
+                            <a href="https://soroban.stellar.org/" target="_blank" class="resource-link success">
                                 📚 Docs Soroban
                             </a>
-                    </div>
+                        </div>
                 `;
 
             console.log('✅ Deployment results injected into Step 5');

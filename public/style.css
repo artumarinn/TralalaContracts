@@ -1352,87 +1352,138 @@ body {
 
 .templates-grid {
     display: grid;
-    grid-template-columns: repeat(auto-fit, minmax(300px, 1fr));
+    grid-template-columns: repeat(3, 1fr);
     gap: 2rem;
     margin: 2rem 0;
 }
 
+/* Template Selection Cards - Consistent Design System */
 .template-card {
-    background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
-    border-radius: 1rem;
+    background: white;
+    border: 2px solid #e5e7eb;
+    border-radius: 12px;
     padding: 2rem;
     cursor: pointer;
-    transition: all 0.3s ease;
-    border: 2px solid transparent;
-    color: white;
+    transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1);
+    position: relative;
+    overflow: hidden;
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    text-align: center;
+    color: #1f2937;
+}
+
+/* Top border gradient accent */
+.template-card::before {
+    content: '';
+    position: absolute;
+    top: 0;
+    left: 0;
+    right: 0;
+    height: 4px;
+    background: linear-gradient(90deg, #0047AB, #E9D758);
+    transform: scaleX(0);
+    transform-origin: left;
+    transition: transform 0.3s ease;
+}
+
+.template-card:hover::before {
+    transform: scaleX(1);
 }
 
 .template-card:hover {
-    transform: translateY(-8px);
-    box-shadow: 0 12px 24px rgba(0, 0, 0, 0.15);
+    border-color: #0047AB;
+    transform: translateY(-6px);
+    box-shadow: 0 12px 32px rgba(0, 71, 171, 0.12);
 }
 
+/* Selected State - Clear Visual Indication */
 .template-card.selected {
     border-color: #10b981;
-    background: linear-gradient(135deg, #10b981 0%, #059669 100%);
-    box-shadow: 0 0 20px rgba(16, 185, 129, 0.4);
+    background: #f0fdf4;
+    box-shadow: 0 0 20px rgba(16, 185, 129, 0.3);
 }
 
-.template-card[data-template="rwa"] {
-    background: linear-gradient(135deg, #f093fb 0%, #f5576c 100%);
+.template-card.selected::after {
+    content: '✓';
+    position: absolute;
+    top: 1rem;
+    right: 1rem;
+    width: 32px;
+    height: 32px;
+    background: #10b981;
+    color: white;
+    border-radius: 50%;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    font-weight: 700;
+    font-size: 1.2rem;
 }
 
-.template-card[data-template="rwa"]:hover {
-    box-shadow: 0 12px 24px rgba(245, 87, 108, 0.3);
-}
-
-.template-card[data-template="defi"] {
-    background: linear-gradient(135deg, #4facfe 0%, #00f2fe 100%);
-}
-
-.template-card[data-template="defi"]:hover {
-    box-shadow: 0 12px 24px rgba(79, 172, 254, 0.3);
-}
-
+/* Icon Styling */
 .template-icon {
     font-size: 3rem;
     margin-bottom: 1rem;
     display: block;
+    line-height: 1;
 }
 
+/* Template Name */
 .template-name {
-    font-size: 1.5rem;
+    font-size: 1.3rem;
     font-weight: 700;
     margin-bottom: 0.5rem;
+    color: #1f2937;
 }
 
+/* Template Description */
 .template-desc {
-    font-size: 0.95rem;
+    font-size: 0.9rem;
     margin-bottom: 1.5rem;
-    opacity: 0.95;
-    line-height: 1.4;
+    color: #6b7280;
+    line-height: 1.5;
+    flex-grow: 1;
 }
 
+/* Feature List - Clean and Clear */
 .template-features {
     list-style: none;
     margin: 0;
     padding: 0;
+    width: 100%;
+    background: #f8f9fa;
+    padding: 1rem;
+    border-radius: 8px;
+    border-left: 4px solid #0047AB;
+    text-align: left;
 }
 
 .template-features li {
-    font-size: 0.9rem;
+    font-size: 0.85rem;
     margin-bottom: 0.5rem;
-    opacity: 0.9;
+    color: #374151;
+    display: flex;
+    align-items: center;
+    gap: 0.5rem;
 }
 
-.template-features li:before {
-    content: "";
-    margin-right: 0.5rem;
+.template-features li:last-child {
+    margin-bottom: 0;
+}
+
+.template-features li::before {
+    content: '✓';
+    color: #10b981;
+    font-weight: 700;
+    font-size: 1rem;
+    min-width: 20px;
 }
 
 @media (max-width: 768px) {
     .templates-grid {
-        grid-template-columns: 1fr;
+        grid-template-columns: repeat(2, 1fr);
         gap: 1.5rem;
     }
 
@@ -1444,3 +1495,220 @@ body {
         font-size: 2.5rem;
     }
 }
+
+/* ========================================
+   RESULTS CONTAINER STYLES (Step 5)
+   ======================================== */
+
+.results-container {
+    max-width: 900px;
+    margin: 0 auto;
+    padding: 0 1rem;
+}
+
+/* Info Cards for Results */
+.result-card {
+    background: white;
+    border: 2px solid #e5e7eb;
+    border-radius: 12px;
+    padding: 1.5rem;
+    margin-bottom: 1.5rem;
+    transition: all 0.3s ease;
+}
+
+.result-card:hover {
+    border-color: #0047AB;
+    box-shadow: 0 4px 12px rgba(0, 71, 171, 0.1);
+}
+
+.result-card.success {
+    border-color: #10b981;
+    background: #f0fdf4;
+}
+
+.result-card.info {
+    border-color: #3b82f6;
+    background: #eff6ff;
+}
+
+.result-card h3 {
+    margin: 0 0 1rem 0;
+    font-size: 1.1rem;
+    font-weight: 700;
+    display: flex;
+    align-items: center;
+    gap: 0.5rem;
+}
+
+.result-card.success h3 {
+    color: #059669;
+}
+
+.result-card.info h3 {
+    color: #1e40af;
+}
+
+.result-item {
+    display: flex;
+    justify-content: space-between;
+    align-items: flex-start;
+    padding: 0.75rem 0;
+    border-bottom: 1px solid rgba(0, 0, 0, 0.05);
+}
+
+.result-item:last-child {
+    border-bottom: none;
+    padding-bottom: 0;
+}
+
+.result-item strong {
+    font-weight: 600;
+    color: #374151;
+    min-width: 140px;
+}
+
+.result-item-value {
+    flex: 1;
+    text-align: right;
+    word-break: break-word;
+    color: #1f2937;
+    font-weight: 500;
+}
+
+/* Contract ID Section */
+.contract-id-section {
+    background: white;
+    border: 3px solid #10b981;
+    border-radius: 12px;
+    padding: 1.5rem;
+    margin-bottom: 1.5rem;
+    text-align: center;
+}
+
+.contract-id-label {
+    font-weight: 700;
+    color: #059669;
+    margin-bottom: 0.75rem;
+    font-size: 1.1rem;
+}
+
+.contract-id-code {
+    font-size: 0.85rem;
+    background: #dcfce7;
+    padding: 1rem;
+    border-radius: 8px;
+    display: block;
+    word-break: break-all;
+    font-family: 'Courier New', monospace;
+    line-height: 1.5;
+    margin-bottom: 1rem;
+    color: #065f46;
+}
+
+.explorer-link {
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    gap: 0.5rem;
+    background: #6366f1;
+    color: white;
+    padding: 0.75rem 1.5rem;
+    text-decoration: none;
+    border-radius: 8px;
+    font-weight: 600;
+    width: 100%;
+    transition: all 0.3s ease;
+    border: none;
+    cursor: pointer;
+    font-size: 1rem;
+}
+
+.explorer-link:hover {
+    background: #4f46e5;
+    transform: translateY(-2px);
+    box-shadow: 0 4px 12px rgba(99, 102, 241, 0.3);
+}
+
+.explorer-arrow {
+    font-size: 0.9rem;
+}
+
+/* Transaction Links */
+.transaction-link {
+    color: #2563eb;
+    text-decoration: none;
+    font-size: 0.85rem;
+    word-break: break-all;
+    font-family: 'Courier New', monospace;
+    transition: color 0.3s ease;
+}
+
+.transaction-link:hover {
+    color: #1d4ed8;
+    text-decoration: underline;
+}
+
+/* Resources Grid */
+.resources-grid {
+    display: grid;
+    grid-template-columns: repeat(auto-fit, minmax(200px, 1fr));
+    gap: 1rem;
+}
+
+.resource-link {
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    gap: 0.5rem;
+    background: #6366f1;
+    color: white;
+    padding: 1rem;
+    text-decoration: none;
+    border-radius: 8px;
+    font-weight: 600;
+    transition: all 0.3s ease;
+    text-align: center;
+}
+
+.resource-link:hover {
+    transform: translateY(-2px);
+    box-shadow: 0 4px 12px rgba(99, 102, 241, 0.3);
+    background: #4f46e5;
+}
+
+.resource-link.success {
+    background: #10b981;
+}
+
+.resource-link.success:hover {
+    background: #059669;
+}
+
+/* Status Badge */
+.status-badge {
+    display: inline-flex;
+    align-items: center;
+    gap: 0.5rem;
+    padding: 0.5rem 1rem;
+    border-radius: 6px;
+    font-weight: 600;
+    font-size: 0.95rem;
+}
+
+.status-badge.success {
+    background: #d1fae5;
+    color: #059669;
+}
+
+.status-badge.pending {
+    background: #fef3c7;
+    color: #92400e;
+}
+
+.status-badge.error {
+    background: #fee2e2;
+    color: #991b1b;
+}
+
+/* Enhanced Template Cards */
+/* Duplicate styles removed - unified in main template-card definition above */

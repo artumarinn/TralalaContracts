@@ -67,6 +67,7 @@ class ContractValidator {
         };
 
         let currentBlock = contractBlock.getInputTargetBlock('SETTINGS');
+        let rwaAssetName = null; // Para usar como fallback
 
         while (currentBlock) {
             const blockType = currentBlock.type;
@@ -100,11 +101,20 @@ class ContractValidator {
                 data.tokenBlocks.push(blockType);
             } else if (blockType.startsWith('rwa_')) {
                 data.rwaBlocks.push(blockType);
+                // Guardar el nombre del activo RWA como fallback para el nombre del contrato
+                if (blockType === 'rwa_asset' && !rwaAssetName) {
+                    rwaAssetName = currentBlock.getFieldValue('NAME');
+                }
             } else if (blockType.startsWith('require_') || blockType === 'access_control') {
                 data.securityBlocks.push(blockType);
             }
 
             currentBlock = currentBlock.getNextBlock();
+        }
+
+        // Si no hay nombre de contrato pero hay un activo RWA, usar su nombre
+        if (!data.name && rwaAssetName) {
+            data.name = rwaAssetName;
         }
 
         return data;
@@ -206,8 +216,15 @@ class ContractValidator {
      * Valida definición de funciones
      */
     validateFunctions(data) {
+        // 🎯 Para plantillas RWA y Token, es OK no tener bloques de funciones
+        // El código se genera automáticamente desde la plantilla
         if (data.functions.length === 0) {
-            this.addError("El contrato debe tener al menos una función");
+            // Solo mostrar warning si no hay bloques RWA ni token ni funciones
+            if (data.rwaBlocks.length === 0 && data.tokenBlocks.length === 0) {
+                this.addWarning("Considera agregar bloques de funciones para mayor flexibilidad");
+            } else {
+                this.addInfo("✅ Usando funciones pre-generadas de la plantilla RWA/Token");
+            }
             return;
         }
 

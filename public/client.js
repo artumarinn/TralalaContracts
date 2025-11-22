@@ -1,6 +1,6 @@
 document.addEventListener("DOMContentLoaded", () => {
 
-    // --- 1. Custom Theme Definition (Restored) ---
+    // --- 1. Custom Theme Definition ---
     const tralaleroTheme = Blockly.Theme.defineTheme('tralalerotheme', {
         'base': Blockly.Themes.Zelos,
         'fontStyle': { 'family': 'Nunito, sans-serif', 'weight': 'bold', 'size': 11 },
@@ -14,15 +14,19 @@ document.addEventListener("DOMContentLoaded", () => {
             'rules_blocks': { 'colourPrimary': '#5E35B1' },
             'powers_blocks': { 'colourPrimary': '#FF8F00' },
             'advanced_blocks': { 'colourPrimary': '#E91E63' },
+            'rwa_blocks': { 'colourPrimary': '#C62828' },
         },
         'categoryStyles': {
-            'start_category': { 'colour': '#8E24AA' }, 'property_category': { 'colour': '#1E88E5' },
-            'rules_category': { 'colour': '#5E35B1' }, 'powers_category': { 'colour': '#FF8F00' },
+            'start_category': { 'colour': '#8E24AA' },
+            'property_category': { 'colour': '#1E88E5' },
+            'rules_category': { 'colour': '#5E35B1' },
+            'powers_category': { 'colour': '#FF8F00' },
             'advanced_category': { 'colour': '#E91E63' },
+            'rwa_category': { 'colour': '#C62828' },
         }
     });
 
-    // --- 2. Definición de bloques de Smart Contract (Genérico) ---
+    // --- 2. Block Definitions (Generic) ---
     Blockly.Blocks['contract_settings'] = {
         init: function () {
             this.appendDummyInput().appendField("🔮 Mi Smart Contract");
@@ -48,81 +52,129 @@ document.addEventListener("DOMContentLoaded", () => {
             this.setPreviousStatement(true, null); this.setNextStatement(true, null); this.setStyle('rules_blocks');
         }
     };
-    Blockly.Blocks['state_var'] = {
-        init: function () {
-            this.appendDummyInput()
-                .appendField("📦 Variable de estado")
-                .appendField("nombre:")
-                .appendField(new Blockly.FieldTextInput("contador"), "VAR_NAME")
-                .appendField("tipo:")
-                .appendField(new Blockly.FieldDropdown([["i32", "I32"], ["i128", "I128"], ["bool", "BOOL"], ["String", "STRING"], ["Address", "ADDRESS"]]), "VAR_TYPE");
-            this.setPreviousStatement(true, null); this.setNextStatement(true, null); this.setStyle('rules_blocks');
-        }
+
+    // --- 3. Template-Specific Toolboxes ---
+    const toolboxes = {
+        basic: `
+            <xml id="toolbox" style="display: none">
+                <category name="🚀 Empezar" categorystyle="start_category">
+                    <block type="contract_settings"></block>
+                </category>
+                <category name="💰 Propiedades del Token" categorystyle="property_category">
+                    <block type="token_properties"></block>
+                    <block type="token_decimals"></block>
+                    <block type="token_supply"></block>
+                </category>
+                <category name="👤 Administración" categorystyle="property_category">
+                    <block type="admin_config"></block>
+                    <block type="admin_address"></block>
+                </category>
+                <category name="💸 Funciones Básicas" categorystyle="advanced_category">
+                    <block type="transfer_function"></block>
+                    <block type="balance_function"></block>
+                </category>
+            </xml>
+        `,
+        rwa: `
+            <xml id="toolbox" style="display: none">
+                <category name="🚀 Empezar" categorystyle="start_category">
+                    <block type="contract_settings"></block>
+                    <block type="contract_name"></block>
+                    <block type="contract_version"></block>
+                </category>
+                <category name="🏢 Activos Reales" categorystyle="rwa_category">
+                    <block type="rwa_asset"></block>
+                    <block type="rwa_custody"></block>
+                    <block type="rwa_redemption"></block>
+                </category>
+                <category name="📋 Liquidación &amp; Cumplimiento" categorystyle="rwa_category">
+                    <block type="rwa_settlement"></block>
+                    <block type="rwa_compliance"></block>
+                </category>
+                <category name="🔐 Administración" categorystyle="property_category">
+                    <block type="admin_address"></block>
+                    <block type="admin_config"></block>
+                </category>
+                <category name="⚖️ Verificación" categorystyle="advanced_category">
+                    <block type="require_condition"></block>
+                    <block type="access_control"></block>
+                </category>
+            </xml>
+        `,
+        defi: `
+            <xml id="toolbox" style="display: none">
+                <category name="🚀 Empezar" categorystyle="start_category">
+                    <block type="contract_settings"></block>
+                </category>
+                <category name="💰 Configuración del Token" categorystyle="property_category">
+                    <block type="token_properties"></block>
+                    <block type="token_decimals"></block>
+                    <block type="token_supply"></block>
+                </category>
+                <category name="✨ Características Avanzadas" categorystyle="powers_category">
+                    <block type="feature_mintable"></block>
+                    <block type="feature_burnable"></block>
+                    <block type="feature_pausable"></block>
+                </category>
+                <category name="⚙️ Funciones DeFi" categorystyle="advanced_category">
+                    <block type="transfer_function"></block>
+                    <block type="balance_function"></block>
+                    <block type="mint_function"></block>
+                    <block type="burn_function"></block>
+                    <block type="pause_function"></block>
+                </category>
+                <category name="🔐 Control de Acceso" categorystyle="advanced_category">
+                    <block type="access_control"></block>
+                    <block type="role_based_check"></block>
+                    <block type="require_condition"></block>
+                </category>
+            </xml>
+        `
     };
-    Blockly.Blocks['function_def'] = {
-        init: function () {
-            this.appendDummyInput()
-                .appendField("⚙️ Función")
-                .appendField("nombre:")
-                .appendField(new Blockly.FieldTextInput("mi_funcion"), "FN_NAME")
-                .appendField("retorna:")
-                .appendField(new Blockly.FieldDropdown([["void", "VOID"], ["i32", "I32"], ["i128", "I128"], ["bool", "BOOL"], ["String", "STRING"], ["Address", "ADDRESS"]]), "RET_TYPE");
-            this.setPreviousStatement(true, null); this.setNextStatement(true, null); this.setStyle('advanced_blocks');
+
+    // --- 4. Global workspace variable ---
+    let blocklyWorkspace = null;
+    let currentTemplate = 'basic';
+
+    // --- 5. Initialize Blockly on first load ---
+    function initializeBlockly() {
+        if (!blocklyWorkspace) {
+            const toolbox = toolboxes.basic || toolboxes.basic;
+            blocklyWorkspace = Blockly.inject('blocklyDiv', {
+                toolbox: toolbox,
+                scrollbars: true,
+                trashcan: true,
+                renderer: 'zelos',
+                theme: tralaleroTheme
+            });
+            console.log('✅ Blockly workspace initialized');
         }
-    };
+    }
 
-    // --- 3. Toolbox (Mejorado) ---
-    const toolbox = `
-        <xml id="toolbox" style="display: none">
-            <category name="🚀 Empezar" categorystyle="start_category">
-                <block type="contract_settings"></block>
-            </category>
-            <category name="🪙 Token" categorystyle="property_category">
-                <block type="token_properties"></block>
-                <block type="admin_config"></block>
-            </category>
-            <category name="✨ Características" categorystyle="powers_category">
-                <block type="feature_mintable"></block>
-                <block type="feature_burnable"></block>
-                <block type="feature_pausable"></block>
-            </category>
-            <category name="⚙️ Funciones" categorystyle="advanced_category">
-                <block type="transfer_function"></block>
-                <block type="balance_function"></block>
-                <block type="mint_function"></block>
-                <block type="burn_function"></block>
-            </category>
-        </xml>
-    `;
-
-    // --- 4. Preparing the Workspace (Restored) ---
-    const blocklyWorkspace = Blockly.inject('blocklyDiv', {
-        toolbox: toolbox, scrollbars: true, trashcan: true, renderer: 'zelos', theme: tralaleroTheme
-    });
-
-    // --- 4.1. Crear Bloques por Defecto (Mejorados) ---
+    // --- 6. Template-aware default block creation ---
     function createDefaultBlocks() {
-        console.log('🔄 Creando bloques por defecto mejorados...');
+        console.log(`🔄 Creating default blocks for template: ${currentTemplate}`);
 
-        // Limpiar workspace
+        if (!blocklyWorkspace) {
+            console.error('❌ Workspace not initialized');
+            return;
+        }
+
         blocklyWorkspace.clear();
+        const blocks = [];
 
-        try {
-            // Crear el bloque principal del contrato
-            const contractBlock = blocklyWorkspace.newBlock('contract_settings');
-            if (!contractBlock) {
-                console.error('❌ No se pudo crear el bloque de contrato');
-                return;
-            }
+        // Always add contract settings block
+        const contractBlock = blocklyWorkspace.newBlock('contract_settings');
+        if (contractBlock) {
             contractBlock.initSvg();
             contractBlock.render();
             contractBlock.moveBy(50, 50);
-            console.log('✅ Bloque de contrato creado');
+            console.log('✅ Contract settings block created');
+        }
 
-            // Crear bloques mejorados
-            const blocks = [];
-
-            // Bloque de propiedades del token
+        // Template-specific blocks
+        if (currentTemplate === 'basic') {
+            // Basic token template
             const tokenPropsBlock = blocklyWorkspace.newBlock('token_properties');
             if (tokenPropsBlock) {
                 tokenPropsBlock.initSvg();
@@ -132,54 +184,24 @@ document.addEventListener("DOMContentLoaded", () => {
                 tokenPropsBlock.setFieldValue('6', 'DECIMALS');
                 tokenPropsBlock.setFieldValue('1000000', 'INITIAL_SUPPLY');
                 blocks.push(tokenPropsBlock);
-                console.log('✅ Bloque de propiedades del token creado');
+                console.log('✅ Token properties block created');
             }
 
-            // Bloque de administrador
             const adminBlock = blocklyWorkspace.newBlock('admin_config');
             if (adminBlock) {
                 adminBlock.initSvg();
                 adminBlock.render();
                 adminBlock.setFieldValue('GBQQHZKDUU...', 'ADMIN');
                 blocks.push(adminBlock);
-                console.log('✅ Bloque de admin creado');
+                console.log('✅ Admin config block created');
             }
 
-            // Bloques de características
-            const mintableBlock = blocklyWorkspace.newBlock('feature_mintable');
-            if (mintableBlock) {
-                mintableBlock.initSvg();
-                mintableBlock.render();
-                mintableBlock.setFieldValue('FALSE', 'ENABLED');
-                blocks.push(mintableBlock);
-                console.log('✅ Bloque de mintable creado');
-            }
-
-            const burnableBlock = blocklyWorkspace.newBlock('feature_burnable');
-            if (burnableBlock) {
-                burnableBlock.initSvg();
-                burnableBlock.render();
-                burnableBlock.setFieldValue('FALSE', 'ENABLED');
-                blocks.push(burnableBlock);
-                console.log('✅ Bloque de burnable creado');
-            }
-
-            const pausableBlock = blocklyWorkspace.newBlock('feature_pausable');
-            if (pausableBlock) {
-                pausableBlock.initSvg();
-                pausableBlock.render();
-                pausableBlock.setFieldValue('FALSE', 'ENABLED');
-                blocks.push(pausableBlock);
-                console.log('✅ Bloque de pausable creado');
-            }
-
-            // Bloques de funciones
             const transferBlock = blocklyWorkspace.newBlock('transfer_function');
             if (transferBlock) {
                 transferBlock.initSvg();
                 transferBlock.render();
                 blocks.push(transferBlock);
-                console.log('✅ Bloque de transfer creado');
+                console.log('✅ Transfer function block created');
             }
 
             const balanceBlock = blocklyWorkspace.newBlock('balance_function');
@@ -187,7 +209,107 @@ document.addEventListener("DOMContentLoaded", () => {
                 balanceBlock.initSvg();
                 balanceBlock.render();
                 blocks.push(balanceBlock);
-                console.log('✅ Bloque de balance creado');
+                console.log('✅ Balance function block created');
+            }
+
+        } else if (currentTemplate === 'rwa') {
+            // Real World Assets template
+            const rwaAsset = blocklyWorkspace.newBlock('rwa_asset');
+            if (rwaAsset) {
+                rwaAsset.initSvg();
+                rwaAsset.render();
+                blocks.push(rwaAsset);
+                console.log('✅ RWA asset block created');
+            }
+
+            const rwaCustody = blocklyWorkspace.newBlock('rwa_custody');
+            if (rwaCustody) {
+                rwaCustody.initSvg();
+                rwaCustody.render();
+                blocks.push(rwaCustody);
+                console.log('✅ RWA custody block created');
+            }
+
+            const rwaSettlement = blocklyWorkspace.newBlock('rwa_settlement');
+            if (rwaSettlement) {
+                rwaSettlement.initSvg();
+                rwaSettlement.render();
+                blocks.push(rwaSettlement);
+                console.log('✅ RWA settlement block created');
+            }
+
+            const rwaCompliance = blocklyWorkspace.newBlock('rwa_compliance');
+            if (rwaCompliance) {
+                rwaCompliance.initSvg();
+                rwaCompliance.render();
+                blocks.push(rwaCompliance);
+                console.log('✅ RWA compliance block created');
+            }
+
+            const rwaRedemption = blocklyWorkspace.newBlock('rwa_redemption');
+            if (rwaRedemption) {
+                rwaRedemption.initSvg();
+                rwaRedemption.render();
+                blocks.push(rwaRedemption);
+                console.log('✅ RWA redemption block created');
+            }
+
+        } else if (currentTemplate === 'defi') {
+            // DeFi template with advanced features
+            const tokenPropsBlock = blocklyWorkspace.newBlock('token_properties');
+            if (tokenPropsBlock) {
+                tokenPropsBlock.initSvg();
+                tokenPropsBlock.render();
+                tokenPropsBlock.setFieldValue('DefiToken', 'TOKEN_NAME');
+                tokenPropsBlock.setFieldValue('DEFI', 'TOKEN_SYMBOL');
+                tokenPropsBlock.setFieldValue('18', 'DECIMALS');
+                tokenPropsBlock.setFieldValue('1000000000000000000', 'INITIAL_SUPPLY');
+                blocks.push(tokenPropsBlock);
+                console.log('✅ DeFi token properties block created');
+            }
+
+            const adminBlock = blocklyWorkspace.newBlock('admin_config');
+            if (adminBlock) {
+                adminBlock.initSvg();
+                adminBlock.render();
+                adminBlock.setFieldValue('GBQQHZKDUU...', 'ADMIN');
+                blocks.push(adminBlock);
+                console.log('✅ DeFi admin block created');
+            }
+
+            const mintableBlock = blocklyWorkspace.newBlock('feature_mintable');
+            if (mintableBlock) {
+                mintableBlock.initSvg();
+                mintableBlock.render();
+                mintableBlock.setFieldValue('TRUE', 'ENABLED');
+                blocks.push(mintableBlock);
+                console.log('✅ Mintable feature block created');
+            }
+
+            const burnableBlock = blocklyWorkspace.newBlock('feature_burnable');
+            if (burnableBlock) {
+                burnableBlock.initSvg();
+                burnableBlock.render();
+                burnableBlock.setFieldValue('TRUE', 'ENABLED');
+                blocks.push(burnableBlock);
+                console.log('✅ Burnable feature block created');
+            }
+
+            const pausableBlock = blocklyWorkspace.newBlock('feature_pausable');
+            if (pausableBlock) {
+                pausableBlock.initSvg();
+                pausableBlock.render();
+                pausableBlock.setFieldValue('TRUE', 'ENABLED');
+                blocks.push(pausableBlock);
+                console.log('✅ Pausable feature block created');
+            }
+
+            const transferBlock = blocklyWorkspace.newBlock('transfer_function');
+            if (transferBlock) {
+                transferBlock.initSvg();
+                transferBlock.render();
+                blocks.push(transferBlock);
+                console.log('✅ Transfer function block created');
             }
 
             const mintBlock = blocklyWorkspace.newBlock('mint_function');
@@ -195,7 +317,7 @@ document.addEventListener("DOMContentLoaded", () => {
                 mintBlock.initSvg();
                 mintBlock.render();
                 blocks.push(mintBlock);
-                console.log('✅ Bloque de mint creado');
+                console.log('✅ Mint function block created');
             }
 
             const burnBlock = blocklyWorkspace.newBlock('burn_function');
@@ -203,72 +325,69 @@ document.addEventListener("DOMContentLoaded", () => {
                 burnBlock.initSvg();
                 burnBlock.render();
                 blocks.push(burnBlock);
-                console.log('✅ Bloque de burn creado');
+                console.log('✅ Burn function block created');
             }
-
-            // Conectar todos los bloques de forma secuencial
-            setTimeout(() => {
-                try {
-                    console.log('🔗 Intentando conectar bloques...');
-
-                    // Conectar el primer bloque al contrato
-                    const settingsInput = contractBlock.getInput('SETTINGS');
-                    if (settingsInput && settingsInput.connection && blocks[0] && blocks[0].previousConnection) {
-                        settingsInput.connection.connect(blocks[0].previousConnection);
-                        console.log('✅ Primer bloque conectado');
-                    }
-
-                    // Conectar los bloques en cadena
-                    for (let i = 0; i < blocks.length - 1; i++) {
-                        const currentBlock = blocks[i];
-                        const nextBlock = blocks[i + 1];
-
-                        if (currentBlock && currentBlock.nextConnection &&
-                            nextBlock && nextBlock.previousConnection) {
-                            currentBlock.nextConnection.connect(nextBlock.previousConnection);
-                            console.log(`✅ Bloque ${i + 1} conectado`);
-                        }
-                    }
-
-                    // Renderizar de nuevo después de conectar
-                    blocklyWorkspace.render();
-                    console.log('🎉 Bloques por defecto creados y conectados');
-
-                } catch (error) {
-                    console.error('❌ Error conectando bloques:', error);
-                }
-            }, 500);
-
-        } catch (error) {
-            console.error('❌ Error creando bloques:', error);
         }
+
+        // Connect blocks in sequence
+        setTimeout(() => {
+            try {
+                console.log('🔗 Connecting blocks...');
+
+                const settingsInput = contractBlock.getInput('SETTINGS');
+                if (settingsInput && settingsInput.connection && blocks[0] && blocks[0].previousConnection) {
+                    settingsInput.connection.connect(blocks[0].previousConnection);
+                    console.log('✅ First block connected');
+                }
+
+                for (let i = 0; i < blocks.length - 1; i++) {
+                    const currentBlock = blocks[i];
+                    const nextBlock = blocks[i + 1];
+
+                    if (currentBlock && currentBlock.nextConnection &&
+                        nextBlock && nextBlock.previousConnection) {
+                        currentBlock.nextConnection.connect(nextBlock.previousConnection);
+                        console.log(`✅ Block ${i + 1} connected`);
+                    }
+                }
+
+                blocklyWorkspace.render();
+                console.log('🎉 Default blocks created and connected for template: ' + currentTemplate);
+
+            } catch (error) {
+                console.error('❌ Error connecting blocks:', error);
+            }
+        }, 300);
     }
 
-    // Crear bloques por defecto al cargar (con delay para asegurar que Blockly esté listo)
-    setTimeout(() => {
+    // --- 7. PUBLIC FUNCTION: Switch template and reload blocks ---
+    window.switchTemplate = function(templateName) {
+        console.log(`🔄 Switching to template: ${templateName}`);
+
+        if (!toolboxes[templateName]) {
+            console.error(`❌ Unknown template: ${templateName}`);
+            return;
+        }
+
+        currentTemplate = templateName;
+
+        // Update toolbox
+        const newToolbox = toolboxes[templateName];
+        blocklyWorkspace.updateToolbox(newToolbox);
+        console.log(`✅ Toolbox updated for ${templateName}`);
+
+        // Recreate default blocks for the new template
         createDefaultBlocks();
 
-        // Verificar Freighter al cargar para logging
-        setTimeout(() => {
-            const freighterCheck = checkFreighterAvailability();
-            if (freighterCheck.available) {
-                console.log('✅ Freighter detectado y disponible');
-                statusDiv.textContent = '✅ ¡Listo! Freighter detectado. Personaliza tu token y despliega.';
-                statusDiv.className = 'status-area success';
-            } else {
-                console.warn('⚠️ Freighter no disponible:', freighterCheck.error);
-                statusDiv.textContent = '⚠️ Freighter no detectado. Instálalo desde freighter.app antes de desplegar.';
-                statusDiv.className = 'status-area error';
-            }
-        }, 1000);
-    }, 500);
+        console.log(`✅ Template switched to: ${templateName}`);
+    };
 
-    // --- 4.2. Generación de Código en Tiempo Real ---
+    // --- 8. Code Generation Functions ---
     function generateRustCode() {
+        if (!blocklyWorkspace) return null;
+
         const contractBlock = blocklyWorkspace.getBlocksByType('contract_settings', false)[0];
-        if (!contractBlock) {
-            return null;
-        }
+        if (!contractBlock) return null;
 
         const data = { name: '', version: '0.1.0', admin: '', state: [], functions: [] };
         let currentBlock = contractBlock.getInputTargetBlock('SETTINGS');
@@ -303,39 +422,37 @@ document.addEventListener("DOMContentLoaded", () => {
         return data;
     }
 
-    // Función para validar bloques con errores detallados
     function validateBlocks() {
         const errors = [];
         const warnings = [];
 
+        if (!blocklyWorkspace) {
+            errors.push('❌ Workspace not initialized');
+            return { errors, warnings, isValid: false };
+        }
+
         const contractBlock = blocklyWorkspace.getBlocksByType('contract_settings', false)[0];
         if (!contractBlock) {
-            errors.push('❌ Falta el bloque principal "Mi Smart Contract"');
+            errors.push('❌ Missing main "Mi Smart Contract" block');
             return { errors, warnings, isValid: false };
         }
 
         const data = generateRustCode();
         if (!data) {
-            errors.push('❌ No se pudieron leer los datos de los bloques');
+            errors.push('❌ Could not read block data');
             return { errors, warnings, isValid: false };
         }
 
-        // Validar campos requeridos
         if (!data.name || data.name.trim() === '') {
-            errors.push('❌ El nombre del contrato está vacío. Usa el bloque "Nombre del Contrato"');
+            errors.push('❌ Contract name is empty');
         }
 
         if (!data.admin || data.admin.trim() === '' || data.admin === 'G...') {
-            warnings.push('⚠️ La dirección del administrador no está configurada');
+            warnings.push('⚠️ Admin address not configured');
         }
 
-        // Validar formato de dirección Stellar
         if (data.admin && data.admin !== 'G...' && !data.admin.startsWith('G')) {
-            warnings.push('⚠️ La dirección del administrador debería empezar con "G" (Stellar)');
-        }
-
-        if (data.state.some(v => !v.name || v.name.trim() === '')) {
-            errors.push('❌ Hay variables de estado sin nombre');
+            warnings.push('⚠️ Admin address should start with "G" (Stellar)');
         }
 
         return {
@@ -346,11 +463,8 @@ document.addEventListener("DOMContentLoaded", () => {
         };
     }
 
-    // Función para generar código Rust usando las plantillas mejoradas
     function generateRustCodeString(data) {
-        // Si tenemos acceso a TokenCodeGenerator, usarlo
         if (typeof TokenCodeGenerator !== 'undefined' && TokenCodeGenerator.generateRustCode) {
-            // Convertir la estructura de datos de bloques a la estructura esperada
             const config = {
                 tokenName: data.name || "MyToken",
                 tokenSymbol: data.symbol || "MTK",
@@ -367,7 +481,6 @@ document.addEventListener("DOMContentLoaded", () => {
             return TokenCodeGenerator.generateRustCode(config);
         }
 
-        // Fallback: código genérico si no está disponible TokenCodeGenerator
         const contractName = (data.name || 'MyContract').replace(/[^A-Za-z0-9_]/g, '');
         const stateDecls = (data.state || []).map(v => {
             const key = v.name.toUpperCase().replace(/[^A-Z0-9_]/g, '_');
@@ -388,12 +501,10 @@ document.addEventListener("DOMContentLoaded", () => {
             return `pub fn ${f.name}(env: Env)${ret}${body}`;
         }).join('\n\n');
 
-        return `// Código generado automáticamente por Tralalero Contracts\n#![no_std]\nuse soroban_sdk::{contract, contractimpl, symbol_short, Address, Env, Symbol, String};\n\nconst ADMIN: Symbol = symbol_short!("ADMIN");\n${stateDecls ? stateDecls + '\n' : ''}\n#[contract]\npub struct ${contractName};\n\n#[contractimpl]\nimpl ${contractName} {\n    pub fn initialize(env: Env, admin: Address) {\n        if env.storage().instance().has(&ADMIN) {\n            panic!("Contract already initialized");\n        }\n        env.storage().instance().set(&ADMIN, &admin);\n    }\n\n    fn require_admin(env: &Env) {\n        let admin: Address = env.storage().instance().get(&ADMIN).unwrap();\n        admin.require_auth();\n    }\n\n${gettersSetters}\n\n${fnStubs}\n}`;
+        return `// Generated by Tralalero Contracts\n#![no_std]\nuse soroban_sdk::{contract, contractimpl, symbol_short, Address, Env, Symbol, String};\n\nconst ADMIN: Symbol = symbol_short!("ADMIN");\n${stateDecls ? stateDecls + '\n' : ''}\n#[contract]\npub struct ${contractName};\n\n#[contractimpl]\nimpl ${contractName} {\n    pub fn initialize(env: Env, admin: Address) {\n        if env.storage().instance().has(&ADMIN) {\n            panic!("Contract already initialized");\n        }\n        env.storage().instance().set(&ADMIN, &admin);\n    }\n\n    fn require_admin(env: &Env) {\n        let admin: Address = env.storage().instance().get(&ADMIN).unwrap();\n        admin.require_auth();\n    }\n\n${gettersSetters}\n\n${fnStubs}\n}`;
     }
 
-    // Función para mostrar toasts
     function showToast(message, type = 'info') {
-        // Remover toast existente
         const existingToast = document.querySelector('.toast');
         if (existingToast) {
             existingToast.remove();
@@ -404,7 +515,6 @@ document.addEventListener("DOMContentLoaded", () => {
         toast.textContent = message;
         document.body.appendChild(toast);
 
-        // Auto-remover después de 3 segundos
         setTimeout(() => {
             if (toast.parentNode) {
                 toast.remove();
@@ -412,67 +522,187 @@ document.addEventListener("DOMContentLoaded", () => {
         }, 3000);
     }
 
-    // Escuchar cambios en el workspace para actualizar estado
-    blocklyWorkspace.addChangeListener((event) => {
-        if (event.type === Blockly.Events.BLOCK_CHANGE ||
-            event.type === Blockly.Events.BLOCK_MOVE ||
-            event.type === Blockly.Events.BLOCK_CREATE ||
-            event.type === Blockly.Events.BLOCK_DELETE) {
-            // Actualizar estado de validación
-            const validation = validateBlocks();
-            if (validation.isValid) {
-                statusDiv.textContent = '✅ Configuración válida. Listo para generar el contrato.';
-                statusDiv.className = 'status-area success';
-            } else {
-                statusDiv.textContent = '⚠️ ' + validation.errors[0];
-                statusDiv.className = 'status-area error';
+    // --- 9. Initialize on page load ---
+    setTimeout(() => {
+        initializeBlockly();
+        createDefaultBlocks();
+
+        // Check Freighter
+        setTimeout(() => {
+            const freighterCheck = checkFreighterAvailability();
+            const statusDiv = document.getElementById('status');
+            if (statusDiv) {
+                if (freighterCheck.available) {
+                    console.log('✅ Freighter detected');
+                    statusDiv.textContent = '✅ Ready! Freighter detected.';
+                    statusDiv.className = 'status-area success';
+                } else {
+                    console.warn('⚠️ Freighter not available:', freighterCheck.error);
+                    statusDiv.textContent = '⚠️ Freighter not detected. Install from freighter.app';
+                    statusDiv.className = 'status-area error';
+                }
             }
+        }, 1000);
+    }, 500);
+
+    // --- 10. Workspace change listener ---
+    setTimeout(() => {
+        if (blocklyWorkspace) {
+            blocklyWorkspace.addChangeListener((event) => {
+                if (event.type === Blockly.Events.BLOCK_CHANGE ||
+                    event.type === Blockly.Events.BLOCK_MOVE ||
+                    event.type === Blockly.Events.BLOCK_CREATE ||
+                    event.type === Blockly.Events.BLOCK_DELETE) {
+                    const validation = validateBlocks();
+                    const statusDiv = document.getElementById('status');
+                    if (statusDiv) {
+                        if (validation.isValid) {
+                            statusDiv.textContent = '✅ Configuration valid. Ready to generate contract.';
+                            statusDiv.className = 'status-area success';
+                        } else {
+                            statusDiv.textContent = '⚠️ ' + validation.errors[0];
+                            statusDiv.className = 'status-area error';
+                        }
+                    }
+                }
+            });
         }
-    });
+    }, 1000);
 
-    // --- 5. New Deployment Logic ---
-    const deployBtn = document.getElementById('deployBtn');
-    const resetBtn = document.getElementById('resetBtn');
-    const contractBtn = document.getElementById('contractBtn');
-    const statusDiv = document.getElementById('status');
+    // --- 11. Button handlers ---
+    setTimeout(() => {
+        const deployBtn = document.getElementById('deployBtn');
+        const resetBtn = document.getElementById('resetBtn');
+        const contractBtn = document.getElementById('contractBtn');
+        const contractModal = document.getElementById('contractModal');
+        const closeModal = document.getElementById('closeModal');
+        const contractCode = document.getElementById('contractCode');
+        const downloadBtn = document.getElementById('downloadBtn');
+        const copyBtn = document.getElementById('copyBtn');
+        const statusDiv = document.getElementById('status');
 
-    // Modal elements
-    const contractModal = document.getElementById('contractModal');
-    const closeModal = document.getElementById('closeModal');
-    const contractCode = document.getElementById('contractCode');
-    const downloadBtn = document.getElementById('downloadBtn');
-    const copyBtn = document.getElementById('copyBtn');
+        if (resetBtn) {
+            resetBtn.addEventListener('click', () => {
+                createDefaultBlocks();
+                if (statusDiv) {
+                    statusDiv.textContent = 'Blocks reset! Customize and deploy.';
+                    statusDiv.className = 'status-area';
+                }
+            });
+        }
 
-    // Función para verificar Freighter con soporte para múltiples APIs
+        if (contractBtn) {
+            contractBtn.addEventListener('click', () => {
+                const validation = validateBlocks();
+                if (!validation.isValid) {
+                    showToast('❌ ' + validation.errors[0], 'error');
+                    return;
+                }
+
+                const rustCode = generateRustCodeString(validation.data);
+                if (contractCode) {
+                    contractCode.textContent = rustCode;
+                }
+                if (contractModal) {
+                    contractModal.style.display = 'block';
+                }
+            });
+        }
+
+        if (closeModal) {
+            closeModal.addEventListener('click', () => {
+                if (contractModal) {
+                    contractModal.style.display = 'none';
+                }
+            });
+        }
+
+        if (downloadBtn) {
+            downloadBtn.addEventListener('click', () => {
+                const code = contractCode ? contractCode.textContent : '';
+                const blob = new Blob([code], { type: 'text/rust' });
+                const url = URL.createObjectURL(blob);
+                const a = document.createElement('a');
+                a.href = url;
+                a.download = 'smart_contract.rs';
+                document.body.appendChild(a);
+                a.click();
+                document.body.removeChild(a);
+                URL.revokeObjectURL(url);
+                showToast('✅ Contract downloaded', 'success');
+            });
+        }
+
+        if (copyBtn) {
+            copyBtn.addEventListener('click', async () => {
+                try {
+                    const code = contractCode ? contractCode.textContent : '';
+                    await navigator.clipboard.writeText(code);
+                    showToast('✅ Code copied to clipboard', 'success');
+                } catch (err) {
+                    showToast('❌ Error copying code', 'error');
+                }
+            });
+        }
+
+        if (deployBtn) {
+            deployBtn.addEventListener('click', async () => {
+                if (statusDiv) {
+                    statusDiv.textContent = 'Validating configuration...';
+                    statusDiv.className = 'status-area';
+                }
+
+                const validation = validateBlocks();
+                if (!validation.isValid) {
+                    if (statusDiv) {
+                        statusDiv.textContent = '❌ ' + validation.errors[0];
+                        statusDiv.classList.add('error');
+                    }
+                    showToast(validation.errors[0], 'error');
+                    return;
+                }
+
+                const rustCode = generateRustCodeString(validation.data);
+                if (contractCode) {
+                    contractCode.textContent = rustCode;
+                }
+                if (contractModal) {
+                    contractModal.style.display = 'block';
+                }
+                if (statusDiv) {
+                    statusDiv.textContent = '✅ Contract generated. Download or copy it.';
+                    statusDiv.className = 'status-area success';
+                }
+            });
+        }
+
+        window.addEventListener('click', (event) => {
+            if (event.target === contractModal) {
+                contractModal.style.display = 'none';
+            }
+        });
+    }, 1000);
+
+    // --- 12. Freighter availability check ---
     function checkFreighterAvailability() {
-        console.log('🔍 Verificando disponibilidad de Freighter...');
-        console.log('window.freighterApi:', window.freighterApi);
-        console.log('window.freighter:', window.freighter);
+        console.log('🔍 Checking Freighter availability...');
 
-        // Verificar diferentes formas de acceso a Freighter
         const freighterApi = window.freighterApi || window.freighter;
 
         if (!freighterApi) {
             return {
                 available: false,
-                error: 'Freighter no está instalado o no se cargó correctamente'
+                error: 'Freighter not installed or not loaded correctly'
             };
         }
 
-        // Verificar métodos en diferentes ubicaciones
         const getPublicKey = freighterApi.getPublicKey || freighterApi.requestAccess || freighterApi.connect;
         const signTransaction = freighterApi.signTransaction || freighterApi.sign;
-        const isConnected = freighterApi.isConnected || freighterApi.isAllowed;
-
-        console.log('🔍 Métodos encontrados:');
-        console.log('  getPublicKey:', typeof getPublicKey);
-        console.log('  signTransaction:', typeof signTransaction);
-        console.log('  isConnected:', typeof isConnected);
 
         if (typeof getPublicKey !== 'function') {
             return {
                 available: false,
-                error: 'Freighter no tiene método de conexión válido. Versión: ' + (freighterApi.version || 'desconocida')
+                error: 'Freighter no valid connection method'
             };
         }
 
@@ -481,122 +711,15 @@ document.addEventListener("DOMContentLoaded", () => {
             api: freighterApi,
             methods: {
                 getPublicKey,
-                signTransaction,
-                isConnected
+                signTransaction
             }
         };
     }
 
-    // Función para conectar automáticamente con Freighter
-    async function autoConnectFreighter() {
-        // Verificación de Freighter
-        const freighterCheck = checkFreighterAvailability();
-        if (!freighterCheck.available) {
-            throw new Error('🛰️ ' + freighterCheck.error + '\n\nPasos para solucionarlo:\n1. Instala Freighter desde freighter.app\n2. Asegúrate de que esté habilitado\n3. Refresca la página');
-        }
+    // --- 13. Export globally accessible functions ---
+    window.generateRustCode = generateRustCode;
+    window.validateBlocks = validateBlocks;
+    window.showToast = showToast;
+    window.getBlocklyWorkspace = () => blocklyWorkspace;
 
-        const { api, methods } = freighterCheck;
-
-        // Solicitar conexión usando el método correcto
-        const publicKey = await methods.getPublicKey();
-        console.log('✅ Freighter conectado automáticamente:', publicKey);
-
-        // Verificar red (opcional)
-        try {
-            if (api.getNetworkDetails) {
-                const networkDetails = await api.getNetworkDetails();
-                console.log('🌐 Red detectada:', networkDetails);
-
-                if (networkDetails && networkDetails.network !== 'TESTNET') {
-                    throw new Error('🛰️ Freighter debe estar en TESTNET. Ve a Settings → Network → Testnet');
-                }
-            }
-        } catch (netError) {
-            console.warn('No se pudo verificar la red:', netError);
-        }
-
-        // Guardar la API para uso posterior
-        window.activeFreighterApi = api;
-        window.activeFreighterMethods = methods;
-
-        return { api, methods };
-    }
-
-    // Botón para resetear bloques
-    resetBtn.addEventListener('click', () => {
-        createDefaultBlocks();
-        statusDiv.textContent = '¡Bloques reseteados! Personaliza tu token y despliega.';
-        statusDiv.className = 'status-area';
-    });
-
-    // Botón para ver contrato
-    contractBtn.addEventListener('click', () => {
-        const validation = validateBlocks();
-        if (!validation.isValid) {
-            showToast('❌ ' + validation.errors[0], 'error');
-            return;
-        }
-
-        const rustCode = generateRustCodeString(validation.data);
-        contractCode.textContent = rustCode;
-        contractModal.style.display = 'block';
-    });
-
-    // Cerrar modal
-    closeModal.addEventListener('click', () => {
-        contractModal.style.display = 'none';
-    });
-
-    // Cerrar modal al hacer clic fuera
-    window.addEventListener('click', (event) => {
-        if (event.target === contractModal) {
-            contractModal.style.display = 'none';
-        }
-    });
-
-    // Descargar contrato
-    downloadBtn.addEventListener('click', () => {
-        const code = contractCode.textContent;
-        const blob = new Blob([code], { type: 'text/rust' });
-        const url = URL.createObjectURL(blob);
-        const a = document.createElement('a');
-        a.href = url;
-        a.download = 'smart_contract.rs';
-        document.body.appendChild(a);
-        a.click();
-        document.body.removeChild(a);
-        URL.revokeObjectURL(url);
-        showToast('✅ Contrato descargado', 'success');
-    });
-
-    // Copiar código
-    copyBtn.addEventListener('click', async () => {
-        try {
-            await navigator.clipboard.writeText(contractCode.textContent);
-            showToast('✅ Código copiado al portapapeles', 'success');
-        } catch (err) {
-            showToast('❌ Error al copiar código', 'error');
-        }
-    });
-
-
-    // En este flujo, solo generamos/mostramos el contrato (sin crear tokens)
-    deployBtn.addEventListener('click', async () => {
-        statusDiv.textContent = 'Validando configuración...';
-        statusDiv.className = 'status-area';
-
-        const validation = validateBlocks();
-        if (!validation.isValid) {
-            statusDiv.textContent = '❌ ' + validation.errors[0];
-            statusDiv.classList.add('error');
-            showToast(validation.errors[0], 'error');
-            return;
-        }
-
-        const rustCode = generateRustCodeString(validation.data);
-        contractCode.textContent = rustCode;
-        contractModal.style.display = 'block';
-        statusDiv.textContent = '✅ Contrato generado. Puedes descargarlo o copiarlo.';
-        statusDiv.className = 'status-area success';
-    });
 });

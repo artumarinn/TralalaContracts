@@ -310,13 +310,19 @@ app.post('/api/build-smart-contract', async (req, res) => {
                 });
             }
 
-            // Determine template type based on features
-            const hasAdvancedFeatures = contractData.features?.pausable ||
-                                        contractData.features?.mintable ||
-                                        contractData.features?.burnable;
-            const templateType = hasAdvancedFeatures ? 'token_advanced' : 'token_basic';
+            // Determine template type based on contract type or features
+            let templateType;
 
-            console.log(`📋 Using template: ${templateType}`);
+            if (contractData.templateType === 'rwa') {
+                templateType = 'rwa';
+                console.log(`📋 Using RWA template`);
+            } else {
+                const hasAdvancedFeatures = contractData.features?.pausable ||
+                                            contractData.features?.mintable ||
+                                            contractData.features?.burnable;
+                templateType = hasAdvancedFeatures ? 'token_advanced' : 'token_basic';
+                console.log(`📋 Using token template: ${templateType}`);
+            }
 
             try {
                 // Call backend to get precompiled WASM
@@ -1022,8 +1028,18 @@ app.post('/api/compile-contract', async (req, res) => {
             license: tokenData.license || 'MIT'
         };
 
-        // Leer y compilar template
-        const templatePath = path.join(__dirname, 'tralala', 'contracts', 'token-templates', 'simple_token.hbs');
+        // Leer y compilar template - elegir según tipo de contrato
+        let templateFilename = 'simple_token.hbs';
+        if (tokenData.templateType === 'rwa') {
+            templateFilename = 'rwa_template.hbs';
+            // Preparar datos específicos para RWA
+            templateData.asset_name = tokenData.name || 'RWA Asset';
+            templateData.asset_id = 'RWA_';
+            templateData.isin = tokenData.symbol || 'ISIN';
+            templateData.issuer = userAddress;
+        }
+
+        const templatePath = path.join(__dirname, 'tralala', 'contracts', 'token-templates', templateFilename);
         const templateContent = await fs.readFile(templatePath, 'utf-8');
         const template = handlebars.compile(templateContent);
         const rustCode = template(templateData);

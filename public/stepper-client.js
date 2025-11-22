@@ -240,6 +240,20 @@ function updateStepContent() {
             updateCodePreview();
             updateTokenSummary();
             updateDeploymentPipeline();
+
+            // ✨ EJECUTAR VALIDACIÓN AUTOMÁTICA AL ENTRAR AL PASO 4
+            setTimeout(() => {
+                console.log('🔍 Ejecutando validación automática en paso 4...');
+                const validationResult = validateContractBeforeDeployment();
+                showValidationResult(validationResult);
+
+                // Mostrar toast con resultado
+                if (validationResult.isValid) {
+                    showToast('✅ Tu contrato está listo para desplegar', 'success');
+                } else {
+                    showToast(`❌ Revisa los errores antes de desplegar: ${validationResult.errors.length} problema(s)`, 'error');
+                }
+            }, 300);
             break;
     }
 }
@@ -428,6 +442,15 @@ function addTemplateListeners() {
 function applyTemplate(template) {
     console.log('🎨 Aplicando plantilla:', template);
     appState.selectedTemplate = template;
+
+    // Switch Blockly template dynamically
+    if (typeof window.switchTemplate === 'function') {
+        console.log('🔄 Switching Blockly template to:', template);
+        window.switchTemplate(template);
+    } else {
+        console.warn('⚠️ switchTemplate function not available');
+    }
+
     showToast(`✅ Plantilla "${template.toUpperCase()}" seleccionada`, 'success');
 }
 
@@ -1027,16 +1050,251 @@ async function deployToStellar(wasmBase64, contractData) {
     }
 }
 
+/**
+ * Valida el contrato completamente antes del despliegue
+ * @returns {object} Objeto con resultado de validación y mensajes
+ */
+function validateContractBeforeDeployment() {
+    console.log('═══════════════════════════════════════════════════');
+    console.log('🔍 INICIANDO VALIDACIÓN PRE-DEPLOYMENT');
+    console.log('═══════════════════════════════════════════════════');
+
+    const errors = [];
+    const warnings = [];
+    const info = [];
+
+    // ✅ Validación 1: Blockly está inicializado
+    if (!window.blocklyWorkspace) {
+        errors.push('❌ Blockly no está inicializado. Por favor recarga la página.');
+        return { isValid: false, errors, warnings, info };
+    }
+    info.push('✅ Blockly inicializado correctamente');
+
+    // ✅ Validación 2: Wallet conectada
+    if (!appState.walletConnected || !appState.walletAddress) {
+        errors.push('❌ Wallet no conectada. Por favor conecta tu wallet primero.');
+        return { isValid: false, errors, warnings, info };
+    }
+    info.push(`✅ Wallet conectada: ${appState.walletAddress.substring(0, 8)}...`);
+
+    // ✅ Validación 3: Balance suficiente
+    if (appState.currentBalance < 5) {
+        errors.push(`❌ Balance insuficiente. Tienes ${appState.currentBalance.toFixed(2)} XLM pero necesitas al menos 5 XLM para desplegar un contrato.`);
+        return { isValid: false, errors, warnings, info };
+    }
+    info.push(`✅ Balance suficiente: ${appState.currentBalance.toFixed(2)} XLM`);
+
+    // ✅ Validación 4: Estructura de bloques
+    const contractBlocks = window.blocklyWorkspace.getBlocksByType('contract_settings', false);
+    if (contractBlocks.length === 0) {
+        errors.push('❌ Falta el bloque principal "Mi Smart Contract". Por favor agrega el bloque de inicio.');
+        return { isValid: false, errors, warnings, info };
+    }
+    info.push('✅ Bloque principal detectado');
+
+    // ✅ Validación 5: Datos del contrato
+    const blocklyData = readBlocklyData();
+    if (!blocklyData) {
+        errors.push('❌ No se pudieron leer los datos de los bloques.');
+        return { isValid: false, errors, warnings, info };
+    }
+    info.push('✅ Datos de bloques leídos correctamente');
+
+    // ✅ Validación 6: Nombre del contrato
+    if (!blocklyData.name || blocklyData.name.trim() === '') {
+        errors.push('❌ El nombre del contrato es requerido. Agrega un bloque "Nombre del Contrato".');
+        return { isValid: false, errors, warnings, info };
+    }
+    if (blocklyData.name.length > 64) {
+        errors.push('❌ El nombre del contrato es demasiado largo (máx 64 caracteres).');
+        return { isValid: false, errors, warnings, info };
+    }
+    if (!/^[a-zA-Z_][a-zA-Z0-9_]*$/.test(blocklyData.name)) {
+        errors.push('❌ El nombre del contrato contiene caracteres inválidos. Solo se permiten letras, números y guiones bajos.');
+        return { isValid: false, errors, warnings, info };
+    }
+    info.push(`✅ Nombre del contrato válido: "${blocklyData.name}"`);
+
+    // ✅ Validación 7: Símbolo del token (si aplica)
+    if (blocklyData.symbol) {
+        if (blocklyData.symbol.length > 12) {
+            errors.push('❌ El símbolo del token no puede tener más de 12 caracteres.');
+            return { isValid: false, errors, warnings, info };
+        }
+        if (!/^[A-Z0-9]+$/.test(blocklyData.symbol)) {
+            errors.push('❌ El símbolo solo puede contener letras mayúsculas y números.');
+            return { isValid: false, errors, warnings, info };
+        }
+        info.push(`✅ Símbolo del token válido: "${blocklyData.symbol}"`);
+    } else {
+        warnings.push('⚠️ No se configuró un símbolo de token');
+    }
+
+    // ✅ Validación 8: Supply (si aplica)
+    if (blocklyData.supply !== undefined && blocklyData.supply !== null) {
+        if (blocklyData.supply < 0) {
+            errors.push('❌ El suministro inicial no puede ser negativo.');
+            return { isValid: false, errors, warnings, info };
+        }
+        if (blocklyData.supply > 9223372036854775807) { // i128 max
+            errors.push('❌ El suministro inicial es demasiado grande.');
+            return { isValid: false, errors, warnings, info };
+        }
+        info.push(`✅ Suministro inicial válido: ${blocklyData.supply.toLocaleString()}`);
+    }
+
+    // ✅ Validación 9: Decimales
+    if (blocklyData.decimals !== undefined) {
+        if (blocklyData.decimals < 0 || blocklyData.decimals > 18) {
+            errors.push('❌ Los decimales deben estar entre 0 y 18.');
+            return { isValid: false, errors, warnings, info };
+        }
+        info.push(`✅ Decimales válidos: ${blocklyData.decimals}`);
+    } else {
+        blocklyData.decimals = 2;
+        warnings.push('⚠️ Decimales no configurados, usando valor por defecto: 2');
+    }
+
+    // ✅ Validación 10: Freighter disponible
+    if (!window.freighterApi) {
+        errors.push('❌ Freighter wallet no detectada. Por favor instala la extensión desde freighter.app');
+        return { isValid: false, errors, warnings, info };
+    }
+    info.push('✅ Freighter wallet detectada');
+
+    console.log('═══════════════════════════════════════════════════');
+    console.log('📊 RESULTADOS DE VALIDACIÓN');
+    console.log('═══════════════════════════════════════════════════');
+    console.log(`✅ Info (${info.length}):`, info);
+    if (warnings.length > 0) console.log(`⚠️ Advertencias (${warnings.length}):`, warnings);
+    if (errors.length > 0) console.log(`❌ Errores (${errors.length}):`, errors);
+    console.log('═══════════════════════════════════════════════════');
+
+    return {
+        isValid: errors.length === 0,
+        errors,
+        warnings,
+        info,
+        blocklyData
+    };
+}
+
+/**
+ * Muestra los resultados de validación al usuario
+ */
+function showValidationResult(validationResult) {
+    // 🎯 Buscar el elemento en múltiples lugares para asegurarse de encontrarlo
+    let validationElement = document.getElementById('preDeploymentValidation');
+
+    if (!validationElement) {
+        // Intenta alternativas
+        validationElement = document.querySelector('[id*="preDeployment"]');
+        console.log('⚠️ Element not found with ID, trying alternative selector:', validationElement ? 'FOUND' : 'NOT FOUND');
+    }
+
+    // Si aún no existe, crear uno temporalmente
+    if (!validationElement) {
+        console.warn('⚠️ Creando elemento de validación dinámicamente');
+        // Buscar el contenedor del paso 4
+        const step4 = document.getElementById('step4');
+        if (step4) {
+            validationElement = document.createElement('div');
+            validationElement.id = 'preDeploymentValidation';
+            validationElement.style.cssText = 'margin-bottom: 2rem; max-width: 100%;';
+            // Insertar después del primer hijo
+            step4.insertBefore(validationElement, step4.children[1] || null);
+        }
+    }
+
+    if (!validationElement) {
+        console.error('❌ No se pudo crear el elemento de validación');
+        // Mostrar en consola como fallback
+        console.log('📊 RESULTADOS DE VALIDACIÓN:');
+        console.log('Válido:', validationResult.isValid);
+        console.log('Errores:', validationResult.errors);
+        console.log('Advertencias:', validationResult.warnings);
+        console.log('Info:', validationResult.info);
+        return;
+    }
+
+    validationElement.classList.remove('hidden');
+
+    let html = `<div style="font-family: 'Inter', sans-serif; padding: 1.5rem; border-radius: 0.75rem; margin-bottom: 0;">`;
+
+    // Encabezado
+    if (validationResult.isValid) {
+        html += `<div style="background: linear-gradient(135deg, #10b981 0%, #059669 100%); color: white; padding: 1rem; border-radius: 0.5rem; margin-bottom: 1rem;">`;
+        html += `<div style="font-size: 1.25rem; font-weight: 700; margin-bottom: 0.5rem;">✅ Contrato Validado Correctamente</div>`;
+        html += `<div style="font-size: 0.95rem; opacity: 0.95;">Tu contrato está listo para desplegar a Stellar Testnet</div>`;
+        html += `</div>`;
+    } else {
+        html += `<div style="background: linear-gradient(135deg, #dc2626 0%, #991b1b 100%); color: white; padding: 1rem; border-radius: 0.5rem; margin-bottom: 1rem;">`;
+        html += `<div style="font-size: 1.25rem; font-weight: 700; margin-bottom: 0.5rem;">❌ Errores en la Validación (${validationResult.errors.length})</div>`;
+        html += `<div style="font-size: 0.95rem; opacity: 0.95;">Por favor corrige los siguientes errores antes de continuar</div>`;
+        html += `</div>`;
+    }
+
+    // Errores
+    if (validationResult.errors.length > 0) {
+        html += `<div style="background: #fef2f2; border: 2px solid #fecaca; border-radius: 0.5rem; padding: 1rem; margin-bottom: 1rem;">`;
+        html += `<div style="font-weight: 700; color: #991b1b; margin-bottom: 0.75rem; font-size: 1rem;">❌ Errores (${validationResult.errors.length}):</div>`;
+        html += `<ul style="margin: 0; padding-left: 1.5rem; color: #991b1b;">`;
+        validationResult.errors.forEach(err => {
+            html += `<li style="margin: 0.5rem 0; line-height: 1.5;">${err}</li>`;
+        });
+        html += `</ul></div>`;
+    }
+
+    // Advertencias
+    if (validationResult.warnings.length > 0) {
+        html += `<div style="background: #fffbeb; border: 2px solid #fde68a; border-radius: 0.5rem; padding: 1rem; margin-bottom: 1rem;">`;
+        html += `<div style="font-weight: 700; color: #92400e; margin-bottom: 0.75rem; font-size: 1rem;">⚠️ Advertencias (${validationResult.warnings.length}):</div>`;
+        html += `<ul style="margin: 0; padding-left: 1.5rem; color: #92400e;">`;
+        validationResult.warnings.forEach(warn => {
+            html += `<li style="margin: 0.5rem 0; line-height: 1.5;">${warn}</li>`;
+        });
+        html += `</ul></div>`;
+    }
+
+    // Información
+    if (validationResult.info.length > 0) {
+        html += `<div style="background: #f0fdf4; border: 2px solid #bbf7d0; border-radius: 0.5rem; padding: 1rem; margin-bottom: 1rem;">`;
+        html += `<div style="font-weight: 700; color: #065f46; margin-bottom: 0.75rem; font-size: 1rem;">ℹ️ Información (${validationResult.info.length}):</div>`;
+        html += `<ul style="margin: 0; padding-left: 1.5rem; color: #065f46;">`;
+        validationResult.info.forEach(inf => {
+            html += `<li style="margin: 0.5rem 0; line-height: 1.5;">${inf}</li>`;
+        });
+        html += `</ul></div>`;
+    }
+
+    html += `</div>`;
+    validationElement.innerHTML = html;
+
+    // Log para debugging
+    console.log('✅ Validación mostrada al usuario');
+    console.log(`   Válido: ${validationResult.isValid}`);
+    console.log(`   Errores: ${validationResult.errors.length}`);
+    console.log(`   Advertencias: ${validationResult.warnings.length}`);
+}
+
 async function deployToken() {
     try {
         console.log('🚀 Iniciando despliegue de Smart Contract...');
 
-        // Leer datos de los bloques
-        const blocklyData = readBlocklyData();
-        if (!blocklyData || !blocklyData.name) {
-            showToast('Por favor, configura el nombre de tu contrato', 'error');
+        // ✨ VALIDACIÓN PRE-DEPLOYMENT ROBUSTA
+        const validationResult = validateContractBeforeDeployment();
+        showValidationResult(validationResult);
+
+        if (!validationResult.isValid) {
+            console.error('❌ Validación fallida. El despliegue no puede continuar.');
+            showToast('❌ Por favor corrige los errores antes de desplegar', 'error');
+            elements.nextBtn.disabled = false;
+            elements.prevBtn.disabled = false;
             return;
         }
+
+        const blocklyData = validationResult.blocklyData;
+        console.log('✅ Validación exitosa. Continuando con el despliegue...');
 
         // Mostrar estado de despliegue
         const contractSummary = document.getElementById('contractSummary');
@@ -1048,7 +1306,7 @@ async function deployToken() {
         elements.nextBtn.disabled = true;
         elements.prevBtn.disabled = true;
 
-        console.log('📊 Datos del contrato:');
+        console.log('📊 Datos del contrato validado:');
         console.log('   Nombre:', blocklyData.name);
         console.log('   Símbolo:', blocklyData.symbol);
         console.log('   Suministro:', blocklyData.supply);
@@ -1465,6 +1723,15 @@ function initializeBlockly() {
                 setTimeout(() => {
                     updateTokenSummary();
                 }, 100);
+
+                // ✨ RE-VALIDAR automáticamente si estamos en paso 4
+                if (appState.currentStep === 4) {
+                    setTimeout(() => {
+                        console.log('🔍 Re-validando contrato después de cambios...');
+                        const validationResult = validateContractBeforeDeployment();
+                        showValidationResult(validationResult);
+                    }, 200);
+                }
             }
         });
 

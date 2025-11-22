@@ -43,7 +43,7 @@ async function loadMetadata() {
  *
  * Request body:
  * {
- *   "templateType": "token_basic" | "token_advanced",
+ *   "templateType": "token_basic" | "token_advanced" | "rwa",
  *   "config": {
  *     "name": "Token Name",
  *     "symbol": "TKN",
@@ -71,7 +71,7 @@ app.post('/api/compile-contract', async (req, res) => {
         if (!templateType) {
             return res.status(400).json({
                 success: false,
-                error: 'templateType is required (token_basic or token_advanced)'
+                error: 'templateType is required (token_basic, token_advanced, or rwa)'
             });
         }
 

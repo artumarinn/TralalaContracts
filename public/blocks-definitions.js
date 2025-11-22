@@ -579,59 +579,72 @@ Blockly.Blocks['token_allowance'] = {
 
 Blockly.Blocks['rwa_asset'] = {
     init: function() {
-        this.appendValueInput("NAME")
+        this.appendDummyInput()
             .appendField("🏢 Definir RWA")
-            .appendField("nombre:");
-        this.appendValueInput("ISIN")
-            .appendField("ISIN:");
-        this.appendValueInput("ISSUER")
-            .appendField("emisor:");
-        this.appendValueInput("PRICE")
-            .appendField("precio inicial:");
+            .appendField("nombre:")
+            .appendField(new Blockly.FieldTextInput("Real Estate Bond"), "NAME");
+        this.appendDummyInput()
+            .appendField("ISIN:")
+            .appendField(new Blockly.FieldTextInput("US0378331005"), "ISIN");
+        this.appendDummyInput()
+            .appendField("emisor:")
+            .appendField(new Blockly.FieldTextInput("Acme Corp"), "ISSUER");
+        this.appendDummyInput()
+            .appendField("precio inicial:")
+            .appendField(new Blockly.FieldNumber(100.00, 0, 999999, 0.01), "PRICE");
         this.setPreviousStatement(true, null);
         this.setNextStatement(true, null);
         this.setColour("#C62828");
-        this.setTooltip("Define un activo del mundo real con propiedades");
+        this.setTooltip("Define un activo del mundo real con propiedades. Nombre: nombre del activo (ej: 'Real Estate Bond'), ISIN: identificador único (12 caracteres), Emisor: entidad que emite (ej: 'Acme Corp'), Precio: valor inicial del activo");
     }
 };
 
 Blockly.Blocks['rwa_custody'] = {
     init: function() {
-        this.appendValueInput("CUSTODIAN")
+        this.appendDummyInput()
             .appendField("🔒 Custodio")
-            .appendField("dirección:");
-        this.appendValueInput("ASSET")
-            .appendField("asset:");
-        this.appendValueInput("AMOUNT")
-            .appendField("cantidad:");
+            .appendField("dirección:")
+            .appendField(new Blockly.FieldTextInput("GBBD47..."), "CUSTODIAN");
+        this.appendDummyInput()
+            .appendField("asset:")
+            .appendField(new Blockly.FieldTextInput("Real Estate Bond"), "ASSET");
+        this.appendDummyInput()
+            .appendField("cantidad:")
+            .appendField(new Blockly.FieldNumber(1000, 0, 999999999, 1), "AMOUNT");
         this.setPreviousStatement(true, null);
         this.setNextStatement(true, null);
         this.setColour("#C62828");
-        this.setTooltip("Establece un custodio para mantener RWAs");
+        this.setTooltip("Establece un custodio para mantener RWAs. Dirección: wallet que cuida el activo, Asset: nombre del activo (debe coincidir con el definido), Cantidad: cantidad de activos bajo custodia");
     }
 };
 
 Blockly.Blocks['rwa_settlement'] = {
     init: function() {
-        this.appendValueInput("SELLER")
-            .appendField("📋 Liquidación - Vendedor:");
-        this.appendValueInput("BUYER")
-            .appendField("Comprador:");
-        this.appendValueInput("AMOUNT")
-            .appendField("Cantidad:");
-        this.appendValueInput("PRICE")
-            .appendField("Precio:");
+        this.appendDummyInput()
+            .appendField("📋 Liquidación - Vendedor:")
+            .appendField(new Blockly.FieldTextInput("GBAE4..."), "SELLER");
+        this.appendDummyInput()
+            .appendField("Comprador:")
+            .appendField(new Blockly.FieldTextInput("GBBD4..."), "BUYER");
+        this.appendDummyInput()
+            .appendField("Cantidad:")
+            .appendField(new Blockly.FieldNumber(500, 0, 999999999, 1), "AMOUNT");
+        this.appendDummyInput()
+            .appendField("Precio:")
+            .appendField(new Blockly.FieldNumber(50000.00, 0, 999999999, 0.01), "PRICE");
         this.setPreviousStatement(true, null);
         this.setNextStatement(true, null);
         this.setColour("#C62828");
-        this.setTooltip("Ejecuta una liquidación de transacción de RWA");
+        this.setTooltip("Ejecuta una liquidación de transacción de RWA. Vendedor: dirección que vende, Comprador: dirección que compra, Cantidad: cantidad de activos a transferir, Precio: precio total de la transacción");
     }
 };
 
 Blockly.Blocks['rwa_compliance'] = {
     init: function() {
-        this.appendValueInput("ACCOUNT")
-            .appendField("⚖️ Verificar Cumplimiento");
+        this.appendDummyInput()
+            .appendField("⚖️ Verificar Cumplimiento")
+            .appendField("cuenta:")
+            .appendField(new Blockly.FieldTextInput("GBAE4..."), "ACCOUNT");
         this.appendDummyInput()
             .appendField("tipo:")
             .appendField(new Blockly.FieldDropdown([
@@ -643,22 +656,25 @@ Blockly.Blocks['rwa_compliance'] = {
         this.setPreviousStatement(true, null);
         this.setNextStatement(true, null);
         this.setColour("#C62828");
-        this.setTooltip("Verifica requisitos de cumplimiento regulatorio");
+        this.setTooltip("Verifica requisitos de cumplimiento regulatorio. Cuenta: dirección a verificar, Tipo: KYC (verificación identidad), AML (anti-lavado), Jurisdicción (restricción geográfica), Acreditado (estatus inversión)");
     }
 };
 
 Blockly.Blocks['rwa_redemption'] = {
     init: function() {
-        this.appendValueInput("FROM")
-            .appendField("🔄 Redención - Desde:");
-        this.appendValueInput("AMOUNT")
-            .appendField("Cantidad:");
-        this.appendValueInput("REASON")
-            .appendField("Razón:");
+        this.appendDummyInput()
+            .appendField("🔄 Redención - Desde:")
+            .appendField(new Blockly.FieldTextInput("GBAE4..."), "FROM");
+        this.appendDummyInput()
+            .appendField("Cantidad:")
+            .appendField(new Blockly.FieldNumber(100, 0, 999999999, 1), "AMOUNT");
+        this.appendDummyInput()
+            .appendField("Razón:")
+            .appendField(new Blockly.FieldTextInput("Liquidación de inversión"), "REASON");
         this.setPreviousStatement(true, null);
         this.setNextStatement(true, null);
         this.setColour("#C62828");
-        this.setTooltip("Procesa una redención de RWA");
+        this.setTooltip("Procesa una redención de RWA. Desde: dirección que redime, Cantidad: cantidad de activos a redimir, Razón: motivo de la redención (ej: 'Liquidación de inversión')");
     }
 };
 

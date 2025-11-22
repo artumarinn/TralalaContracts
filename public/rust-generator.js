@@ -425,6 +425,137 @@ class RustGenerator {
         return `// Burn: Se queman ${amountCode} tokens de ${fromCode}`;
     }
 
+    // ========== RWA (REAL WORLD ASSETS) ==========
+
+    block_rwa_asset(block) {
+        // Add RWA imports once (Set will deduplicate)
+        this.addImport('use soroban_sdk::{Symbol, symbol_short, Map};');
+
+        const name = block.getFieldValue('NAME');
+        const isin = block.getFieldValue('ISIN');
+        const issuer = block.getFieldValue('ISSUER');
+        const price = block.getFieldValue('PRICE');
+
+        const code = `pub fn register_rwa_asset(env: Env, name: Symbol, isin: Symbol, issuer: Address, price: i128) -> Symbol {
+        let asset_key = symbol_short!("${name.slice(0, 4).toUpperCase()}");
+
+        // Store asset metadata
+        env.storage().persistent().set(&symbol_short!("NAME"), &"${name}");
+        env.storage().persistent().set(&symbol_short!("ISIN"), &"${isin}");
+        env.storage().persistent().set(&symbol_short!("ISSUER"), &issuer);
+        env.storage().persistent().set(&symbol_short!("PRICE"), &price);
+
+        asset_key
+    }`;
+
+        return code;
+    }
+
+    block_rwa_custody(block) {
+        this.addImport('use soroban_sdk::{Symbol, symbol_short, Map};');
+
+        const custodian = block.getFieldValue('CUSTODIAN');
+        const asset = block.getFieldValue('ASSET');
+        const amount = block.getFieldValue('AMOUNT');
+
+        const code = `pub fn register_custodian(env: Env, custodian: Address, asset: Symbol, amount: i128) -> bool {
+        // Verify custodian authorization
+        custodian.require_auth();
+
+        // Store custody relationship
+        let custody_key = symbol_short!("CUST");
+        let mut custodies: Map<Address, i128> = env.storage()
+            .persistent()
+            .get(&custody_key)
+            .unwrap_or_default();
+
+        custodies.set(custodian.clone(), amount);
+        env.storage().persistent().set(&custody_key, &custodies);
+
+        true
+    }`;
+
+        return code;
+    }
+
+    block_rwa_settlement(block) {
+        this.addImport('use soroban_sdk::{Symbol, symbol_short};');
+
+        const seller = block.getFieldValue('SELLER');
+        const buyer = block.getFieldValue('BUYER');
+        const amount = block.getFieldValue('AMOUNT');
+        const price = block.getFieldValue('PRICE');
+
+        const code = `pub fn settle_transaction(env: Env, seller: Address, buyer: Address, amount: i128, price: i128) -> bool {
+        // Verify seller authorization
+        seller.require_auth();
+
+        // Store settlement record
+        let settlement_key = symbol_short!("SETL");
+        env.storage().persistent().set(&settlement_key, &true);
+
+        // Emit settlement event
+        env.events().publish((
+            symbol_short!("SETTLE"),
+            seller.clone(),
+            buyer.clone(),
+        ), (amount, price));
+
+        true
+    }`;
+
+        return code;
+    }
+
+    block_rwa_compliance(block) {
+        this.addImport('use soroban_sdk::{Symbol, symbol_short};');
+
+        const account = block.getFieldValue('ACCOUNT');
+        const complianceType = block.getFieldValue('COMPLIANCE_TYPE');
+
+        const code = `pub fn verify_compliance(env: Env, account: Address, compliance_type: Symbol) -> bool {
+        match compliance_type {
+            Symbol::new(&env, "${complianceType}") => {
+                // Store compliance verification
+                let compliance_key = symbol_short!("COMP");
+                env.storage().persistent().set(&compliance_key, &true);
+                true
+            },
+            _ => false
+        }
+    }`;
+
+        return code;
+    }
+
+    block_rwa_redemption(block) {
+        this.addImport('use soroban_sdk::{Symbol, symbol_short};');
+
+        const from = block.getFieldValue('FROM');
+        const amount = block.getFieldValue('AMOUNT');
+        const reason = block.getFieldValue('REASON');
+
+        const code = `pub fn redeem_assets(env: Env, from: Address, amount: i128, reason: Symbol) -> bool {
+        // Verify redemption authorization
+        from.require_auth();
+
+        // Store redemption record
+        let redemption_key = symbol_short!("REDM");
+        env.storage().persistent().set(&redemption_key, &true);
+
+        // Emit redemption event
+        env.events().publish((
+            symbol_short!("REDEEM"),
+            from.clone(),
+            reason.clone(),
+        ), amount);
+
+        true
+    }`;
+
+        return code;
+    }
+
     // ========== SEGURIDAD ==========
 
     block_require_condition(block) {
@@ -488,7 +619,12 @@ class RustGenerator {
                 functions.push(code);
             } else if (currentBlock.type.startsWith('state_event')) {
                 eventDefs.push(code);
-            } else {
+            } else if (currentBlock.type.startsWith('rwa_')) {
+                // RWA blocks generate functions, so add them to functions list
+                if (code && code.trim()) {
+                    functions.push(code);
+                }
+            } else if (code && code.trim()) {
                 this.addCode(code);
             }
 
@@ -504,13 +640,15 @@ class RustGenerator {
     buildContract(stateVars = [], functions = [], events = []) {
         let rust = '';
 
-        // Agregar imports
-        if (this.imports.size === 0) {
-            this.addImport('#![no_std]');
+        // Agregar imports (siempre incluir al menos los básicos)
+        if (!Array.from(this.imports).some(i => i.includes('contract, contractimpl'))) {
             this.addImport('use soroban_sdk::{contract, contractimpl, Address, Env};');
         }
 
-        rust += Array.from(this.imports).join('\n') + '\n\n';
+        // Deduplicar y ordenar imports
+        const importsArray = Array.from(this.imports);
+        const sortedImports = ['#![no_std]', ...importsArray.filter(i => !i.includes('#![no_std]'))];
+        rust += sortedImports.join('\n') + '\n\n';
 
         // Agregar declaraciones
         if (this.declarations.length > 0) {
