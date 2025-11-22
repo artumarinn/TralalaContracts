@@ -4,7 +4,7 @@
 // Estado global de la aplicación
 const appState = {
     currentStep: 1,
-    totalSteps: 4,
+    totalSteps: 5,  // ✅ 5 pasos: Wallet -> Plantilla -> Bloques -> Revisar -> Resultados
     walletConnected: false,
     walletAddress: null,
     walletType: null,
@@ -181,8 +181,14 @@ function updateStepper() {
     // Actualizar botones
     elements.prevBtn.disabled = appState.currentStep === 1;
 
-    if (appState.currentStep === appState.totalSteps) {
-        elements.nextBtn.textContent = 'Crear Smart Contract';
+    // Actualizar botón según el paso
+    // Paso 4 (Revisar): Siguiente → Paso 5
+    // Paso 5 (Resultados): Desplegar o Crear Otro Contrato
+    if (appState.currentStep === 5) {
+        // Paso 5: Resultados
+        elements.nextBtn.textContent = '🚀 Crear Smart Contract';
+    } else if (appState.currentStep === appState.totalSteps) {
+        elements.nextBtn.textContent = '🔄 Crear Otro Contrato';
     } else {
         elements.nextBtn.textContent = 'Siguiente';
     }
@@ -254,6 +260,12 @@ function updateStepContent() {
                     showToast(`❌ Revisa los errores antes de desplegar: ${validationResult.errors.length} problema(s)`, 'error');
                 }
             }, 300);
+            break;
+
+        case 5:
+            // Paso 5: Mostrar resumen del contrato ANTES de desplegar
+            console.log('✨ Paso 5: Resumen del contrato. Listo para desplegar.');
+            showContractSummaryForStep5();
             break;
     }
 }
@@ -1383,19 +1395,18 @@ async function deployToken() {
 
         console.log('✅ Contrato deployado a Stellar:', deploymentData);
 
-        // Paso 4: Mostrar resultado con link al explorador
+        // Mostrar resultado con link al explorador
         if (deploymentMessage) deploymentMessage.textContent = '✅ ¡Contrato deployado exitosamente!';
 
-        const deploymentResult = document.getElementById('deploymentResult');
+        const explorerUrl = `https://stellar.expert/explorer/testnet/contract/${deploymentData.contractId}`;
+
+        // Determinar dónde mostrar el resultado (paso 4 o paso 5)
         const resultContent = document.getElementById('resultContent');
+        const deploymentResults = document.getElementById('deploymentResults');
+        const resultContainer = deploymentResults || resultContent;
 
-        if (deploymentPipeline) deploymentPipeline.style.display = 'none';
-        if (deploymentResult) deploymentResult.classList.remove('hidden');
-
-        if (resultContent) {
-            const explorerUrl = `https://stellar.expert/explorer/testnet/contract/${deploymentData.contractId}`;
-
-            resultContent.innerHTML = `
+        if (resultContainer) {
+            const resultContent_html = `
                 <div style="text-align: center; max-width: 600px; margin: 0 auto;">
                     <div style="font-size: 3rem; margin-bottom: 1rem;">🎉</div>
                     <h2 style="color: #10b981; margin-bottom: 1rem;">¡Smart Contract Deployado a Stellar Testnet!</h2>
@@ -1453,6 +1464,8 @@ async function deployToken() {
                     </button>
                 </div>
             `;
+
+            resultContainer.innerHTML = resultContent_html;
         }
 
         showToast('🎉 ¡Smart Contract deployado a Stellar Testnet!', 'success');
@@ -1497,6 +1510,36 @@ function updateCodePreview() {
     }
 }
 
+/**
+ * Limpia la indentación del código
+ * Elimina espacios iniciales innecesarios manteniendo la indentación relativa
+ */
+function cleanCodeIndentation(code) {
+    const lines = code.split('\n');
+
+    // Encontrar la indentación mínima (excepto líneas vacías)
+    let minIndent = Infinity;
+    lines.forEach(line => {
+        if (line.trim().length > 0) {
+            const indent = line.match(/^(\s*)/)[1].length;
+            minIndent = Math.min(minIndent, indent);
+        }
+    });
+
+    // Si todas las líneas estaban vacías, no hacer nada
+    if (minIndent === Infinity) {
+        minIndent = 0;
+    }
+
+    // Remover la indentación mínima de todas las líneas
+    return lines.map(line => {
+        if (line.trim().length === 0) {
+            return '';
+        }
+        return line.substring(minIndent);
+    }).join('\n');
+}
+
 // Función para generar código Rust avanzado
 function generateAdvancedRustCode(data) {
     const features = [];
@@ -1506,7 +1549,7 @@ function generateAdvancedRustCode(data) {
     if (dataFeatures.burnable) features.push('Burnable');
     if (dataFeatures.pausable) features.push('Pausable');
 
-    return `// Smart Contract: ${data.name || 'Mi Token'}
+    const code = `// Smart Contract: ${data.name || 'Mi Token'}
 // Generado automáticamente por Tralalero Contracts
 #![no_std]
 
@@ -1545,6 +1588,97 @@ impl TokenContract {
 }
 
 // Características: ${features.join(', ') || 'Básico'}`;
+
+    return cleanCodeIndentation(code);
+}
+
+/**
+ * Muestra el resumen del contrato en el paso 5
+ */
+function showContractSummaryForStep5() {
+    const blocklyData = readBlocklyData();
+    if (!blocklyData) {
+        console.warn('⚠️ No se pudieron leer datos del contrato');
+        return;
+    }
+
+    const summaryContainer = document.getElementById('contractSummaryStep5');
+    if (!summaryContainer) {
+        console.warn('⚠️ Contenedor de resumen no encontrado');
+        return;
+    }
+
+    const html = `
+        <div style="background: #f0fdf4; border: 2px solid #10b981; border-radius: 1rem; padding: 1.5rem; text-align: left;">
+            <h3 style="margin: 0 0 1.5rem 0; color: #059669; font-size: 1.25rem;">📄 Detalles del Contrato</h3>
+
+            <div style="display: grid; gap: 1rem;">
+                <div style="padding: 1rem; background: white; border-radius: 0.5rem; border-left: 4px solid #6366f1;">
+                    <div style="font-size: 0.85rem; color: #6b7280; margin-bottom: 0.25rem;">📝 Nombre del Contrato</div>
+                    <div style="font-size: 1.1rem; font-weight: 600; color: #1f2937;">${blocklyData.name || 'Mi Contrato'}</div>
+                </div>
+
+                <div style="padding: 1rem; background: white; border-radius: 0.5rem; border-left: 4px solid #f59e0b;">
+                    <div style="font-size: 0.85rem; color: #6b7280; margin-bottom: 0.25rem;">🔤 Símbolo del Token</div>
+                    <div style="font-size: 1.1rem; font-weight: 600; color: #1f2937; font-family: monospace;">${blocklyData.symbol || 'TOKEN'}</div>
+                </div>
+
+                <div style="padding: 1rem; background: white; border-radius: 0.5rem; border-left: 4px solid #10b981;">
+                    <div style="font-size: 0.85rem; color: #6b7280; margin-bottom: 0.25rem;">💰 Suministro Inicial</div>
+                    <div style="font-size: 1.1rem; font-weight: 600; color: #1f2937;">${(blocklyData.supply || 0).toLocaleString()}</div>
+                </div>
+
+                <div style="padding: 1rem; background: white; border-radius: 0.5rem; border-left: 4px solid #8b5cf6;">
+                    <div style="font-size: 0.85rem; color: #6b7280; margin-bottom: 0.25rem;">🔢 Decimales</div>
+                    <div style="font-size: 1.1rem; font-weight: 600; color: #1f2937;">${blocklyData.decimals || 2}</div>
+                </div>
+
+                <div style="padding: 1rem; background: white; border-radius: 0.5rem; border-left: 4px solid #3b82f6;">
+                    <div style="font-size: 0.85rem; color: #6b7280; margin-bottom: 0.25rem;">🔐 Administrador</div>
+                    <div style="font-size: 0.9rem; font-weight: 600; color: #1f2937; font-family: monospace; word-break: break-all;">${appState.walletAddress}</div>
+                </div>
+
+                <div style="padding: 1rem; background: white; border-radius: 0.5rem; border-left: 4px solid #ec4899;">
+                    <div style="font-size: 0.85rem; color: #6b7280; margin-bottom: 0.25rem;">🌐 Red</div>
+                    <div style="font-size: 1.1rem; font-weight: 600; color: #1f2937;">Stellar Testnet</div>
+                </div>
+            </div>
+
+            <div style="margin-top: 1.5rem; padding: 1rem; background: #eff6ff; border: 1px solid #bfdbfe; border-radius: 0.5rem;">
+                <strong style="color: #1e40af;">ℹ️ Información:</strong><br>
+                <div style="color: #1e40af; font-size: 0.95rem; margin-top: 0.5rem;">
+                    • Tu contrato se desplegará en la red de prueba de Stellar<br>
+                    • Podrás verificarlo en Stellar Expert después de desplegarlo<br>
+                    • Asegúrate de tener suficiente XLM en tu wallet para pagar los fees
+                </div>
+            </div>
+        </div>
+    `;
+
+    summaryContainer.innerHTML = html;
+}
+
+/**
+ * Despliega el contrato desde el paso 5
+ */
+async function deployTokenFromStep5() {
+    console.log('🚀 Iniciando despliegue desde paso 5...');
+
+    // Usar la función deployToken() existente
+    await deployToken();
+
+    // Si el despliegue fue exitoso, mostrar el cartel de éxito
+    const deploymentResults = document.getElementById('deploymentResults');
+    const contractSummary = document.getElementById('contractSummaryStep5');
+    const deployButton = document.getElementById('deployButtonStep5');
+
+    if (deploymentResults && contractSummary && deployButton) {
+        // El contenido ya fue inyectado por deployToken()
+        // Solo mostrar el resultado
+        contractSummary.style.display = 'none';
+        deployButton.style.display = 'none';
+        deploymentResults.style.display = 'block';
+    }
 }
 
 // Función para leer datos de Blockly

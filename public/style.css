@@ -809,15 +809,19 @@ body {
     overflow-x: auto;
     max-height: 300px;
     border: 1px solid #374151;
+    text-align: left;  /* 🔧 Asegurar alineación a la izquierda */
 }
 
 .code-preview pre {
     margin: 0;
+    padding: 0;
     color: #f3f4f6;
     font-family: 'Monaco', 'Menlo', 'Ubuntu Mono', monospace;
     font-size: 0.875rem;
     line-height: 1.5;
     white-space: pre-wrap;
+    word-wrap: break-word;
+    text-align: left;  /* 🔧 Alineación explícita */
 }
 
 .validation-result {

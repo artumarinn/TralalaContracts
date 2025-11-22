@@ -333,26 +333,24 @@
                 </div>
             </div>
 
-            <!-- Step 5: Deployment Results -->
+            <!-- Step 5: Contract Summary (Before Deployment) -->
             <div class="step-content" id="step5">
                 <div class="results-container">
                     <div class="description-box" style="text-align: center;">
-                        <h2 class="step-title" style="color: #10b981; font-size: 2rem; margin-bottom: 1rem;">🎉
-                            ¡Deployment Exitoso!</h2>
-                        <p style="font-size: 1.1rem; color: #6b7280;">Tu contrato ha sido desplegado en Stellar Testnet
+                        <h2 class="step-title" style="color: #6366f1; font-size: 2rem; margin-bottom: 1rem;">📋
+                            Resumen del Contrato</h2>
+                        <p style="font-size: 1.1rem; color: #6b7280;">Revisa los detalles antes de desplegar a Stellar Testnet
                         </p>
                     </div>
 
-                    <div id="deploymentResults" style="max-width: 800px; margin: 2rem auto;">
-                        <!-- Content will be injected here by showDeploymentResults() -->
+                    <div id="contractSummaryStep5" style="max-width: 800px; margin: 2rem auto;">
+                        <!-- Contract summary will be injected here -->
                     </div>
 
-                    <div class="stepper-navigation" style="margin-top: 2rem;">
-                        <button class="btn btn-primary" onclick="window.location.reload()"
-                            style="width: 100%; max-width: 300px;">
-                            🔄 Crear Otro Contrato
-                        </button>
+                    <div id="deploymentResults" style="max-width: 800px; margin: 2rem auto; display: none;">
+                        <!-- Success content will be shown after deployment -->
                     </div>
+
                 </div>
             </div>
 
