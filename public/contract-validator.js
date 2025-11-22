@@ -1,6 +1,6 @@
 /**
- * VALIDADOR DE CONTRATOS INTELIGENTES
- * Valida estructura, tipos, y mejores prácticas antes de compilar
+ * SMART CONTRACT VALIDATOR
+ * Validates structure, types, and best practices before compiling
  */
 
 class ContractValidator {
@@ -17,38 +17,124 @@ class ContractValidator {
     }
 
     /**
-     * Valida un contrato completo desde el workspace de Blockly
+     * Validates a complete contract from the Blockly workspace
      */
     validate(blocklyWorkspace) {
         this.reset();
 
         if (!blocklyWorkspace) {
-            this.addError("El workspace de Blockly no está inicializado");
+            this.addError("Blockly workspace is not initialized");
             return this.getReport();
         }
 
-        // Obtener bloque principal
-        const contractBlocks = blocklyWorkspace.getBlocksByType('contract_settings', false);
-        if (contractBlocks.length === 0) {
-            this.addError("❌ Falta el bloque principal 'Mi Smart Contract'");
-            return this.getReport();
+        // Get main block - try multiple block types
+        let contractBlock = null;
+        const blockTypes = ['contract_settings', 'contract_init'];
+
+        for (const blockType of blockTypes) {
+            const blocks = blocklyWorkspace.getBlocksByType(blockType, false);
+            if (blocks.length > 0) {
+                contractBlock = blocks[0];
+                break;
+            }
         }
 
-        const contractBlock = contractBlocks[0];
-        const contractData = this.extractContractData(contractBlock);
+        // If no contract block found, show info instead of error
+        if (!contractBlock) {
+            this.addInfo("ℹ️ No main contract block found, validating available blocks...");
+            const contractData = this.extractContractDataFromWorkspace(blocklyWorkspace);
 
-        // Validaciones
-        this.validateContractMetadata(contractData);
-        this.validateStateVariables(contractData);
-        this.validateFunctions(contractData);
-        this.validateSecurity(contractData);
-        this.validateStellarIntegration(contractData);
+            // Still validate what we have
+            this.validateContractMetadata(contractData);
+            this.validateStateVariables(contractData);
+            this.validateFunctions(contractData);
+            this.validateSecurity(contractData);
+            this.validateStellarIntegration(contractData);
+        } else {
+            const contractData = this.extractContractData(contractBlock);
+
+            // Validations
+            this.validateContractMetadata(contractData);
+            this.validateStateVariables(contractData);
+            this.validateFunctions(contractData);
+            this.validateSecurity(contractData);
+            this.validateStellarIntegration(contractData);
+        }
 
         return this.getReport();
     }
 
     /**
-     * Extrae datos del contrato desde los bloques
+     * Extracts contract data from all blocks in the workspace
+     */
+    extractContractDataFromWorkspace(blocklyWorkspace) {
+        const data = {
+            name: null,
+            version: null,
+            admin: null,
+            owner: null,
+            description: null,
+            stateVars: [],
+            functions: [],
+            events: [],
+            securityBlocks: [],
+            stellarBlocks: [],
+            tokenBlocks: [],
+            rwaBlocks: []
+        };
+
+        const allBlocks = blocklyWorkspace.getAllBlocks(false);
+
+        allBlocks.forEach(block => {
+            const blockType = block.type;
+
+            if (blockType === 'contract_name') {
+                data.name = block.getFieldValue('NAME');
+            } else if (blockType === 'contract_version') {
+                data.version = block.getFieldValue('VERSION');
+            } else if (blockType === 'admin_address') {
+                data.admin = block.getFieldValue('ADDRESS');
+            } else if (blockType === 'contract_owner') {
+                data.owner = block.getFieldValue('ADDRESS');
+            } else if (blockType === 'contract_description') {
+                data.description = block.getFieldValue('TEXT');
+            } else if (blockType === 'state_variable') {
+                data.stateVars.push({
+                    name: block.getFieldValue('VAR_NAME'),
+                    type: block.getFieldValue('VAR_TYPE'),
+                    value: block.getFieldValue('INIT_VALUE')
+                });
+            } else if (blockType === 'function_declaration') {
+                data.functions.push({
+                    name: block.getFieldValue('FN_NAME'),
+                    returnType: block.getFieldValue('RET_TYPE')
+                });
+            } else if (blockType === 'state_event') {
+                data.events.push(block.getFieldValue('EVENT_NAME'));
+            } else if (blockType.startsWith('stellar_') || blockType === 'stellar_transfer') {
+                if (!data.stellarBlocks.includes(blockType)) {
+                    data.stellarBlocks.push(blockType);
+                }
+            } else if (blockType.startsWith('token_')) {
+                if (!data.tokenBlocks.includes(blockType)) {
+                    data.tokenBlocks.push(blockType);
+                }
+            } else if (blockType.startsWith('rwa_')) {
+                if (!data.rwaBlocks.includes(blockType)) {
+                    data.rwaBlocks.push(blockType);
+                }
+            } else if (blockType.startsWith('require_') || blockType === 'access_control') {
+                if (!data.securityBlocks.includes(blockType)) {
+                    data.securityBlocks.push(blockType);
+                }
+            }
+        });
+
+        return data;
+    }
+
+    /**
+     * Extracts contract data from the blocks
      */
     extractContractData(contractBlock) {
         const data = {
@@ -67,7 +153,7 @@ class ContractValidator {
         };
 
         let currentBlock = contractBlock.getInputTargetBlock('SETTINGS');
-        let rwaAssetName = null; // Para usar como fallback
+        let rwaAssetName = null; // To use as a fallback
 
         while (currentBlock) {
             const blockType = currentBlock.type;
@@ -101,7 +187,7 @@ class ContractValidator {
                 data.tokenBlocks.push(blockType);
             } else if (blockType.startsWith('rwa_')) {
                 data.rwaBlocks.push(blockType);
-                // Guardar el nombre del activo RWA como fallback para el nombre del contrato
+                // Save the RWA asset name as a fallback for the contract name
                 if (blockType === 'rwa_asset' && !rwaAssetName) {
                     rwaAssetName = currentBlock.getFieldValue('NAME');
                 }
@@ -112,7 +198,7 @@ class ContractValidator {
             currentBlock = currentBlock.getNextBlock();
         }
 
-        // Si no hay nombre de contrato pero hay un activo RWA, usar su nombre
+        // If there is no contract name but there is an RWA asset, use its name
         if (!data.name && rwaAssetName) {
             data.name = rwaAssetName;
         }
@@ -121,51 +207,51 @@ class ContractValidator {
     }
 
     /**
-     * Valida metadatos del contrato
+     * Validates contract metadata
      */
     validateContractMetadata(data) {
-        // Nombre
+        // Name
         if (!data.name || data.name.trim() === '') {
-            this.addError("El nombre del contrato es requerido");
+            this.addError("The contract name is required");
         } else if (data.name.length > 64) {
-            this.addError("El nombre del contrato es muy largo (máx 64 caracteres)");
+            this.addError("The contract name is too long (max 64 characters)");
         } else if (!/^[a-zA-Z_][a-zA-Z0-9_]*$/.test(data.name)) {
-            this.addError("El nombre del contrato debe ser un identificador válido (letras, números, guiones bajos)");
+            this.addError("The contract name must be a valid identifier (letters, numbers, underscores)");
         } else {
-            this.addInfo(`✅ Nombre del contrato válido: ${data.name}`);
+            this.addInfo(`✅ Valid contract name: ${data.name}`);
         }
 
-        // Versión
+        // Version
         if (!data.version || data.version.trim() === '') {
-            this.addWarning("Considera agregar una versión al contrato (ej: 1.0.0)");
+            this.addWarning("Consider adding a version to the contract (e.g., 1.0.0)");
         } else if (!/^\d+\.\d+\.\d+/.test(data.version)) {
-            this.addWarning("La versión debería seguir formato semántico (X.Y.Z)");
+            this.addWarning("The version should follow semantic formatting (X.Y.Z)");
         } else {
-            this.addInfo(`✅ Versión: ${data.version}`);
+            this.addInfo(`✅ Version: ${data.version}`);
         }
 
         // Admin/Owner
         if (!data.admin && !data.owner) {
-            this.addError("Debes especificar al menos un administrador o propietario");
+            this.addError("You must specify at least one administrator or owner");
         } else {
-            if (data.admin) this.addInfo(`✅ Administrador configurado`);
-            if (data.owner) this.addInfo(`✅ Propietario configurado`);
+            if (data.admin) this.addInfo(`✅ Administrator configured`);
+            if (data.owner) this.addInfo(`✅ Owner configured`);
         }
 
-        // Descripción
+        // Description
         if (!data.description || data.description.trim() === '') {
-            this.addWarning("Considera agregar una descripción del contrato");
+            this.addWarning("Consider adding a contract description");
         } else {
-            this.addInfo(`✅ Descripción presente`);
+            this.addInfo(`✅ Description present`);
         }
     }
 
     /**
-     * Valida variables de estado
+     * Validates state variables
      */
     validateStateVariables(data) {
         if (data.stateVars.length === 0) {
-            this.addWarning("El contrato no tiene variables de estado. ¿Debería almacenar algún dato?");
+            this.addWarning("The contract has no state variables. Should it store any data?");
             return;
         }
 
@@ -175,55 +261,55 @@ class ContractValidator {
         data.stateVars.forEach((varDef, index) => {
             const { name, type, value } = varDef;
 
-            // Validar nombre
+            // Validate name
             if (!name || name.trim() === '') {
-                this.addError(`Variable de estado ${index + 1}: nombre vacío`);
+                this.addError(`State variable ${index + 1}: empty name`);
                 return;
             }
 
             if (!/^[a-zA-Z_][a-zA-Z0-9_]*$/.test(name)) {
-                this.addError(`Variable '${name}': nombre inválido (debe ser identificador válido)`);
+                this.addError(`Variable '${name}': invalid name (must be a valid identifier)`);
             }
 
             if (varNames.has(name)) {
-                this.addError(`Variable '${name}': nombre duplicado`);
+                this.addError(`Variable '${name}': duplicate name`);
             }
             varNames.add(name);
 
-            // Validar tipo
+            // Validate type
             if (!validTypes.includes(type)) {
-                this.addError(`Variable '${name}': tipo inválido '${type}'`);
+                this.addError(`Variable '${name}': invalid type '${type}'`);
             }
 
-            // Validar valor inicial
+            // Validate initial value
             if (value && value.trim() !== '') {
                 if (type === 'I32' || type === 'I64' || type === 'I128' || type === 'U32' || type === 'U64' || type === 'U128') {
                     if (!/^-?\d+$/.test(value)) {
-                        this.addWarning(`Variable '${name}': valor inicial '${value}' no es un número válido`);
+                        this.addWarning(`Variable '${name}': initial value '${value}' is not a valid number`);
                     }
                 }
             }
 
-            this.addInfo(`✅ Variable de estado: ${name} (${type})`);
+            this.addInfo(`✅ State variable: ${name} (${type})`);
         });
 
         if (data.stateVars.length > 20) {
-            this.addWarning("El contrato tiene muchas variables de estado (>20). Considera usar mapeos para optimizar");
+            this.addWarning("The contract has many state variables (>20). Consider using maps to optimize");
         }
     }
 
     /**
-     * Valida definición de funciones
+     * Validates function definitions
      */
     validateFunctions(data) {
-        // 🎯 Para plantillas RWA y Token, es OK no tener bloques de funciones
-        // El código se genera automáticamente desde la plantilla
+        // 🎯 For RWA and Token templates, it's OK not to have function blocks
+        // The code is automatically generated from the template
         if (data.functions.length === 0) {
-            // Solo mostrar warning si no hay bloques RWA ni token ni funciones
+            // Only show a warning if there are no RWA, token, or function blocks
             if (data.rwaBlocks.length === 0 && data.tokenBlocks.length === 0) {
-                this.addWarning("Considera agregar bloques de funciones para mayor flexibilidad");
+                this.addWarning("Consider adding function blocks for greater flexibility");
             } else {
-                this.addInfo("✅ Usando funciones pre-generadas de la plantilla RWA/Token");
+                this.addInfo("✅ Using pre-generated functions from the RWA/Token template");
             }
             return;
         }
@@ -234,90 +320,90 @@ class ContractValidator {
         data.functions.forEach((fn) => {
             const { name, returnType } = fn;
 
-            // Validar nombre
+            // Validate name
             if (!name || name.trim() === '') {
-                this.addError("Función: nombre vacío");
+                this.addError("Function: empty name");
                 return;
             }
 
             if (!/^[a-z_][a-z0-9_]*$/.test(name)) {
-                this.addError(`Función '${name}': nombre debe ser snake_case`);
+                this.addError(`Function '${name}': name should be snake_case`);
             }
 
             if (functionNames.has(name)) {
-                this.addError(`Función '${name}': nombre duplicado`);
+                this.addError(`Function '${name}': duplicate name`);
             }
             functionNames.add(name);
 
-            // Validar tipo de retorno
+            // Validate return type
             if (!validReturnTypes.includes(returnType)) {
-                this.addWarning(`Función '${name}': tipo de retorno inválido`);
+                this.addWarning(`Function '${name}': invalid return type`);
             }
 
-            this.addInfo(`✅ Función: ${name}() -> ${returnType}`);
+            this.addInfo(`✅ Function: ${name}() -> ${returnType}`);
         });
 
-        // Funciones comunes recomendadas
+        // Recommended common functions
         if (!functionNames.has('initialize')) {
-            this.addWarning("Considera agregar una función 'initialize()' para setup del contrato");
+            this.addWarning("Consider adding an 'initialize()' function for contract setup");
         }
 
         if (data.tokenBlocks.length > 0 && !functionNames.has('transfer')) {
-            this.addWarning("Token contract: considera agregar función 'transfer'");
+            this.addWarning("Token contract: consider adding a 'transfer' function");
         }
     }
 
     /**
-     * Valida características de seguridad
+     * Validates security features
      */
     validateSecurity(data) {
         if (data.securityBlocks.length === 0) {
-            this.addWarning("El contrato no tiene bloques de seguridad. Considera agregar validaciones y control de acceso");
+            this.addWarning("The contract has no security blocks. Consider adding validations and access control");
         } else {
-            this.addInfo(`✅ Seguridad: ${data.securityBlocks.length} bloque(s) de seguridad`);
+            this.addInfo(`✅ Security: ${data.securityBlocks.length} security block(s)`);
         }
     }
 
     /**
-     * Valida integración con Stellar
+     * Validates Stellar integration
      */
     validateStellarIntegration(data) {
         if (data.stellarBlocks.length > 0) {
-            this.addInfo(`✅ Integración Stellar: ${data.stellarBlocks.length} operación(es)`);
+            this.addInfo(`✅ Stellar Integration: ${data.stellarBlocks.length} operation(s)`);
         }
 
         if (data.tokenBlocks.length > 0) {
-            this.addInfo(`✅ Token Features: ${data.tokenBlocks.length} bloque(s) de token`);
+            this.addInfo(`✅ Token Features: ${data.tokenBlocks.length} token block(s)`);
         }
 
         if (data.rwaBlocks.length > 0) {
-            this.addInfo(`✅ RWA Features: ${data.rwaBlocks.length} bloque(s) RWA`);
+            this.addInfo(`✅ RWA Features: ${data.rwaBlocks.length} RWA block(s)`);
         }
     }
 
     /**
-     * Agrega un error
+     * Adds an error
      */
     addError(message) {
         this.errors.push(message);
     }
 
     /**
-     * Agrega una advertencia
+     * Adds a warning
      */
     addWarning(message) {
         this.warnings.push(message);
     }
 
     /**
-     * Agrega información
+     * Adds information
      */
     addInfo(message) {
         this.info.push(message);
     }
 
     /**
-     * Retorna reporte de validación
+     * Returns a validation report
      */
     getReport() {
         const isValid = this.errors.length === 0;
@@ -335,33 +421,33 @@ class ContractValidator {
     }
 
     /**
-     * Genera resumen de validación
+     * Generates a validation summary
      */
     getSummary() {
         if (this.errors.length > 0) {
-            return `❌ ${this.errors.length} error(es) encontrado(s)`;
+            return `❌ ${this.errors.length} error(s) found`;
         } else if (this.warnings.length > 0) {
-            return `⚠️ Contrato válido con ${this.warnings.length} advertencia(s)`;
+            return `⚠️ Contract valid with ${this.warnings.length} warning(s)`;
         } else {
-            return `✅ Contrato completamente válido`;
+            return `✅ Contract completely valid`;
         }
     }
 
     /**
-     * Genera HTML para mostrar el reporte
+     * Generates HTML to display the report
      */
     toHTML() {
         let html = `<div style="font-family: monospace;">`;
 
-        // Resumen
+        // Summary
         html += `<div style="margin-bottom: 1rem; padding: 1rem; background: ${this.errors.length > 0 ? '#fef2f2' : this.warnings.length > 0 ? '#fffbeb' : '#f0fdf4'}; border-radius: 0.5rem; border-left: 4px solid ${this.errors.length > 0 ? '#dc2626' : this.warnings.length > 0 ? '#d97706' : '#059669'};">`;
         html += `<strong>${this.getSummary()}</strong>`;
         html += `</div>`;
 
-        // Errores
+        // Errors
         if (this.errors.length > 0) {
             html += `<div style="margin-bottom: 1rem;">`;
-            html += `<strong style="color: #dc2626;">❌ Errores (${this.errors.length}):</strong>`;
+            html += `<strong style="color: #dc2626;">❌ Errors (${this.errors.length}):</strong>`;
             html += `<ul style="margin: 0.5rem 0; padding-left: 1.5rem;">`;
             this.errors.forEach(err => {
                 html += `<li style="color: #991b1b; margin: 0.25rem 0;">${err}</li>`;
@@ -369,10 +455,10 @@ class ContractValidator {
             html += `</ul></div>`;
         }
 
-        // Advertencias
+        // Warnings
         if (this.warnings.length > 0) {
             html += `<div style="margin-bottom: 1rem;">`;
-            html += `<strong style="color: #d97706;">⚠️ Advertencias (${this.warnings.length}):</strong>`;
+            html += `<strong style="color: #d97706;">⚠️ Warnings (${this.warnings.length}):</strong>`;
             html += `<ul style="margin: 0.5rem 0; padding-left: 1.5rem;">`;
             this.warnings.forEach(warn => {
                 html += `<li style="color: #92400e; margin: 0.25rem 0;">${warn}</li>`;
@@ -383,7 +469,7 @@ class ContractValidator {
         // Info
         if (this.info.length > 0) {
             html += `<div style="margin-bottom: 1rem;">`;
-            html += `<strong style="color: #059669;">ℹ️ Información (${this.info.length}):</strong>`;
+            html += `<strong style="color: #059669;">ℹ️ Information (${this.info.length}):</strong>`;
             html += `<ul style="margin: 0.5rem 0; padding-left: 1.5rem;">`;
             this.info.forEach(inf => {
                 html += `<li style="color: #065f46; margin: 0.25rem 0;">${inf}</li>`;
@@ -396,7 +482,7 @@ class ContractValidator {
     }
 }
 
-// Crear instancia global
+// Create a global instance
 const validator = new ContractValidator();
 
-console.log('✅ Validador de contratos cargado correctamente');
+console.log('✅ Contract validator loaded successfully');
