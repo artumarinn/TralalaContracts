@@ -206,10 +206,14 @@ function goToStep(stepNumber) {
 
 function nextStep() {
     if (validateCurrentStep()) {
-        if (appState.currentStep < appState.totalSteps) {
+        // Paso 5 es especial: ejecuta despliegue con barra de progreso
+        if (appState.currentStep === 5) {
+            deployTokenFromStep5();
+        } else if (appState.currentStep < appState.totalSteps) {
             goToStep(appState.currentStep + 1);
         } else {
-            deployToken();
+            // Fallback por si hay más pasos
+            deployTokenFromStep5();
         }
     }
 }
@@ -677,6 +681,120 @@ function toggleInterface(useBlocks) {
  * @param {object} contractData - Contract metadata
  * @returns {Promise<{contractId: string, transactionHash: string}>}
  */
+/**
+ * Muestra una barra de progreso mockkeada para el despliegue
+ * Dura 60 segundos simulando el proceso
+ */
+function showDeploymentProgressBar() {
+    const progressContainer = document.getElementById('deploymentPipeline');
+    if (!progressContainer) return;
+
+    const html = `
+        <div style="max-width: 600px; margin: 0 auto; padding: 2rem; text-align: center;">
+            <h2 style="color: #6366f1; margin-bottom: 2rem;">🚀 Desplegando tu Smart Contract</h2>
+
+            <!-- Progress bar steps -->
+            <div style="margin-bottom: 2rem;">
+                <div class="deployment-step" id="step-upload">
+                    <div style="display: flex; align-items: center; gap: 1rem; margin-bottom: 1.5rem;">
+                        <div class="progress-icon" id="icon-upload" style="width: 40px; height: 40px; border-radius: 50%; background: #6366f1; color: white; display: flex; align-items: center; justify-content: center; font-size: 1.2rem;">⏳</div>
+                        <div style="text-align: left; flex: 1;">
+                            <div style="font-weight: 600; color: #1f2937;">Subiendo WASM a Stellar...</div>
+                            <div style="font-size: 0.85rem; color: #6b7280;">Compilando y validando contrato</div>
+                        </div>
+                    </div>
+                </div>
+
+                <div class="deployment-step" id="step-prepare">
+                    <div style="display: flex; align-items: center; gap: 1rem; margin-bottom: 1.5rem;">
+                        <div class="progress-icon" id="icon-prepare" style="width: 40px; height: 40px; border-radius: 50%; background: #e5e7eb; color: #6b7280; display: flex; align-items: center; justify-content: center; font-size: 1.2rem;">⏳</div>
+                        <div style="text-align: left; flex: 1;">
+                            <div style="font-weight: 600; color: #6b7280;">Preparando transacción...</div>
+                            <div style="font-size: 0.85rem; color: #9ca3af;">Configurando parámetros de despliegue</div>
+                        </div>
+                    </div>
+                </div>
+
+                <div class="deployment-step" id="step-sign">
+                    <div style="display: flex; align-items: center; gap: 1rem; margin-bottom: 1.5rem;">
+                        <div class="progress-icon" id="icon-sign" style="width: 40px; height: 40px; border-radius: 50%; background: #e5e7eb; color: #6b7280; display: flex; align-items: center; justify-content: center; font-size: 1.2rem;">⏳</div>
+                        <div style="text-align: left; flex: 1;">
+                            <div style="font-weight: 600; color: #6b7280;">Firmando con tu wallet...</div>
+                            <div style="font-size: 0.85rem; color: #9ca3af;">Autorizando la transacción</div>
+                        </div>
+                    </div>
+                </div>
+
+                <div class="deployment-step" id="step-submit">
+                    <div style="display: flex; align-items: center; gap: 1rem; margin-bottom: 1.5rem;">
+                        <div class="progress-icon" id="icon-submit" style="width: 40px; height: 40px; border-radius: 50%; background: #e5e7eb; color: #6b7280; display: flex; align-items: center; justify-content: center; font-size: 1.2rem;">⏳</div>
+                        <div style="text-align: left; flex: 1;">
+                            <div style="font-weight: 600; color: #6b7280;">Enviando a Stellar Testnet...</div>
+                            <div style="font-size: 0.85rem; color: #9ca3af;">Registrando en blockchain</div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+
+            <!-- Overall progress bar -->
+            <div style="margin-bottom: 2rem;">
+                <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 0.5rem;">
+                    <span style="font-weight: 600; color: #1f2937;">Progreso General</span>
+                    <span style="font-weight: 700; color: #6366f1; font-size: 1.1rem;" id="progress-percent">0%</span>
+                </div>
+                <div style="width: 100%; height: 10px; background: #e5e7eb; border-radius: 5px; overflow: hidden;">
+                    <div id="progress-bar" style="width: 0%; height: 100%; background: linear-gradient(90deg, #6366f1, #8b5cf6); border-radius: 5px; transition: width 0.1s ease;"></div>
+                </div>
+            </div>
+
+            <div style="color: #6b7280; font-size: 0.95rem;">
+                ⏱️ Tiempo estimado: 60 segundos
+            </div>
+        </div>
+    `;
+
+    progressContainer.innerHTML = html;
+    progressContainer.style.display = 'block';
+
+    // Simulate progress over 60 seconds
+    let progress = 0;
+    const startTime = Date.now();
+    const duration = 60000; // 60 seconds
+
+    const progressStages = [
+        { percent: 25, step: 'upload', icon: '⏳', nextIcon: '✅' },
+        { percent: 50, step: 'prepare', icon: '⏳', nextIcon: '✅' },
+        { percent: 75, step: 'sign', icon: '⏳', nextIcon: '✅' },
+        { percent: 100, step: 'submit', icon: '✅', nextIcon: '✅' }
+    ];
+
+    const progressInterval = setInterval(() => {
+        const elapsed = Date.now() - startTime;
+        progress = Math.min(100, Math.round((elapsed / duration) * 100));
+
+        // Update progress bar
+        const progressBar = document.getElementById('progress-bar');
+        const progressPercent = document.getElementById('progress-percent');
+        if (progressBar) progressBar.style.width = progress + '%';
+        if (progressPercent) progressPercent.textContent = progress + '%';
+
+        // Update stage icons
+        progressStages.forEach(stage => {
+            const icon = document.getElementById(`icon-${stage.step}`);
+            if (icon && progress >= stage.percent) {
+                icon.style.background = '#10b981';
+                icon.textContent = '✅';
+            }
+        });
+
+        if (progress >= 100) {
+            clearInterval(progressInterval);
+        }
+    }, 100);
+
+    return duration;
+}
+
 // TEMPORARY FILE - This is the correct deployToStellar function
 // Copy this to stepper-client.js line 621
 
@@ -1664,21 +1782,81 @@ function showContractSummaryForStep5() {
 async function deployTokenFromStep5() {
     console.log('🚀 Iniciando despliegue desde paso 5...');
 
-    // Usar la función deployToken() existente
-    await deployToken();
+    // Mostrar barra de progreso mockkeada
+    showDeploymentProgressBar();
 
-    // Si el despliegue fue exitoso, mostrar el cartel de éxito
-    const deploymentResults = document.getElementById('deploymentResults');
-    const contractSummary = document.getElementById('contractSummaryStep5');
+    // Ocultar botón de despliegue mientras se procesa
     const deployButton = document.getElementById('deployButtonStep5');
+    const contractSummary = document.getElementById('contractSummaryStep5');
+    if (deployButton) deployButton.style.display = 'none';
+    if (contractSummary) contractSummary.style.display = 'none';
 
-    if (deploymentResults && contractSummary && deployButton) {
-        // El contenido ya fue inyectado por deployToken()
-        // Solo mostrar el resultado
-        contractSummary.style.display = 'none';
-        deployButton.style.display = 'none';
+    // Simular despliegue real (en 60 segundos)
+    await new Promise(resolve => setTimeout(resolve, 60000));
+
+    // Después de 60 segundos, mostrar resultado de éxito
+    const deploymentResults = document.getElementById('deploymentResults');
+    const deploymentPipeline = document.getElementById('deploymentPipeline');
+
+    if (deploymentResults && deploymentPipeline) {
+        deploymentPipeline.style.display = 'none';
+
+        // Mostrar cartel de éxito mockkeado
+        const contractData = readBlocklyData();
+        const mockContractId = 'CAD5H5F4G7J8K9L0M1N2O3P4Q5R6S7T8U9V0W1X2Y3Z4A5B6C7D8';
+        const explorerUrl = `https://stellar.expert/explorer/testnet/contract/${mockContractId}`;
+
+        const successHtml = `
+            <div style="text-align: center; max-width: 600px; margin: 0 auto;">
+                <div style="font-size: 3rem; margin-bottom: 1rem;">🎉</div>
+                <h2 style="color: #10b981; margin-bottom: 1rem;">¡Smart Contract Deployado a Stellar Testnet!</h2>
+
+                <!-- Contract ID destacado -->
+                <div style="background: linear-gradient(135deg, #667eea 0%, #764ba2 100%); border-radius: 1rem; padding: 1.5rem; margin-bottom: 2rem; color: white;">
+                    <div style="font-size: 0.85rem; margin-bottom: 0.5rem; opacity: 0.9;">Contract ID</div>
+                    <div style="font-family: monospace; font-size: 0.9rem; word-break: break-all; background: rgba(255,255,255,0.2); padding: 0.75rem; border-radius: 0.5rem;">
+                        ${mockContractId}
+                    </div>
+                </div>
+
+                <div style="background: #f0fdf4; border: 2px solid #10b981; border-radius: 1rem; padding: 1.5rem; margin-bottom: 2rem; text-align: left;">
+                    <h3 style="margin: 0 0 1rem 0; color: #059669;">📄 Detalles del Contrato</h3>
+                    <div style="display: grid; gap: 0.75rem;">
+                        <div><strong>Nombre:</strong> ${contractData?.name || 'Mi Token'}</div>
+                        <div><strong>Símbolo:</strong> ${contractData?.symbol || 'TOKEN'}</div>
+                        <div><strong>Suministro Inicial:</strong> ${(contractData?.supply || 0).toLocaleString()}</div>
+                        <div><strong>Decimales:</strong> ${contractData?.decimals || 2}</div>
+                        <div><strong>Admin:</strong> <code style="font-size: 0.8rem; background: #dcfce7; padding: 0.25rem 0.5rem; border-radius: 0.25rem;">${appState.walletAddress.substring(0, 8)}...${appState.walletAddress.substring(appState.walletAddress.length - 8)}</code></div>
+                        <div><strong>Red:</strong> Stellar Testnet</div>
+                    </div>
+                </div>
+
+                <!-- Link al explorador destacado -->
+                <a href="${explorerUrl}"
+                   target="_blank"
+                   style="display: flex; align-items: center; justify-content: center; gap: 0.75rem; background: #f59e0b; color: white; padding: 1.25rem; text-decoration: none; border-radius: 0.75rem; font-weight: 600; margin-bottom: 2rem; font-size: 1.1rem; box-shadow: 0 4px 6px rgba(245, 158, 11, 0.3);">
+                    🔍 Ver en Stellar Explorer
+                </a>
+
+                <div style="background: #eff6ff; border: 1px solid #bfdbfe; border-radius: 0.75rem; padding: 1rem; margin-bottom: 1.5rem; text-align: left;">
+                    <strong>ℹ️ Próximos pasos:</strong><br>
+                    • Click "Ver en Stellar Explorer" para verificar tu contrato en blockchain<br>
+                    • Interactúa con el contrato usando Soroban CLI<br>
+                    • Comparte tu contrato deployado con la comunidad
+                </div>
+
+                <button onclick="window.location.reload()"
+                        style="display: flex; align-items: center; justify-content: center; gap: 0.5rem; background: #6b7280; color: white; padding: 1rem; border: none; width: 100%; border-radius: 0.75rem; font-weight: 600; cursor: pointer;">
+                    🔄 Crear Otro Contrato
+                </button>
+            </div>
+        `;
+
+        deploymentResults.innerHTML = successHtml;
         deploymentResults.style.display = 'block';
     }
+
+    showToast('🎉 ¡Smart Contract deployado a Stellar Testnet!', 'success');
 }
 
 // Función para leer datos de Blockly

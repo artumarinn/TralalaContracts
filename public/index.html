@@ -172,8 +172,8 @@
                     flex-direction: column;
                     align-items: center;
                     justify-content: center;
-                    min-height: 600px;
-                    padding: 2rem;
+                    min-height: 200px;
+                    padding: 1rem;
                     max-width: 600px;
                     margin: 0 auto;
                 ">
@@ -1647,15 +1647,39 @@ impl TokenContract {
                     if (result.isPrecompiled || result.compiled) {
                         console.log('🚀 Precompiled contract detected, deploying immediately...');
 
-                        // Simulate progress bar (instant)
+                        // CRITICAL: Show compilation/deployment progress UI
+                        const compilationStep = document.getElementById('compilationStep');
+                        const step4 = document.getElementById('step4');
                         const progressBar = document.getElementById('compilationProgressBar');
                         const percentElement = document.getElementById('compilationPercent');
-                        if (progressBar) progressBar.style.width = '100%';
-                        if (percentElement) percentElement.textContent = '100%';
+                        const statusElement = document.getElementById('compilationStatus');
+
+                        // Hide step4 content and show progress bar
+                        if (step4) step4.style.display = 'none';
+                        if (compilationStep) {
+                            compilationStep.style.display = 'block';
+                            console.log('✅ compilationStep made visible');
+                        }
+
+                        // Animate progress bar during deployment
+                        if (progressBar) progressBar.style.width = '30%';
+                        if (percentElement) percentElement.textContent = '30%';
+                        if (statusElement) statusElement.textContent = 'Subiendo WASM a Stellar...';
 
                         // Deploy to Stellar
                         console.log('🚀 Calling deployment...');
+
+                        // Update progress to 60%
+                        if (progressBar) progressBar.style.width = '60%';
+                        if (percentElement) percentElement.textContent = '60%';
+                        if (statusElement) statusElement.textContent = 'Creando contrato en blockchain...';
+
                         const deploymentData = await deployToStellar(result.wasmBase64, blocklyData);
+
+                        // Update progress to 100%
+                        if (progressBar) progressBar.style.width = '100%';
+                        if (percentElement) percentElement.textContent = '100%';
+                        if (statusElement) statusElement.textContent = '¡Completado!';
 
                         console.log('✅ Deployment complete:', deploymentData);
 
@@ -2425,6 +2449,17 @@ impl TokenContract {
                             </a>
                         </div>
                 `;
+
+            // CRITICAL: Ocultar resumen del contrato y mostrar resultados
+            const summaryStep5 = document.getElementById('contractSummaryStep5');
+            if (summaryStep5) {
+                summaryStep5.style.display = 'none';
+                console.log('✅ contractSummaryStep5 hidden');
+            }
+
+            // CRITICAL: Hacer visible el contenedor de resultados
+            resultsContainer.style.display = 'block';
+            console.log('✅ deploymentResults made visible');
 
             console.log('✅ Deployment results injected into Step 5');
             console.log('✅ DEPLOYMENT SUCCESS COMPLETE');
