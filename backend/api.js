@@ -129,6 +129,181 @@ app.post('/api/compile-contract', async (req, res) => {
 });
 
 /**
+ * POST /api/compile-custom-contract
+ *
+ * Compiles custom Rust code for Soroban
+ *
+ * Request body:
+ * {
+ *   "rustCode": "[full rust source code]",
+ *   "contractName": "my_contract"
+ * }
+ *
+ * Response:
+ * {
+ *   "success": true,
+ *   "contractId": "uuid-xxx",
+ *   "wasmBase64": "AGFzbS0x...",
+ *   "compiledAt": "2025-11-22T...",
+ *   "message": "Custom contract compiled successfully",
+ *   "compilationTime": 125000
+ * }
+ */
+app.post('/api/compile-custom-contract', async (req, res) => {
+    try {
+        console.log('🔨 Custom contract compilation request received');
+        const { rustCode, contractName } = req.body;
+
+        // Validate input
+        if (!rustCode || rustCode.trim().length === 0) {
+            return res.status(400).json({
+                success: false,
+                error: 'rustCode is required and cannot be empty'
+            });
+        }
+
+        const { execSync } = require('child_process');
+        const tempDir = path.join(__dirname, 'temp-contracts', `compile-${uuidv4()}`);
+        const startTime = Date.now();
+
+        try {
+            // Create temporary directory structure
+            console.log(`📁 Creating temp directory: ${tempDir}`);
+            await fse.ensureDir(tempDir);
+            await fse.ensureDir(path.join(tempDir, 'src'));
+
+            // Create Cargo.toml
+            const cargoToml = `[package]
+name = "${contractName || 'custom-contract'}"
+version = "0.1.0"
+edition = "2021"
+
+[lib]
+crate-type = ["cdylib"]
+
+[dependencies]
+soroban-sdk = "23.0.1"
+
+[profile.release]
+opt-level = 2
+lto = true
+strip = true
+`;
+
+            await fs.writeFile(path.join(tempDir, 'Cargo.toml'), cargoToml);
+            console.log('✅ Cargo.toml created');
+
+            // Write Rust code to lib.rs
+            await fs.writeFile(path.join(tempDir, 'src', 'lib.rs'), rustCode);
+            console.log('✅ Rust code written to lib.rs');
+
+            // Compile with Cargo
+            console.log('🔨 Starting cargo build...');
+            const buildCommand = `cd "${tempDir}" && cargo build --target wasm32-unknown-unknown --release 2>&1`;
+
+            let buildOutput = '';
+            try {
+                buildOutput = execSync(buildCommand, {
+                    timeout: 600000, // 10 minutes
+                    maxBuffer: 10 * 1024 * 1024 // 10MB buffer
+                }).toString();
+            } catch (buildError) {
+                const errorOutput = buildError.stdout?.toString() || buildError.message;
+                console.error('❌ Build failed:', errorOutput);
+
+                // Cleanup
+                await fse.remove(tempDir);
+
+                return res.status(400).json({
+                    success: false,
+                    error: 'Compilation failed',
+                    details: errorOutput.slice(-1000), // Last 1000 chars
+                    message: 'Check your Rust code for syntax errors'
+                });
+            }
+
+            // Find the compiled WASM file
+            const wasmPath = path.join(
+                tempDir,
+                'target',
+                'wasm32-unknown-unknown',
+                'release',
+                `${contractName || 'custom_contract'}.wasm`
+            );
+
+            // Handle underscore/hyphen conversion in crate name
+            let wasmFile = null;
+            const targetDir = path.join(tempDir, 'target', 'wasm32-unknown-unknown', 'release');
+            if (await fse.pathExists(targetDir)) {
+                const files = await fse.readdir(targetDir);
+                const wasmFiles = files.filter(f => f.endsWith('.wasm'));
+                if (wasmFiles.length > 0) {
+                    wasmFile = path.join(targetDir, wasmFiles[0]);
+                }
+            }
+
+            if (!wasmFile || !await fse.pathExists(wasmFile)) {
+                console.error('❌ WASM file not found after compilation');
+                await fse.remove(tempDir);
+
+                return res.status(500).json({
+                    success: false,
+                    error: 'WASM file not generated',
+                    message: 'Compilation succeeded but WASM output was not created'
+                });
+            }
+
+            // Read compiled WASM
+            const wasmBuffer = await fs.readFile(wasmFile);
+            const wasmBase64 = wasmBuffer.toString('base64');
+            const compilationTime = Date.now() - startTime;
+
+            console.log(`✅ Custom contract compiled successfully`);
+            console.log(`📦 WASM size: ${wasmBuffer.length} bytes`);
+            console.log(`⏱️ Compilation time: ${(compilationTime / 1000).toFixed(2)}s`);
+
+            // Cleanup temporary directory
+            await fse.remove(tempDir);
+
+            // Return response
+            res.json({
+                success: true,
+                contractId: uuidv4(),
+                wasmBase64: wasmBase64,
+                wasmSize: wasmBuffer.length,
+                compiledAt: new Date().toISOString(),
+                compilationTime: compilationTime,
+                message: 'Custom contract compiled successfully',
+                buildOutput: buildOutput.slice(-500) // Last 500 chars for debugging
+            });
+
+        } catch (tempError) {
+            console.error('❌ Temp directory error:', tempError);
+            // Cleanup on error
+            try {
+                await fse.remove(tempDir);
+            } catch (cleanupError) {
+                console.error('⚠️ Cleanup failed:', cleanupError);
+            }
+
+            res.status(500).json({
+                success: false,
+                error: 'Compilation error: ' + (tempError.message || 'Unknown error'),
+                message: 'Failed to set up compilation environment'
+            });
+        }
+
+    } catch (error) {
+        console.error('❌ Error in custom compilation:', error);
+        res.status(500).json({
+            success: false,
+            error: error.message || 'Internal server error',
+            message: 'Custom compilation failed'
+        });
+    }
+});
+
+/**
  * GET /api/templates
  *
  * Returns available contract templates

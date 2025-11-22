@@ -310,6 +310,69 @@ app.post('/api/build-smart-contract', async (req, res) => {
                 });
             }
 
+            // Check if there's custom Rust code to compile
+            if (contractData.rustCode && contractData.rustCode.trim().length > 0) {
+                console.log('🔨 Detected custom Rust code - compiling dynamically');
+                console.log(`📝 Code length: ${contractData.rustCode.length} characters`);
+
+                try {
+                    // Send custom code to backend for dynamic compilation
+                    const customCompileResponse = await fetch(`${BACKEND_URL}/api/compile-custom-contract`, {
+                        method: 'POST',
+                        headers: { 'Content-Type': 'application/json' },
+                        body: JSON.stringify({
+                            rustCode: contractData.rustCode,
+                            contractName: contractData.symbol?.toLowerCase() || 'custom_contract'
+                        }),
+                        timeout: 600000 // 10 minutes
+                    });
+
+                    if (!customCompileResponse.ok) {
+                        const errorData = await customCompileResponse.json();
+                        console.error('❌ Custom compilation failed:', errorData);
+                        return res.status(400).json({
+                            success: false,
+                            error: 'Custom contract compilation failed',
+                            details: errorData.details || errorData.error,
+                            message: errorData.message || 'Check your Rust code for syntax errors'
+                        });
+                    }
+
+                    const customData = await customCompileResponse.json();
+                    console.log('✅ Custom contract compiled successfully');
+                    console.log(`⏱️ Compilation time: ${(customData.compilationTime / 1000).toFixed(2)}s`);
+                    console.log(`📦 WASM size: ${customData.wasmSize} bytes`);
+
+                    // Return custom compiled WASM
+                    return res.json({
+                        success: true,
+                        message: 'Contrato personalizado compilado',
+                        contractId: customData.contractId,
+                        contractName: contractData.symbol || 'custom_contract',
+                        wasmBase64: customData.wasmBase64,
+                        wasmSize: customData.wasmSize,
+                        compiledAt: customData.compiledAt,
+                        compilationTime: customData.compilationTime,
+                        isCustom: true,
+                        isPrecompiled: false,
+                        status: 'completed',
+                        compiled: true
+                    });
+
+                } catch (customError) {
+                    console.error('❌ Custom compilation error:', customError);
+                    return res.status(500).json({
+                        success: false,
+                        error: 'Custom contract compilation error',
+                        details: customError.message,
+                        message: 'Failed to compile custom Rust code'
+                    });
+                }
+            }
+
+            // No custom code detected, use precompiled template
+            console.log('📋 Using precompiled template');
+
             // Determine template type based on contract type or features
             let templateType;
 
