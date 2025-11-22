@@ -441,6 +441,13 @@ class RustGenerator {
         const rustOp = opMap[op] || '+';
 
         let aCode = a ? this.fromBlock(a) : '0';
+        // Si estamos en una función y el input A está vacío, intentar usar el primer parámetro
+        if (!a && this.currentFunctionReturnType !== null) {
+            // Buscar el primer parámetro de la función actual
+            // Por ahora, usamos 'value' como nombre por defecto para el template DeFi
+            // Esto se puede mejorar para obtener el nombre real del parámetro
+            aCode = 'value';
+        }
         let bCode = b ? this.fromBlock(b) : '0';
 
         return `(${aCode} ${rustOp} ${bCode})`;
@@ -900,6 +907,11 @@ env.storage().persistent().set(&(&${toCode}, &balance_key), &(current + ${amount
                 if (code && code.trim()) {
                     functions.push(code);
                 }
+            } else if (currentBlock.type === 'hello_world_function' || currentBlock.type === 'counter_function') {
+                // Hello World and Counter blocks generate functions
+                if (code && code.trim()) {
+                    functions.push(code);
+                }
             } else if (code && code.trim()) {
                 this.addCode(code);
             }
@@ -980,6 +992,26 @@ env.storage().persistent().set(&(&${toCode}, &balance_key), &(current + ${amount
         }
 
         return rust;
+    }
+
+    // ========== HELLO WORLD FUNCTION ==========
+
+    block_hello_world_function(block) {
+        const message = block.getFieldValue('MESSAGE') || 'Hello, Stellar!';
+        return `/// Returns a greeting message
+    pub fn hello(env: Env) -> String {
+        String::from_str(&env, "${message}")
+    }`;
+    }
+
+    // ========== COUNTER FUNCTION ==========
+
+    block_counter_function(block) {
+        const increment = block.getFieldValue('INCREMENT') || 1;
+        return `/// Takes a number and returns the number plus ${increment}
+    pub fn increment(env: Env, value: u32) -> u32 {
+        value + ${increment}
+    }`;
     }
 
     reset() {

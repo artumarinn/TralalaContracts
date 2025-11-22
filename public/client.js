@@ -60,18 +60,8 @@ document.addEventListener("DOMContentLoaded", () => {
                 <category name="🚀 Start" categorystyle="start_category">
                     <block type="contract_settings"></block>
                 </category>
-                <category name="💰 Token Properties" categorystyle="property_category">
-                    <block type="token_properties"></block>
-                    <block type="token_decimals"></block>
-                    <block type="token_supply"></block>
-                </category>
-                <category name="👤 Administration" categorystyle="property_category">
-                    <block type="admin_config"></block>
-                    <block type="admin_address"></block>
-                </category>
-                <category name="💸 Basic Functions" categorystyle="advanced_category">
-                    <block type="transfer_function"></block>
-                    <block type="balance_function"></block>
+                <category name="👋 Hello World" categorystyle="property_category">
+                    <block type="hello_world_function"></block>
                 </category>
             </xml>
         `,
@@ -106,27 +96,8 @@ document.addEventListener("DOMContentLoaded", () => {
                 <category name="🚀 Start" categorystyle="start_category">
                     <block type="contract_settings"></block>
                 </category>
-                <category name="💰 Token Configuration" categorystyle="property_category">
-                    <block type="token_properties"></block>
-                    <block type="token_decimals"></block>
-                    <block type="token_supply"></block>
-                </category>
-                <category name="✨ Advanced Features" categorystyle="powers_category">
-                    <block type="feature_mintable"></block>
-                    <block type="feature_burnable"></block>
-                    <block type="feature_pausable"></block>
-                </category>
-                <category name="⚙️ DeFi Functions" categorystyle="advanced_category">
-                    <block type="transfer_function"></block>
-                    <block type="balance_function"></block>
-                    <block type="mint_function"></block>
-                    <block type="burn_function"></block>
-                    <block type="pause_function"></block>
-                </category>
-                <category name="🔐 Access Control" categorystyle="advanced_category">
-                    <block type="access_control"></block>
-                    <block type="role_based_check"></block>
-                    <block type="require_condition"></block>
+                <category name="🔢 Counter" categorystyle="powers_category">
+                    <block type="counter_function"></block>
                 </category>
             </xml>
         `
@@ -174,42 +145,14 @@ document.addEventListener("DOMContentLoaded", () => {
 
         // Template-specific blocks
         if (currentTemplate === 'basic') {
-            // Basic token template
-            const tokenPropsBlock = blocklyWorkspace.newBlock('token_properties');
-            if (tokenPropsBlock) {
-                tokenPropsBlock.initSvg();
-                tokenPropsBlock.render();
-                tokenPropsBlock.setFieldValue('MyToken', 'TOKEN_NAME');
-                tokenPropsBlock.setFieldValue('MTK', 'TOKEN_SYMBOL');
-                tokenPropsBlock.setFieldValue('6', 'DECIMALS');
-                tokenPropsBlock.setFieldValue('1000000', 'INITIAL_SUPPLY');
-                blocks.push(tokenPropsBlock);
-                console.log('✅ Token properties block created');
-            }
-
-            const adminBlock = blocklyWorkspace.newBlock('admin_config');
-            if (adminBlock) {
-                adminBlock.initSvg();
-                adminBlock.render();
-                adminBlock.setFieldValue('GBQQHZKDUU...', 'ADMIN');
-                blocks.push(adminBlock);
-                console.log('✅ Admin config block created');
-            }
-
-            const transferBlock = blocklyWorkspace.newBlock('transfer_function');
-            if (transferBlock) {
-                transferBlock.initSvg();
-                transferBlock.render();
-                blocks.push(transferBlock);
-                console.log('✅ Transfer function block created');
-            }
-
-            const balanceBlock = blocklyWorkspace.newBlock('balance_function');
-            if (balanceBlock) {
-                balanceBlock.initSvg();
-                balanceBlock.render();
-                blocks.push(balanceBlock);
-                console.log('✅ Balance function block created');
+            // Hello World template
+            const helloWorldBlock = blocklyWorkspace.newBlock('hello_world_function');
+            if (helloWorldBlock) {
+                helloWorldBlock.initSvg();
+                helloWorldBlock.render();
+                helloWorldBlock.setFieldValue('Hello, Stellar!', 'MESSAGE');
+                blocks.push(helloWorldBlock);
+                console.log('✅ Hello World function block created');
             }
 
         } else if (currentTemplate === 'rwa') {
@@ -255,77 +198,14 @@ document.addEventListener("DOMContentLoaded", () => {
             }
 
         } else if (currentTemplate === 'defi') {
-            // DeFi template with advanced features
-            const tokenPropsBlock = blocklyWorkspace.newBlock('token_properties');
-            if (tokenPropsBlock) {
-                tokenPropsBlock.initSvg();
-                tokenPropsBlock.render();
-                tokenPropsBlock.setFieldValue('DefiToken', 'TOKEN_NAME');
-                tokenPropsBlock.setFieldValue('DEFI', 'TOKEN_SYMBOL');
-                tokenPropsBlock.setFieldValue('18', 'DECIMALS');
-                tokenPropsBlock.setFieldValue('1000000000000000000', 'INITIAL_SUPPLY');
-                blocks.push(tokenPropsBlock);
-                console.log('✅ DeFi token properties block created');
-            }
-
-            const adminBlock = blocklyWorkspace.newBlock('admin_config');
-            if (adminBlock) {
-                adminBlock.initSvg();
-                adminBlock.render();
-                adminBlock.setFieldValue('GBQQHZKDUU...', 'ADMIN');
-                blocks.push(adminBlock);
-                console.log('✅ DeFi admin block created');
-            }
-
-            const mintableBlock = blocklyWorkspace.newBlock('feature_mintable');
-            if (mintableBlock) {
-                mintableBlock.initSvg();
-                mintableBlock.render();
-                mintableBlock.setFieldValue('TRUE', 'ENABLED');
-                blocks.push(mintableBlock);
-                console.log('✅ Mintable feature block created');
-            }
-
-            const burnableBlock = blocklyWorkspace.newBlock('feature_burnable');
-            if (burnableBlock) {
-                burnableBlock.initSvg();
-                burnableBlock.render();
-                burnableBlock.setFieldValue('TRUE', 'ENABLED');
-                blocks.push(burnableBlock);
-                console.log('✅ Burnable feature block created');
-            }
-
-            const pausableBlock = blocklyWorkspace.newBlock('feature_pausable');
-            if (pausableBlock) {
-                pausableBlock.initSvg();
-                pausableBlock.render();
-                pausableBlock.setFieldValue('TRUE', 'ENABLED');
-                blocks.push(pausableBlock);
-                console.log('✅ Pausable feature block created');
-            }
-
-            const transferBlock = blocklyWorkspace.newBlock('transfer_function');
-            if (transferBlock) {
-                transferBlock.initSvg();
-                transferBlock.render();
-                blocks.push(transferBlock);
-                console.log('✅ Transfer function block created');
-            }
-
-            const mintBlock = blocklyWorkspace.newBlock('mint_function');
-            if (mintBlock) {
-                mintBlock.initSvg();
-                mintBlock.render();
-                blocks.push(mintBlock);
-                console.log('✅ Mint function block created');
-            }
-
-            const burnBlock = blocklyWorkspace.newBlock('burn_function');
-            if (burnBlock) {
-                burnBlock.initSvg();
-                burnBlock.render();
-                blocks.push(burnBlock);
-                console.log('✅ Burn function block created');
+            // Counter template
+            const counterBlock = blocklyWorkspace.newBlock('counter_function');
+            if (counterBlock) {
+                counterBlock.initSvg();
+                counterBlock.render();
+                counterBlock.setFieldValue(1, 'INCREMENT');
+                blocks.push(counterBlock);
+                console.log('✅ Counter function block created');
             }
         }
 
@@ -389,7 +269,16 @@ document.addEventListener("DOMContentLoaded", () => {
         const contractBlock = blocklyWorkspace.getBlocksByType('contract_settings', false)[0];
         if (!contractBlock) return null;
 
-        const data = { name: '', version: '0.1.0', admin: '', state: [], functions: [] };
+        const data = {
+            name: '',
+            version: '0.1.0',
+            admin: '',
+            state: [],
+            functions: [],
+            templateType: currentTemplate,
+            helloWorldMessage: null,
+            counterIncrement: null
+        };
         let currentBlock = contractBlock.getInputTargetBlock('SETTINGS');
 
         while (currentBlock) {
@@ -414,6 +303,12 @@ document.addEventListener("DOMContentLoaded", () => {
                         name: currentBlock.getFieldValue('FN_NAME'),
                         returns: currentBlock.getFieldValue('RET_TYPE')
                     });
+                    break;
+                case 'hello_world_function':
+                    data.helloWorldMessage = currentBlock.getFieldValue('MESSAGE') || 'Hello, Stellar!';
+                    break;
+                case 'counter_function':
+                    data.counterIncrement = currentBlock.getFieldValue('INCREMENT') || 1;
                     break;
             }
             currentBlock = currentBlock.getNextBlock();
@@ -443,15 +338,19 @@ document.addEventListener("DOMContentLoaded", () => {
             return { errors, warnings, isValid: false };
         }
 
-        if (!data.name || data.name.trim() === '') {
+        // Skip validation for Hello World and Counter templates
+        const isHelloWorld = data.helloWorldMessage !== null;
+        const isCounter = data.counterIncrement !== null && data.counterIncrement !== undefined;
+
+        if (!isHelloWorld && !isCounter && (!data.name || data.name.trim() === '')) {
             errors.push('❌ Contract name is empty');
         }
 
-        if (!data.admin || data.admin.trim() === '' || data.admin === 'G...') {
+        if (!isHelloWorld && !isCounter && (!data.admin || data.admin.trim() === '' || data.admin === 'G...')) {
             warnings.push('⚠️ Admin address not configured');
         }
 
-        if (data.admin && data.admin !== 'G...' && !data.admin.startsWith('G')) {
+        if (!isHelloWorld && !isCounter && data.admin && data.admin !== 'G...' && !data.admin.startsWith('G')) {
             warnings.push('⚠️ Admin address should start with "G" (Stellar)');
         }
 
@@ -464,6 +363,45 @@ document.addEventListener("DOMContentLoaded", () => {
     }
 
     function generateRustCodeString(data) {
+        // Handle Hello World template
+        if (data.templateType === 'basic' || data.helloWorldMessage) {
+            const message = data.helloWorldMessage || 'Hello, Stellar!';
+            return `// Generated by Tralalero Contracts - Hello World
+#![no_std]
+use soroban_sdk::{contract, contractimpl, Env, String};
+
+#[contract]
+pub struct HelloContract;
+
+#[contractimpl]
+impl HelloContract {
+    /// Returns a greeting message
+    pub fn hello(env: Env) -> String {
+        String::from_str(&env, "${message}")
+    }
+}`;
+        }
+
+        // Handle Counter template
+        if (data.templateType === 'defi' || data.counterIncrement !== null) {
+            const increment = data.counterIncrement || 1;
+            return `// Generated by Tralalero Contracts - Counter
+#![no_std]
+use soroban_sdk::{contract, contractimpl, Env};
+
+#[contract]
+pub struct CounterContract;
+
+#[contractimpl]
+impl CounterContract {
+    /// Takes a number and returns the number plus ${increment}
+    pub fn increment(_env: Env, value: u32) -> u32 {
+        value + ${increment}
+    }
+}`;
+        }
+
+        // Handle RWA and other templates using TokenCodeGenerator
         if (typeof TokenCodeGenerator !== 'undefined' && TokenCodeGenerator.generateRustCode) {
             const config = {
                 tokenName: data.name || "MyToken",

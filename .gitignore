@@ -6,8 +6,9 @@ yarn-error.log*
 package-lock.json
 
 # Logs
-logs
+logs/
 *.log
+backend/*.log
 
 # Runtime data
 pids
@@ -76,15 +77,21 @@ jspm_packages/
 
 # Rust/Cargo
 target/
+**/target/
 Cargo.lock
 **/*.rs.bk
 
 # Stellar/Soroban specific
 tralala/target/
 tralala/cache/
-tralala/compiled/
+tralala/compiled/*.json
+tralala/compiled/*.wasm
 tralala/dynamic-contracts/*/target/
 tralala/dynamic-contracts/*/Cargo.lock
+
+# Backend compiled artifacts
+backend/compiled/*.wasm
+backend/temp-contracts/
 
 # OS generated files
 .DS_Store
@@ -105,25 +112,29 @@ Thumbs.db
 # Temporary files
 *.tmp
 *.temp
+*.bak
+*-BACKUP-*
 
 # Build artifacts
 dist/
 build/
 out/
 
-# Test files (optional - remove if you want to track test files)
+# Test files
 test-*.js
 *-test.js
-error-handling-tests.js
 test-*.html
+test-*.sh
+error-handling-tests.js
 
-# Media files (optional - uncomment if you don't want to track media)
+# Backup directories (like the ~/ directory that was accidentally created)
+~/
+
+# Media files (uncomment if you don't want to track media)
 # *.mp4
 # *.mov
 # *.avi
-# *.png
+# *.PNG
 # *.jpg
 # *.jpeg
 # *.gif
-
-tralala/target/

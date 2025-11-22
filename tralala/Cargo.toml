@@ -2,6 +2,7 @@
 resolver = "2"
 members = [
     "contracts/hello-world",
+    "contracts/counter",
     "contracts/token_template_basic",
     "contracts/token_template_advanced",
     "dynamic-contracts/mtk_*"

@@ -65,7 +65,8 @@
                     <div class="wallet-options">
                         <div class="wallet-option" id="connectFreighter">
                             <div class="wallet-icon">
-                                <img src="/freighter.png" alt="Freighter wallet" style="width: 64px; height:64px; object-fit: contain;" />
+                                <img src="/freighter.png" alt="Freighter wallet"
+                                    style="width: 64px; height:64px; object-fit: contain;" />
                             </div>
                             <div class="wallet-label">Freighter</div>
                         </div>
@@ -81,18 +82,20 @@
             <div class="step-content" id="step2">
                 <div class="templates-container">
                     <div class="description-box">
-                        <h2 style="font-size: 1.5rem; font-weight: 700; margin-bottom: 0.5rem; color: #1f2937;">Choose a Template to Start</h2>
-                        <p style="font-size: 1rem; color: #6b7280; margin: 0;">Select a common use case that fits your needs. You can fully customize it with blocks later.</p>
+                        <h2 style="font-size: 1.5rem; font-weight: 700; margin-bottom: 0.5rem; color: #1f2937;">Choose a
+                            Template to Start</h2>
+                        <p style="font-size: 1rem; color: #6b7280; margin: 0;">Select a common use case that fits your
+                            needs. You can fully customize it with blocks later.</p>
                     </div>
                     <div class="templates-grid">
                         <div class="template-card" id="templateBasic" data-template="basic">
-                            <div class="template-icon">💰</div>
-                            <div class="template-name">Basic Token</div>
-                            <div class="template-desc">A simple fungible token with transfer functions</div>
+                            <div class="template-icon">👋</div>
+                            <div class="template-name">Hello World</div>
+                            <div class="template-desc">A simple contract that returns a greeting message</div>
                             <ul class="template-features">
-                                <li>✓ Create and transfer tokens</li>
-                                <li>✓ Check balance</li>
-                                <li>✓ Approve transfers</li>
+                                <li>✓ Simple greeting function</li>
+                                <li>✓ Customizable message</li>
+                                <li>✓ Perfect for learning</li>
                             </ul>
                         </div>
                         <div class="template-card" id="templateRWA" data-template="rwa">
@@ -106,14 +109,13 @@
                             </ul>
                         </div>
                         <div class="template-card" id="templateDeFi" data-template="defi">
-                            <div class="template-icon">🔄</div>
-                            <div class="template-name">DeFi (Decentralized Finance)</div>
-                            <div class="template-desc">Token with advanced features for DeFi applications</div>
+                            <div class="template-icon">🔢</div>
+                            <div class="template-name">Counter</div>
+                            <div class="template-desc">A counter that increments any number by 1</div>
                             <ul class="template-features">
-                                <li>✓ Mint and Burn</li>
-                                <li>✓ Pausable</li>
-                                <li>✓ Access control</li>
-                                <li>✓ Transfer limits</li>
+                                <li>✓ Increment function</li>
+                                <li>✓ Takes a number input</li>
+                                <li>✓ Returns number + 1</li>
                             </ul>
                         </div>
                     </div>
@@ -341,7 +343,8 @@
                     <div class="description-box" style="text-align: center;">
                         <h2 class="step-title" style="color: #6366f1; font-size: 2rem; margin-bottom: 1rem;">📋
                             Contract Summary</h2>
-                        <p style="font-size: 1.1rem; color: #6b7280;">Review the details before deploying to Stellar Testnet
+                        <p style="font-size: 1.1rem; color: #6b7280;">Review the details before deploying to Stellar
+                            Testnet
                         </p>
                     </div>
 
@@ -620,7 +623,7 @@
         }
 
         // Function to dynamically change the default blocks according to the template
-        window.switchTemplate = function(templateName) {
+        window.switchTemplate = function (templateName) {
             console.log(`🔄 Switching Blockly blocks to template: ${templateName}`);
             appState.selectedTemplate = templateName;
             createDefaultBlocks();
@@ -1098,14 +1101,45 @@ impl SmartContract {
 
                 } else if (template === 'defi') {
                     // Blocks for DeFi
+                    console.log('🎯 Entrando en template defi, creando bloques...');
+
+                    // Contract name block
                     const nameBlock = blocklyWorkspace.newBlock('contract_name');
                     if (nameBlock) {
                         nameBlock.initSvg();
                         nameBlock.render();
                         nameBlock.setFieldValue('DefiToken', 'NAME');
                         blocks.push(nameBlock);
+                        console.log('✅ Contract name block created');
+                    } else {
+                        console.error('❌ No se pudo crear el bloque contract_name');
                     }
 
+                    // Version block
+                    const versionBlock = blocklyWorkspace.newBlock('contract_version');
+                    if (versionBlock) {
+                        versionBlock.initSvg();
+                        versionBlock.render();
+                        versionBlock.setFieldValue('1.0.0', 'VERSION');
+                        blocks.push(versionBlock);
+                        console.log('✅ Version block created');
+                    } else {
+                        console.error('❌ No se pudo crear el bloque contract_version');
+                    }
+
+                    // Admin block
+                    const adminBlock = blocklyWorkspace.newBlock('admin_address');
+                    if (adminBlock) {
+                        adminBlock.initSvg();
+                        adminBlock.render();
+                        adminBlock.setFieldValue('G...', 'ADDRESS');
+                        blocks.push(adminBlock);
+                        console.log('✅ Admin address block created');
+                    } else {
+                        console.error('❌ No se pudo crear el bloque admin_address');
+                    }
+
+                    // State variable block
                     const stateVarBlock = blocklyWorkspace.newBlock('state_variable');
                     if (stateVarBlock) {
                         stateVarBlock.initSvg();
@@ -1114,24 +1148,158 @@ impl SmartContract {
                         stateVarBlock.setFieldValue('I128', 'VAR_TYPE');
                         stateVarBlock.setFieldValue('0', 'INIT_VALUE');
                         blocks.push(stateVarBlock);
+                        console.log('✅ State variable block created');
+                    } else {
+                        console.error('❌ No se pudo crear el bloque state_variable');
                     }
 
-                    const mintFn = blocklyWorkspace.newBlock('function_declaration');
-                    if (mintFn) {
-                        mintFn.initSvg();
-                        mintFn.render();
-                        mintFn.setFieldValue('mint', 'FN_NAME');
-                        mintFn.setFieldValue('VOID', 'RET_TYPE');
-                        blocks.push(mintFn);
+                    // Simple increment function - recibe un número y retorna número + 1
+                    const incrementFn = blocklyWorkspace.newBlock('function_declaration');
+                    if (incrementFn) {
+                        incrementFn.initSvg();
+                        incrementFn.render();
+                        incrementFn.setFieldValue('increment', 'FN_NAME');
+                        incrementFn.setFieldValue('I128', 'RET_TYPE'); // Retorna i128
+                        blocks.push(incrementFn);
+                        console.log('✅ Increment function block created');
+
+                        // Crear parámetro 'value' de tipo i128
+                        const paramBlock = blocklyWorkspace.newBlock('function_parameter');
+                        if (paramBlock) {
+                            paramBlock.initSvg();
+                            paramBlock.render();
+                            paramBlock.setFieldValue('value', 'PARAM_NAME');
+                            paramBlock.setFieldValue('I128', 'PARAM_TYPE');
+
+                            // Conectar parámetro al input PARAMS de la función
+                            const paramsInput = incrementFn.getInput('PARAMS');
+                            if (paramsInput && paramsInput.connection && paramBlock.previousConnection) {
+                                paramsInput.connection.connect(paramBlock.previousConnection);
+                            }
+                        }
+
+                        // Crear operación aritmética: value + 1
+                        const arithmeticOp = blocklyWorkspace.newBlock('arithmetic_operation');
+                        if (arithmeticOp) {
+                            arithmeticOp.initSvg();
+                            arithmeticOp.render();
+                            arithmeticOp.setFieldValue('ADD', 'OP'); // Operación suma
+
+                            // Crear número literal 1 para el input B
+                            const numberOne = blocklyWorkspace.newBlock('number_literal');
+                            if (numberOne) {
+                                numberOne.initSvg();
+                                numberOne.render();
+                                numberOne.setFieldValue(1, 'VALUE');
+
+                                // Conectar el 1 al input B de la operación
+                                const inputB = arithmeticOp.getInput('B');
+                                if (inputB && inputB.connection && numberOne.outputConnection) {
+                                    inputB.connection.connect(numberOne.outputConnection);
+                                }
+                            }
+
+                            // Para el input A, necesitamos referenciar el parámetro 'value'
+                            // Usaremos un número literal con el nombre del parámetro como placeholder
+                            // El generador de código debería interpretar esto correctamente
+                            // Nota: En una implementación real, necesitarías un bloque de "variable_get"
+                            // Por ahora, dejamos el input A vacío y el generador usará '0' como default
+                            // Esto se puede mejorar después con un bloque de referencia a variables
+                        }
+
+                        // Crear return con la operación aritmética
+                        const returnBlock = blocklyWorkspace.newBlock('function_return');
+                        if (returnBlock && arithmeticOp) {
+                            returnBlock.initSvg();
+                            returnBlock.render();
+
+                            // Conectar la operación aritmética al return
+                            const returnValueInput = returnBlock.getInput('VALUE');
+                            if (returnValueInput && returnValueInput.connection && arithmeticOp.outputConnection) {
+                                returnValueInput.connection.connect(arithmeticOp.outputConnection);
+                            }
+
+                            // Conectar el return al body de la función
+                            const bodyInput = incrementFn.getInput('BODY');
+                            if (bodyInput && bodyInput.connection && returnBlock.previousConnection) {
+                                bodyInput.connection.connect(returnBlock.previousConnection);
+                            }
+                        }
+                    } else {
+                        console.error('❌ No se pudo crear el bloque function_declaration (increment)');
                     }
 
-                    const burnFn = blocklyWorkspace.newBlock('function_declaration');
-                    if (burnFn) {
-                        burnFn.initSvg();
-                        burnFn.render();
-                        burnFn.setFieldValue('burn', 'FN_NAME');
-                        burnFn.setFieldValue('VOID', 'RET_TYPE');
-                        blocks.push(burnFn);
+                    console.log(`📊 Total de bloques creados para defi: ${blocks.length}`);
+
+                } else if (template === 'basic') {
+                    // Hello World template - bloques básicos + función que retorna string
+
+                    // Contract name block
+                    const nameBlock = blocklyWorkspace.newBlock('contract_name');
+                    if (nameBlock) {
+                        nameBlock.initSvg();
+                        nameBlock.render();
+                        nameBlock.setFieldValue('hello_world', 'NAME');
+                        blocks.push(nameBlock);
+                        console.log('✅ Contract name block created');
+                    }
+
+                    // Version block
+                    const versionBlock = blocklyWorkspace.newBlock('contract_version');
+                    if (versionBlock) {
+                        versionBlock.initSvg();
+                        versionBlock.render();
+                        versionBlock.setFieldValue('1.0.0', 'VERSION');
+                        blocks.push(versionBlock);
+                        console.log('✅ Version block created');
+                    }
+
+                    // Admin block
+                    const adminBlock = blocklyWorkspace.newBlock('admin_address');
+                    if (adminBlock) {
+                        adminBlock.initSvg();
+                        adminBlock.render();
+                        adminBlock.setFieldValue('G...', 'ADDRESS');
+                        blocks.push(adminBlock);
+                        console.log('✅ Admin address block created');
+                    }
+
+                    // Hello World function - función que retorna un string
+                    const helloFnBlock = blocklyWorkspace.newBlock('function_declaration');
+                    if (helloFnBlock) {
+                        helloFnBlock.initSvg();
+                        helloFnBlock.render();
+                        helloFnBlock.setFieldValue('hello', 'FN_NAME'); // Nombre de la función
+                        helloFnBlock.setFieldValue('STRING', 'RET_TYPE'); // Retorna String
+                        blocks.push(helloFnBlock);
+                        console.log('✅ Hello World function block created');
+
+                        // Crear el bloque de return
+                        const returnBlock = blocklyWorkspace.newBlock('function_return');
+                        if (returnBlock) {
+                            returnBlock.initSvg();
+                            returnBlock.render();
+
+                            // Crear el string literal
+                            const stringBlock = blocklyWorkspace.newBlock('string_literal');
+                            if (stringBlock) {
+                                stringBlock.initSvg();
+                                stringBlock.render();
+                                stringBlock.setFieldValue('Hello, Stellar!', 'VALUE');
+
+                                // Conectar el string literal al return
+                                const valueInput = returnBlock.getInput('VALUE');
+                                if (valueInput && valueInput.connection && stringBlock.outputConnection) {
+                                    valueInput.connection.connect(stringBlock.outputConnection);
+                                }
+                            }
+
+                            // Conectar el return al body de la función
+                            const bodyInput = helloFnBlock.getInput('BODY');
+                            if (bodyInput && bodyInput.connection && returnBlock.previousConnection) {
+                                bodyInput.connection.connect(returnBlock.previousConnection);
+                            }
+                        }
                     }
 
                 } else {
@@ -1850,7 +2018,7 @@ impl SmartContract {
                                 // -32602 = transaction not found (normal during polling)
                                 if (errorCode === -32602 || errorMessage?.includes('not found')) {
                                     console.log(`      Status: NOT_FOUND (transaction still pending)`);
-                                 } else {
+                                } else {
                                     console.warn(`      ⚠️ RPC error: ${errorMessage}`);
                                 }
                             } else if (jsonResponse.result) {

@@ -798,4 +798,40 @@ Blockly.Blocks['boolean_literal'] = {
     }
 };
 
+// ============================================================================
+// CATEGORY: 👋 HELLO WORLD (Simple greeting contract)
+// ============================================================================
+
+Blockly.Blocks['hello_world_function'] = {
+    init: function() {
+        this.appendDummyInput()
+            .appendField("👋 Hello World Function");
+        this.appendDummyInput()
+            .appendField("Message:")
+            .appendField(new Blockly.FieldTextInput("Hello, Stellar!"), "MESSAGE");
+        this.setPreviousStatement(true, null);
+        this.setNextStatement(true, null);
+        this.setColour("#43A047");
+        this.setTooltip("Creates a function that returns a greeting message. Perfect for learning Soroban smart contracts!");
+    }
+};
+
+// ============================================================================
+// CATEGORY: 🔢 COUNTER (Increment function)
+// ============================================================================
+
+Blockly.Blocks['counter_function'] = {
+    init: function() {
+        this.appendDummyInput()
+            .appendField("🔢 Counter Function");
+        this.appendDummyInput()
+            .appendField("Increment by:")
+            .appendField(new Blockly.FieldNumber(1, 1, 100), "INCREMENT");
+        this.setPreviousStatement(true, null);
+        this.setNextStatement(true, null);
+        this.setColour("#7B1FA2");
+        this.setTooltip("Creates an increment function that adds a value to the input number and returns the result.");
+    }
+};
+
 console.log('✅ Professional blocks loaded successfully');

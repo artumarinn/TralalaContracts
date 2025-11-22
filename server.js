@@ -373,18 +373,22 @@ app.post('/api/build-smart-contract', async (req, res) => {
             // No custom code detected, use precompiled template
             console.log('📋 Using precompiled template');
 
-            // Determine template type based on contract type or features
+            // Determine template type based on contract type
             let templateType;
 
-            if (contractData.templateType === 'rwa') {
+            if (contractData.templateType === 'basic') {
+                templateType = 'hello_world';
+                console.log(`📋 Using Hello World template`);
+            } else if (contractData.templateType === 'rwa') {
                 templateType = 'rwa';
                 console.log(`📋 Using RWA template`);
+            } else if (contractData.templateType === 'defi') {
+                templateType = 'counter';
+                console.log(`📋 Using Counter template`);
             } else {
-                const hasAdvancedFeatures = contractData.features?.pausable ||
-                                            contractData.features?.mintable ||
-                                            contractData.features?.burnable;
-                templateType = hasAdvancedFeatures ? 'token_advanced' : 'token_basic';
-                console.log(`📋 Using token template: ${templateType}`);
+                // Fallback to hello_world for unknown templates
+                templateType = 'hello_world';
+                console.log(`📋 Unknown template, defaulting to Hello World`);
             }
 
             try {
