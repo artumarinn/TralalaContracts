@@ -1,21 +1,21 @@
 /**
- * DEFINICIONES DE BLOQUES PROFESIONALES PARA SMART CONTRACTS
- * Sistema completo de bloques para construir contratos inteligentes en Stellar
+ * PROFESSIONAL BLOCK DEFINITIONS FOR SMART CONTRACTS
+ * Complete block system for building smart contracts on Stellar
  */
 
 // ============================================================================
-// CATEGORÍA 1: 🚀 EMPEZAR (Bloques de inicialización)
+// CATEGORY 1: 🚀 START (Initialization blocks)
 // ============================================================================
 
 Blockly.Blocks['contract_init'] = {
     init: function() {
         this.appendDummyInput()
-            .appendField("🚀 Iniciar Smart Contract");
+            .appendField("🚀 Start Smart Contract");
         this.appendStatementInput("BODY")
             .setCheck(null);
         this.setColour("#8E24AA");
         this.setStyle("hat");
-        this.setTooltip("Bloque principal que inicia un smart contract");
+        this.setTooltip("Main block that starts a smart contract");
         this.setHelpUrl("");
     }
 };
@@ -23,92 +23,92 @@ Blockly.Blocks['contract_init'] = {
 Blockly.Blocks['contract_metadata'] = {
     init: function() {
         this.appendDummyInput()
-            .appendField("📄 Metadatos del Contrato")
-            .appendField(new Blockly.FieldTextInput("Mi Contrato"), "TITLE");
+            .appendField("📄 Contract Metadata")
+            .appendField(new Blockly.FieldTextInput("My Contract"), "TITLE");
         this.appendDummyInput()
-            .appendField("Descripción:")
-            .appendField(new Blockly.FieldTextInput("Descripción..."), "DESCRIPTION");
+            .appendField("Description:")
+            .appendField(new Blockly.FieldTextInput("Description..."), "DESCRIPTION");
         this.setPreviousStatement(true, null);
         this.setNextStatement(true, null);
         this.setColour("#8E24AA");
-        this.setTooltip("Define el título y descripción del contrato");
+        this.setTooltip("Defines the title and description of the contract");
     }
 };
 
 // ============================================================================
-// CATEGORÍA 2: 🎨 PROPIEDADES (Configuración del contrato)
+// CATEGORY 2: 🎨 PROPERTIES (Contract configuration)
 // ============================================================================
 
 Blockly.Blocks['contract_name'] = {
     init: function() {
         this.appendDummyInput()
-            .appendField("📝 Nombre del Contrato")
-            .appendField(new Blockly.FieldTextInput("MiContrato"), "NAME");
+            .appendField("📝 Contract Name")
+            .appendField(new Blockly.FieldTextInput("MyContract"), "NAME");
         this.setPreviousStatement(true, null);
         this.setNextStatement(true, null);
         this.setColour("#1E88E5");
-        this.setTooltip("Define el nombre único de tu contrato");
+        this.setTooltip("Defines the unique name of your contract");
     }
 };
 
 Blockly.Blocks['contract_version'] = {
     init: function() {
         this.appendDummyInput()
-            .appendField("🔢 Versión")
+            .appendField("🔢 Version")
             .appendField(new Blockly.FieldTextInput("1.0.0"), "VERSION");
         this.setPreviousStatement(true, null);
         this.setNextStatement(true, null);
         this.setColour("#1E88E5");
-        this.setTooltip("Define la versión semántica del contrato");
+        this.setTooltip("Defines the semantic version of the contract");
     }
 };
 
 Blockly.Blocks['contract_owner'] = {
     init: function() {
         this.appendDummyInput()
-            .appendField("👤 Propietario")
+            .appendField("👤 Owner")
             .appendField(new Blockly.FieldTextInput("G..."), "ADDRESS");
         this.setPreviousStatement(true, null);
         this.setNextStatement(true, null);
         this.setColour("#1E88E5");
-        this.setTooltip("Define la dirección del propietario principal");
+        this.setTooltip("Defines the main owner's address");
     }
 };
 
 Blockly.Blocks['admin_address'] = {
     init: function() {
         this.appendDummyInput()
-            .appendField("🔑 Administrador")
+            .appendField("🔑 Administrator")
             .appendField(new Blockly.FieldTextInput("G..."), "ADDRESS");
         this.setPreviousStatement(true, null);
         this.setNextStatement(true, null);
         this.setColour("#1E88E5");
-        this.setTooltip("Define la dirección del administrador (puede ser diferente al propietario)");
+        this.setTooltip("Defines the administrator's address (can be different from the owner)");
     }
 };
 
 Blockly.Blocks['contract_description'] = {
     init: function() {
         this.appendDummyInput()
-            .appendField("📖 Descripción")
-            .appendField(new Blockly.FieldTextInput("Tu descripción aquí"), "TEXT");
+            .appendField("📖 Description")
+            .appendField(new Blockly.FieldTextInput("Your description here"), "TEXT");
         this.setPreviousStatement(true, null);
         this.setNextStatement(true, null);
         this.setColour("#1E88E5");
-        this.setTooltip("Describe el propósito y funcionalidad del contrato");
+        this.setTooltip("Describes the purpose and functionality of the contract");
     }
 };
 
 // ============================================================================
-// CATEGORÍA 3: 📦 ESTADO (Variables y almacenamiento)
+// CATEGORY 3: 📦 STATE (Variables and storage)
 // ============================================================================
 
 Blockly.Blocks['state_variable'] = {
     init: function() {
         this.appendDummyInput()
-            .appendField("📦 Variable de Estado")
-            .appendField(new Blockly.FieldTextInput("miVariable"), "VAR_NAME")
-            .appendField("tipo:")
+            .appendField("📦 State Variable")
+            .appendField(new Blockly.FieldTextInput("myVariable"), "VAR_NAME")
+            .appendField("type:")
             .appendField(new Blockly.FieldDropdown([
                 ["i32", "I32"],
                 ["i128", "I128"],
@@ -123,68 +123,68 @@ Blockly.Blocks['state_variable'] = {
                 ["Map", "MAP"],
                 ["Vec", "VEC"]
             ]), "VAR_TYPE")
-            .appendField("inicio:")
+            .appendField("initial:")
             .appendField(new Blockly.FieldTextInput("0"), "INIT_VALUE");
         this.setPreviousStatement(true, null);
         this.setNextStatement(true, null);
         this.setColour("#5E35B1");
-        this.setTooltip("Define una variable de estado persistente del contrato");
+        this.setTooltip("Defines a persistent state variable of the contract");
     }
 };
 
 Blockly.Blocks['state_map'] = {
     init: function() {
         this.appendDummyInput()
-            .appendField("🗺️ Mapeo")
-            .appendField(new Blockly.FieldTextInput("miMapa"), "MAP_NAME")
-            .appendField("clave:")
+            .appendField("🗺️ Map")
+            .appendField(new Blockly.FieldTextInput("myMap"), "MAP_NAME")
+            .appendField("key:")
             .appendField(new Blockly.FieldDropdown([["Address", "ADDRESS"], ["String", "STRING"], ["i128", "I128"]]), "KEY_TYPE")
-            .appendField("valor:")
+            .appendField("value:")
             .appendField(new Blockly.FieldDropdown([["i128", "I128"], ["bool", "BOOL"], ["String", "STRING"], ["Address", "ADDRESS"]]), "VALUE_TYPE");
         this.setPreviousStatement(true, null);
         this.setNextStatement(true, null);
         this.setColour("#5E35B1");
-        this.setTooltip("Define un mapeo (tabla hash) para almacenar pares clave-valor");
+        this.setTooltip("Defines a map (hash table) to store key-value pairs");
     }
 };
 
 Blockly.Blocks['state_event'] = {
     init: function() {
         this.appendDummyInput()
-            .appendField("📢 Evento")
-            .appendField(new Blockly.FieldTextInput("MiEvento"), "EVENT_NAME");
+            .appendField("📢 Event")
+            .appendField(new Blockly.FieldTextInput("MyEvent"), "EVENT_NAME");
         this.appendStatementInput("PARAMS");
         this.setPreviousStatement(true, null);
         this.setNextStatement(true, null);
         this.setColour("#5E35B1");
-        this.setTooltip("Define un evento que se emitirá cuando ocurran acciones específicas");
+        this.setTooltip("Defines an event that will be emitted when specific actions occur");
     }
 };
 
 Blockly.Blocks['event_parameter'] = {
     init: function() {
         this.appendDummyInput()
-            .appendField("🔹 Parámetro:")
+            .appendField("🔹 Parameter:")
             .appendField(new Blockly.FieldTextInput("param"), "PARAM_NAME")
-            .appendField("tipo:")
+            .appendField("type:")
             .appendField(new Blockly.FieldDropdown([["Address", "ADDRESS"], ["i128", "I128"], ["String", "STRING"], ["bool", "BOOL"]]), "PARAM_TYPE");
         this.setPreviousStatement(true, null);
         this.setNextStatement(true, null);
         this.setColour("#7C4DFF");
-        this.setTooltip("Define un parámetro para un evento");
+        this.setTooltip("Defines a parameter for an event");
     }
 };
 
 // ============================================================================
-// CATEGORÍA 4: ⚙️ FUNCIONES (Definición y parámetros)
+// CATEGORY 4: ⚙️ FUNCTIONS (Definition and parameters)
 // ============================================================================
 
 Blockly.Blocks['function_declaration'] = {
     init: function() {
         this.appendDummyInput()
-            .appendField("⚙️ Función")
-            .appendField(new Blockly.FieldTextInput("miFuncion"), "FN_NAME")
-            .appendField("retorna:")
+            .appendField("⚙️ Function")
+            .appendField(new Blockly.FieldTextInput("myFunction"), "FN_NAME")
+            .appendField("returns:")
             .appendField(new Blockly.FieldDropdown([
                 ["void", "VOID"],
                 ["i32", "I32"],
@@ -196,22 +196,22 @@ Blockly.Blocks['function_declaration'] = {
                 ["Vec", "VEC"]
             ]), "RET_TYPE");
         this.appendStatementInput("PARAMS")
-            .appendField("parámetros");
+            .appendField("parameters");
         this.appendStatementInput("BODY")
-            .appendField("cuerpo");
+            .appendField("body");
         this.setPreviousStatement(true, null);
         this.setNextStatement(true, null);
         this.setColour("#FF8F00");
-        this.setTooltip("Define una función pública del contrato");
+        this.setTooltip("Defines a public function of the contract");
     }
 };
 
 Blockly.Blocks['function_parameter'] = {
     init: function() {
         this.appendDummyInput()
-            .appendField("🔹 Parámetro:")
+            .appendField("🔹 Parameter:")
             .appendField(new Blockly.FieldTextInput("param"), "PARAM_NAME")
-            .appendField("tipo:")
+            .appendField("type:")
             .appendField(new Blockly.FieldDropdown([
                 ["i32", "I32"],
                 ["i128", "I128"],
@@ -224,37 +224,37 @@ Blockly.Blocks['function_parameter'] = {
         this.setPreviousStatement(true, null);
         this.setNextStatement(true, null);
         this.setColour("#FFB74D");
-        this.setTooltip("Define un parámetro de función");
+        this.setTooltip("Defines a function parameter");
     }
 };
 
 Blockly.Blocks['function_return'] = {
     init: function() {
         this.appendValueInput("VALUE")
-            .appendField("↩️ Retornar");
+            .appendField("↩️ Return");
         this.setPreviousStatement(true, null);
         this.setColour("#FFB74D");
-        this.setTooltip("Retorna un valor de la función");
+        this.setTooltip("Returns a value from the function");
     }
 };
 
 // ============================================================================
-// CATEGORÍA 5: 🧠 LÓGICA (Control de flujo)
+// CATEGORY 5: 🧠 LOGIC (Flow control)
 // ============================================================================
 
 Blockly.Blocks['if_statement'] = {
     init: function() {
         this.appendValueInput("CONDITION")
             .setCheck("Boolean")
-            .appendField("si");
+            .appendField("if");
         this.appendStatementInput("THEN")
-            .appendField("entonces");
+            .appendField("then");
         this.appendStatementInput("ELSE")
-            .appendField("si no");
+            .appendField("else");
         this.setPreviousStatement(true, null);
         this.setNextStatement(true, null);
         this.setColour("#E91E63");
-        this.setTooltip("Ejecuta un bloque si la condición es verdadera, otro si es falsa");
+        this.setTooltip("Executes a block if the condition is true, another if it is false");
     }
 };
 
@@ -274,7 +274,7 @@ Blockly.Blocks['comparison_operator'] = {
             ]), "OP");
         this.setOutput(true, "Boolean");
         this.setColour("#E91E63");
-        this.setTooltip("Compara dos valores y retorna verdadero o falso");
+        this.setTooltip("Compares two values and returns true or false");
     }
 };
 
@@ -284,10 +284,10 @@ Blockly.Blocks['logical_operator'] = {
             .setCheck("Boolean");
         this.appendValueInput("B")
             .setCheck("Boolean")
-            .appendField(new Blockly.FieldDropdown([["Y", "AND"], ["O", "OR"]]), "OP");
+            .appendField(new Blockly.FieldDropdown([["AND", "AND"], ["OR", "OR"]]), "OP");
         this.setOutput(true, "Boolean");
         this.setColour("#E91E63");
-        this.setTooltip("Combina dos condiciones booleanas");
+        this.setTooltip("Combines two boolean conditions");
     }
 };
 
@@ -295,13 +295,13 @@ Blockly.Blocks['loop_while'] = {
     init: function() {
         this.appendValueInput("CONDITION")
             .setCheck("Boolean")
-            .appendField("mientras");
+            .appendField("while");
         this.appendStatementInput("BODY")
-            .appendField("hacer");
+            .appendField("do");
         this.setPreviousStatement(true, null);
         this.setNextStatement(true, null);
         this.setColour("#E91E63");
-        this.setTooltip("Repite un bloque mientras la condición sea verdadera");
+        this.setTooltip("Repeats a block while the condition is true");
     }
 };
 
@@ -309,21 +309,21 @@ Blockly.Blocks['loop_for'] = {
     init: function() {
         this.appendValueInput("START")
             .setCheck("Number")
-            .appendField("para i desde");
+            .appendField("for i from");
         this.appendValueInput("END")
             .setCheck("Number")
-            .appendField("hasta");
+            .appendField("to");
         this.appendStatementInput("BODY")
-            .appendField("hacer");
+            .appendField("do");
         this.setPreviousStatement(true, null);
         this.setNextStatement(true, null);
         this.setColour("#E91E63");
-        this.setTooltip("Itera un número específico de veces");
+        this.setTooltip("Iterates a specific number of times");
     }
 };
 
 // ============================================================================
-// CATEGORÍA 6: 🔢 OPERACIONES (Aritmética y asignación)
+// CATEGORY 6: 🔢 OPERATIONS (Arithmetic and assignment)
 // ============================================================================
 
 Blockly.Blocks['arithmetic_operation'] = {
@@ -335,7 +335,7 @@ Blockly.Blocks['arithmetic_operation'] = {
             .appendField(new Blockly.FieldDropdown([["+", "ADD"], ["-", "MINUS"], ["*", "MULT"], ["/", "DIV"], ["%", "MOD"]]), "OP");
         this.setOutput(true, "Number");
         this.setColour("#4CAF50");
-        this.setTooltip("Realiza una operación aritmética entre dos números");
+        this.setTooltip("Performs an arithmetic operation between two numbers");
     }
 };
 
@@ -348,7 +348,7 @@ Blockly.Blocks['variable_assignment'] = {
         this.setPreviousStatement(true, null);
         this.setNextStatement(true, null);
         this.setColour("#4CAF50");
-        this.setTooltip("Asigna un valor a una variable");
+        this.setTooltip("Assigns a value to a variable");
     }
 };
 
@@ -360,82 +360,82 @@ Blockly.Blocks['increment_decrement'] = {
         this.setPreviousStatement(true, null);
         this.setNextStatement(true, null);
         this.setColour("#4CAF50");
-        this.setTooltip("Incrementa o decrementa una variable en 1");
+        this.setTooltip("Increments or decrements a variable by 1");
     }
 };
 
 // ============================================================================
-// CATEGORÍA 7: ⭐ STELLAR (Operaciones específicas de Stellar)
+// CATEGORY 7: ⭐ STELLAR (Stellar-specific operations)
 // ============================================================================
 
 Blockly.Blocks['stellar_transfer'] = {
     init: function() {
         this.appendValueInput("FROM")
-            .appendField("⭐ Transferir de");
+            .appendField("⭐ Transfer from");
         this.appendValueInput("TO")
-            .appendField("a");
+            .appendField("to");
         this.appendValueInput("AMOUNT")
-            .appendField("cantidad:");
+            .appendField("amount:");
         this.appendValueInput("ASSET")
             .appendField("asset:");
         this.setPreviousStatement(true, null);
         this.setNextStatement(true, null);
         this.setColour("#FFC107");
-        this.setTooltip("Realiza una transferencia de assets en Stellar");
+        this.setTooltip("Performs an asset transfer on Stellar");
     }
 };
 
 Blockly.Blocks['stellar_payment'] = {
     init: function() {
         this.appendValueInput("DESTINATION")
-            .appendField("💰 Pagar a");
+            .appendField("💰 Pay to");
         this.appendValueInput("AMOUNT")
-            .appendField("cantidad:");
+            .appendField("amount:");
         this.appendValueInput("ASSET_CODE")
-            .appendField("código:");
+            .appendField("code:");
         this.appendValueInput("ASSET_ISSUER")
-            .appendField("emisor:");
+            .appendField("issuer:");
         this.setPreviousStatement(true, null);
         this.setNextStatement(true, null);
         this.setColour("#FFC107");
-        this.setTooltip("Envía un pago en Stellar");
+        this.setTooltip("Sends a payment on Stellar");
     }
 };
 
 Blockly.Blocks['stellar_trust_line'] = {
     init: function() {
         this.appendValueInput("ACCOUNT")
-            .appendField("🔗 Establecer TrustLine para");
+            .appendField("🔗 Set TrustLine for");
         this.appendValueInput("ASSET_CODE")
             .appendField("asset:");
         this.appendValueInput("ASSET_ISSUER")
-            .appendField("emisor:");
+            .appendField("issuer:");
         this.appendValueInput("LIMIT")
-            .appendField("límite:");
+            .appendField("limit:");
         this.setPreviousStatement(true, null);
         this.setNextStatement(true, null);
         this.setColour("#FFC107");
-        this.setTooltip("Establece un trustline para permitir recibir un asset");
+        this.setTooltip("Sets a trustline to allow receiving an asset");
     }
 };
 
 Blockly.Blocks['stellar_require_auth'] = {
     init: function() {
         this.appendDummyInput()
-            .appendField("🔐 Requerir Autenticación");
+            .appendField("🔐 Require Authentication");
         this.appendValueInput("ADDRESS")
-            .appendField("de");
+            .appendField("from");
         this.setPreviousStatement(true, null);
         this.setNextStatement(true, null);
         this.setColour("#FFC107");
-        this.setTooltip("Requiere que una dirección proporcione su firma");
+        this.setTooltip("Requires an address to provide its signature");
     }
 };
 
 Blockly.Blocks['stellar_context'] = {
     init: function() {
         this.appendDummyInput()
-            .appendField("📋 Obtener Contexto Stellar")
+            .appendField("📋 Get Stellar Context")
             .appendField(new Blockly.FieldDropdown([
                 ["Invoker", "INVOKER"],
                 ["Contract Address", "CONTRACT"],
@@ -444,264 +444,264 @@ Blockly.Blocks['stellar_context'] = {
             ]), "CONTEXT");
         this.setOutput(true, null);
         this.setColour("#FFC107");
-        this.setTooltip("Obtiene información del contexto de ejecución");
+        this.setTooltip("Gets information from the execution context");
     }
 };
 
 // ============================================================================
-// CATEGORÍA 8: 💰 TOKEN (Operaciones de tokens)
+// CATEGORY 8: 💰 TOKEN (Token operations)
 // ============================================================================
 
 Blockly.Blocks['token_symbol'] = {
     init: function() {
         this.appendDummyInput()
-            .appendField("💱 Símbolo del Token")
+            .appendField("💱 Token Symbol")
             .appendField(new Blockly.FieldTextInput("TOKEN"), "SYMBOL");
         this.setPreviousStatement(true, null);
         this.setNextStatement(true, null);
         this.setColour("#7B1FA2");
-        this.setTooltip("Define el símbolo único del token (máx 12 caracteres)");
+        this.setTooltip("Defines the unique token symbol (max 12 characters)");
     }
 };
 
 Blockly.Blocks['token_supply'] = {
     init: function() {
         this.appendDummyInput()
-            .appendField("📊 Suministro Inicial")
+            .appendField("📊 Initial Supply")
             .appendField(new Blockly.FieldNumber(1000, 0, Infinity, 1), "SUPPLY");
         this.setPreviousStatement(true, null);
         this.setNextStatement(true, null);
         this.setColour("#7B1FA2");
-        this.setTooltip("Define la cantidad inicial de tokens a crear");
+        this.setTooltip("Defines the initial amount of tokens to be created");
     }
 };
 
 Blockly.Blocks['token_decimals'] = {
     init: function() {
         this.appendDummyInput()
-            .appendField("🔢 Decimales")
+            .appendField("🔢 Decimals")
             .appendField(new Blockly.FieldNumber(2, 0, 18, 1), "DECIMALS");
         this.setPreviousStatement(true, null);
         this.setNextStatement(true, null);
         this.setColour("#7B1FA2");
-        this.setTooltip("Define la cantidad de decimales (0-18)");
+        this.setTooltip("Defines the number of decimals (0-18)");
     }
 };
 
 Blockly.Blocks['token_init'] = {
     init: function() {
         this.appendDummyInput()
-            .appendField("🪙 Inicializar Token");
+            .appendField("🪙 Initialize Token");
         this.appendValueInput("NAME")
-            .appendField("nombre:");
+            .appendField("name:");
         this.appendValueInput("SYMBOL")
-            .appendField("símbolo:");
+            .appendField("symbol:");
         this.appendValueInput("DECIMALS")
-            .appendField("decimales:");
+            .appendField("decimals:");
         this.appendValueInput("SUPPLY")
-            .appendField("suministro:");
+            .appendField("supply:");
         this.setPreviousStatement(true, null);
         this.setNextStatement(true, null);
         this.setColour("#7B1FA2");
-        this.setTooltip("Inicializa un token fungible con propiedades específicas");
+        this.setTooltip("Initializes a fungible token with specific properties");
     }
 };
 
 Blockly.Blocks['token_mint'] = {
     init: function() {
         this.appendValueInput("TO")
-            .appendField("🪙 Acuñar tokens para");
+            .appendField("🪙 Mint tokens for");
         this.appendValueInput("AMOUNT")
-            .appendField("cantidad:");
+            .appendField("amount:");
         this.setPreviousStatement(true, null);
         this.setNextStatement(true, null);
         this.setColour("#7B1FA2");
-        this.setTooltip("Crea nuevos tokens y los asigna a una dirección");
+        this.setTooltip("Creates new tokens and assigns them to an address");
     }
 };
 
 Blockly.Blocks['token_burn'] = {
     init: function() {
         this.appendValueInput("FROM")
-            .appendField("🔥 Quemar tokens de");
+            .appendField("🔥 Burn tokens from");
         this.appendValueInput("AMOUNT")
-            .appendField("cantidad:");
+            .appendField("amount:");
         this.setPreviousStatement(true, null);
         this.setNextStatement(true, null);
         this.setColour("#7B1FA2");
-        this.setTooltip("Destruye tokens eliminándolos de circulación");
+        this.setTooltip("Destroys tokens by removing them from circulation");
     }
 };
 
 Blockly.Blocks['token_transfer'] = {
     init: function() {
         this.appendValueInput("FROM")
-            .appendField("💸 Transferir desde");
+            .appendField("💸 Transfer from");
         this.appendValueInput("TO")
-            .appendField("a");
+            .appendField("to");
         this.appendValueInput("AMOUNT")
-            .appendField("cantidad:");
+            .appendField("amount:");
         this.setPreviousStatement(true, null);
         this.setNextStatement(true, null);
         this.setColour("#7B1FA2");
-        this.setTooltip("Transfiere tokens entre cuentas");
+        this.setTooltip("Transfers tokens between accounts");
     }
 };
 
 Blockly.Blocks['token_balance'] = {
     init: function() {
         this.appendValueInput("ACCOUNT")
-            .appendField("📊 Balance de tokens para");
+            .appendField("📊 Token balance for");
         this.setOutput(true, "Number");
         this.setColour("#7B1FA2");
-        this.setTooltip("Obtiene el balance de tokens de una cuenta");
+        this.setTooltip("Gets the token balance of an account");
     }
 };
 
 Blockly.Blocks['token_allowance'] = {
     init: function() {
         this.appendValueInput("OWNER")
-            .appendField("✅ Permitir a");
+            .appendField("✅ Allow");
         this.appendValueInput("SPENDER")
-            .appendField("gastar hasta");
+            .appendField("to spend up to");
         this.appendValueInput("AMOUNT")
-            .appendField("cantidad:");
+            .appendField("amount:");
         this.setPreviousStatement(true, null);
         this.setNextStatement(true, null);
         this.setColour("#7B1FA2");
-        this.setTooltip("Autoriza a una dirección a gastar tokens en nombre del propietario");
+        this.setTooltip("Authorizes an address to spend tokens on behalf of the owner");
     }
 };
 
 // ============================================================================
-// CATEGORÍA 9: 🏢 RWA (Real World Assets)
+// CATEGORY 9: 🏢 RWA (Real World Assets)
 // ============================================================================
 
 Blockly.Blocks['rwa_asset'] = {
     init: function() {
         this.appendDummyInput()
-            .appendField("🏢 Definir RWA")
-            .appendField("nombre:")
+            .appendField("🏢 Define RWA")
+            .appendField("name:")
             .appendField(new Blockly.FieldTextInput("Real Estate Bond"), "NAME");
         this.appendDummyInput()
             .appendField("ISIN:")
             .appendField(new Blockly.FieldTextInput("US0378331005"), "ISIN");
         this.appendDummyInput()
-            .appendField("emisor:")
+            .appendField("issuer:")
             .appendField(new Blockly.FieldTextInput("Acme Corp"), "ISSUER");
         this.appendDummyInput()
-            .appendField("precio inicial:")
+            .appendField("initial price:")
             .appendField(new Blockly.FieldNumber(100.00, 0, 999999, 0.01), "PRICE");
         this.setPreviousStatement(true, null);
         this.setNextStatement(true, null);
         this.setColour("#C62828");
-        this.setTooltip("Define un activo del mundo real con propiedades. Nombre: nombre del activo (ej: 'Real Estate Bond'), ISIN: identificador único (12 caracteres), Emisor: entidad que emite (ej: 'Acme Corp'), Precio: valor inicial del activo");
+        this.setTooltip("Defines a real-world asset with properties. Name: asset name (e.g., 'Real Estate Bond'), ISIN: unique identifier (12 characters), Issuer: entity that issues (e.g., 'Acme Corp'), Price: initial value of the asset");
     }
 };
 
 Blockly.Blocks['rwa_custody'] = {
     init: function() {
         this.appendDummyInput()
-            .appendField("🔒 Custodio")
-            .appendField("dirección:")
+            .appendField("🔒 Custodian")
+            .appendField("address:")
             .appendField(new Blockly.FieldTextInput("GBBD47..."), "CUSTODIAN");
         this.appendDummyInput()
             .appendField("asset:")
             .appendField(new Blockly.FieldTextInput("Real Estate Bond"), "ASSET");
         this.appendDummyInput()
-            .appendField("cantidad:")
+            .appendField("amount:")
             .appendField(new Blockly.FieldNumber(1000, 0, 999999999, 1), "AMOUNT");
         this.setPreviousStatement(true, null);
         this.setNextStatement(true, null);
         this.setColour("#C62828");
-        this.setTooltip("Establece un custodio para mantener RWAs. Dirección: wallet que cuida el activo, Asset: nombre del activo (debe coincidir con el definido), Cantidad: cantidad de activos bajo custodia");
+        this.setTooltip("Establishes a custodian to hold RWAs. Address: wallet that holds the asset, Asset: name of the asset (must match the defined one), Amount: amount of assets under custody");
     }
 };
 
 Blockly.Blocks['rwa_settlement'] = {
     init: function() {
         this.appendDummyInput()
-            .appendField("📋 Liquidación - Vendedor:")
+            .appendField("📋 Settlement - Seller:")
             .appendField(new Blockly.FieldTextInput("GBAE4..."), "SELLER");
         this.appendDummyInput()
-            .appendField("Comprador:")
+            .appendField("Buyer:")
             .appendField(new Blockly.FieldTextInput("GBBD4..."), "BUYER");
         this.appendDummyInput()
-            .appendField("Cantidad:")
+            .appendField("Amount:")
             .appendField(new Blockly.FieldNumber(500, 0, 999999999, 1), "AMOUNT");
         this.appendDummyInput()
-            .appendField("Precio:")
+            .appendField("Price:")
             .appendField(new Blockly.FieldNumber(50000.00, 0, 999999999, 0.01), "PRICE");
         this.setPreviousStatement(true, null);
         this.setNextStatement(true, null);
         this.setColour("#C62828");
-        this.setTooltip("Ejecuta una liquidación de transacción de RWA. Vendedor: dirección que vende, Comprador: dirección que compra, Cantidad: cantidad de activos a transferir, Precio: precio total de la transacción");
+        this.setTooltip("Executes an RWA transaction settlement. Seller: selling address, Buyer: buying address, Amount: amount of assets to transfer, Price: total price of the transaction");
     }
 };
 
 Blockly.Blocks['rwa_compliance'] = {
     init: function() {
         this.appendDummyInput()
-            .appendField("⚖️ Verificar Cumplimiento")
-            .appendField("cuenta:")
+            .appendField("⚖️ Verify Compliance")
+            .appendField("account:")
             .appendField(new Blockly.FieldTextInput("GBAE4..."), "ACCOUNT");
         this.appendDummyInput()
-            .appendField("tipo:")
+            .appendField("type:")
             .appendField(new Blockly.FieldDropdown([
                 ["KYC", "KYC"],
                 ["AML", "AML"],
-                ["Jurisdicción", "JURISDICTION"],
-                ["Acreditado", "ACCREDITED"]
+                ["Jurisdiction", "JURISDICTION"],
+                ["Accredited", "ACCREDITED"]
             ]), "COMPLIANCE_TYPE");
         this.setPreviousStatement(true, null);
         this.setNextStatement(true, null);
         this.setColour("#C62828");
-        this.setTooltip("Verifica requisitos de cumplimiento regulatorio. Cuenta: dirección a verificar, Tipo: KYC (verificación identidad), AML (anti-lavado), Jurisdicción (restricción geográfica), Acreditado (estatus inversión)");
+        this.setTooltip("Verifies regulatory compliance requirements. Account: address to verify, Type: KYC (identity verification), AML (anti-money laundering), Jurisdiction (geographic restriction), Accredited (investment status)");
     }
 };
 
 Blockly.Blocks['rwa_redemption'] = {
     init: function() {
         this.appendDummyInput()
-            .appendField("🔄 Redención - Desde:")
+            .appendField("🔄 Redemption - From:")
             .appendField(new Blockly.FieldTextInput("GBAE4..."), "FROM");
         this.appendDummyInput()
-            .appendField("Cantidad:")
+            .appendField("Amount:")
             .appendField(new Blockly.FieldNumber(100, 0, 999999999, 1), "AMOUNT");
         this.appendDummyInput()
-            .appendField("Razón:")
-            .appendField(new Blockly.FieldTextInput("Liquidación de inversión"), "REASON");
+            .appendField("Reason:")
+            .appendField(new Blockly.FieldTextInput("Investment settlement"), "REASON");
         this.setPreviousStatement(true, null);
         this.setNextStatement(true, null);
         this.setColour("#C62828");
-        this.setTooltip("Procesa una redención de RWA. Desde: dirección que redime, Cantidad: cantidad de activos a redimir, Razón: motivo de la redención (ej: 'Liquidación de inversión')");
+        this.setTooltip("Processes an RWA redemption. From: redeeming address, Amount: amount of assets to redeem, Reason: reason for redemption (e.g., 'Investment settlement')");
     }
 };
 
 // ============================================================================
-// CATEGORÍA 10: 🔐 SEGURIDAD (Control y protección)
+// CATEGORY 10: 🔐 SECURITY (Control and protection)
 // ============================================================================
 
 Blockly.Blocks['require_condition'] = {
     init: function() {
         this.appendValueInput("CONDITION")
             .setCheck("Boolean")
-            .appendField("🔍 Requiere");
+            .appendField("🔍 Requires");
         this.appendValueInput("MESSAGE")
-            .appendField("mensaje de error:");
+            .appendField("error message:");
         this.setPreviousStatement(true, null);
         this.setNextStatement(true, null);
         this.setColour("#D32F2F");
-        this.setTooltip("Valida una condición - falla si es falsa");
+        this.setTooltip("Validates a condition - fails if it is false");
     }
 };
 
 Blockly.Blocks['access_control'] = {
     init: function() {
         this.appendValueInput("ADDRESS")
-            .appendField("🔐 Control de Acceso - Solo");
+            .appendField("🔐 Access Control - Only");
         this.appendDummyInput()
-            .appendField("rol:")
+            .appendField("role:")
             .appendField(new Blockly.FieldDropdown([
                 ["Admin", "ADMIN"],
                 ["Owner", "OWNER"],
@@ -710,20 +710,20 @@ Blockly.Blocks['access_control'] = {
                 ["Custom", "CUSTOM"]
             ]), "ROLE");
         this.appendStatementInput("BODY")
-            .appendField("permitir");
+            .appendField("allow");
         this.setPreviousStatement(true, null);
         this.setNextStatement(true, null);
         this.setColour("#D32F2F");
-        this.setTooltip("Restringe el acceso a ciertos roles");
+        this.setTooltip("Restricts access to certain roles");
     }
 };
 
 Blockly.Blocks['role_based_check'] = {
     init: function() {
         this.appendValueInput("ADDRESS")
-            .appendField("👤 Verificar Rol");
+            .appendField("👤 Verify Role");
         this.appendDummyInput()
-            .appendField("tiene rol:")
+            .appendField("has role:")
             .appendField(new Blockly.FieldDropdown([
                 ["Admin", "ADMIN"],
                 ["Owner", "OWNER"],
@@ -732,20 +732,20 @@ Blockly.Blocks['role_based_check'] = {
             ]), "ROLE");
         this.setOutput(true, "Boolean");
         this.setColour("#D32F2F");
-        this.setTooltip("Verifica si una dirección tiene un rol específico");
+        this.setTooltip("Verifies if an address has a specific role");
     }
 };
 
 Blockly.Blocks['reentrancy_guard'] = {
     init: function() {
         this.appendDummyInput()
-            .appendField("🛡️ Protección Anti-Reentrancia");
+            .appendField("🛡️ Re-entrancy Guard");
         this.appendStatementInput("BODY")
-            .appendField("ejecutar");
+            .appendField("execute");
         this.setPreviousStatement(true, null);
         this.setNextStatement(true, null);
         this.setColour("#D32F2F");
-        this.setTooltip("Protege contra ataques de reentrancia");
+        this.setTooltip("Protects against re-entrancy attacks");
     }
 };
 
@@ -753,17 +753,17 @@ Blockly.Blocks['pause_functionality'] = {
     init: function() {
         this.appendDummyInput()
             .appendField("⏸️")
-            .appendField(new Blockly.FieldDropdown([["Pausar", "PAUSE"], ["Reanudar", "UNPAUSE"]]), "ACTION")
-            .appendField("contrato");
+            .appendField(new Blockly.FieldDropdown([["Pause", "PAUSE"], ["Resume", "UNPAUSE"]]), "ACTION")
+            .appendField("contract");
         this.setPreviousStatement(true, null);
         this.setNextStatement(true, null);
         this.setColour("#D32F2F");
-        this.setTooltip("Pausa o reanuda todas las operaciones del contrato");
+        this.setTooltip("Pauses or resumes all contract operations");
     }
 };
 
 // ============================================================================
-// VALORES LITERALES Y UTILIDADES
+// LITERAL VALUES AND UTILITIES
 // ============================================================================
 
 Blockly.Blocks['number_literal'] = {
@@ -772,7 +772,7 @@ Blockly.Blocks['number_literal'] = {
             .appendField(new Blockly.FieldNumber(0), "VALUE");
         this.setOutput(true, "Number");
         this.setColour("#4CAF50");
-        this.setTooltip("Un número");
+        this.setTooltip("A number");
     }
 };
 
@@ -780,22 +780,22 @@ Blockly.Blocks['string_literal'] = {
     init: function() {
         this.appendDummyInput()
             .appendField('"')
-            .appendField(new Blockly.FieldTextInput("texto"), "VALUE")
+            .appendField(new Blockly.FieldTextInput("text"), "VALUE")
             .appendField('"');
         this.setOutput(true, "String");
         this.setColour("#4CAF50");
-        this.setTooltip("Una cadena de texto");
+        this.setTooltip("A string of text");
     }
 };
 
 Blockly.Blocks['boolean_literal'] = {
     init: function() {
         this.appendDummyInput()
-            .appendField(new Blockly.FieldDropdown([["verdadero", "TRUE"], ["falso", "FALSE"]]), "VALUE");
+            .appendField(new Blockly.FieldDropdown([["true", "TRUE"], ["false", "FALSE"]]), "VALUE");
         this.setOutput(true, "Boolean");
         this.setColour("#4CAF50");
-        this.setTooltip("Un valor booleano (verdadero o falso)");
+        this.setTooltip("A boolean value (true or false)");
     }
 };
 
-console.log('✅ Bloques profesionales cargados correctamente');
+console.log('✅ Professional blocks loaded successfully');

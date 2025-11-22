@@ -283,64 +283,64 @@
 <body>
     <div class="container">
         <div class="header">
-            <h1>🔮 Interfaz de Smart Contract</h1>
-            <p>Interfaz de ejemplo (las acciones de token pueden no aplicar a contratos genéricos)</p>
+            <h1>🔮 Smart Contract Interface</h1>
+            <p>Example interface (token actions may not apply to generic contracts)</p>
         </div>
 
         <div class="content">
             <!-- Connection Section -->
             <div class="card" style="margin-bottom: 2rem;">
-                <h3>🔗 Conectar Contract</h3>
+                <h3>🔗 Connect Contract</h3>
                 <div class="form-group">
-                    <label>Dirección del Contrato</label>
+                    <label>Contract Address</label>
                     <input type="text" id="contractAddress" placeholder="C..." />
                 </div>
                 <div class="form-group">
-                    <label>Dirección de la Wallet</label>
+                    <label>Wallet Address</label>
                     <input type="text" id="walletAddress" placeholder="G..." />
                 </div>
-                <button class="btn" onclick="connectContract()">🔗 Conectar</button>
-                <button class="btn secondary" onclick="connectWallet()">👛 Conectar Wallet</button>
+                <button class="btn" onclick="connectContract()">🔗 Connect</button>
+                <button class="btn secondary" onclick="connectWallet()">👛 Connect Wallet</button>
             </div>
 
             <!-- Tabs -->
             <div class="tabs">
                 <button class="tab active" onclick="switchTab('overview')">📊 Overview</button>
-                <button class="tab" onclick="switchTab('interact')">⚡ Interactuar</button>
+                <button class="tab" onclick="switchTab('interact')">⚡ Interact</button>
                 <button class="tab" onclick="switchTab('admin')">🔐 Admin</button>
-                <button class="tab" onclick="switchTab('history')">📜 Historial</button>
+                <button class="tab" onclick="switchTab('history')">📜 History</button>
             </div>
 
             <!-- Overview Tab -->
             <div id="overview" class="tab-content active">
                 <div class="grid">
                     <div class="card">
-                        <h3>📋 Información del Contrato</h3>
+                        <h3>📋 Contract Information</h3>
                         <div id="contractInfo">
-                            <p><strong>Estado:</strong> <span class="status-indicator active"></span> <span
-                                    id="contractStatus">Conectado</span></p>
-                            <p><strong>Nombre:</strong> <span id="tokenName">-</span></p>
-                            <p><strong>Símbolo:</strong> <span id="tokenSymbol">-</span></p>
-                            <p><strong>Decimales:</strong> <span id="tokenDecimals">-</span></p>
-                            <p><strong>Suministro Total:</strong> <span id="totalSupply">-</span></p>
+                            <p><strong>Status:</strong> <span class="status-indicator active"></span> <span
+                                    id="contractStatus">Connected</span></p>
+                            <p><strong>Name:</strong> <span id="tokenName">-</span></p>
+                            <p><strong>Symbol:</strong> <span id="tokenSymbol">-</span></p>
+                            <p><strong>Decimals:</strong> <span id="tokenDecimals">-</span></p>
+                            <p><strong>Total Supply:</strong> <span id="totalSupply">-</span></p>
                             <p><strong>Admin:</strong> <span id="adminAddress">-</span></p>
                         </div>
                     </div>
 
                     <div class="card">
-                        <h3>💰 Tu Balance</h3>
+                        <h3>💰 Your Balance</h3>
                         <div id="userBalance">
                             <p style="font-size: 2rem; font-weight: bold; color: #4f46e5;" id="balanceAmount">0</p>
-                            <p>tokens en tu wallet</p>
-                            <button class="btn" onclick="refreshBalance()">🔄 Actualizar</button>
+                            <p>tokens in your wallet</p>
+                            <button class="btn" onclick="refreshBalance()">🔄 Refresh</button>
                         </div>
                     </div>
 
                     <div class="card">
-                        <h3>🎯 Características</h3>
+                        <h3>🎯 Features</h3>
                         <div id="contractFeatures">
                             <div id="features-list">
-                                <!-- Se llenarán dinámicamente -->
+                                <!-- Will be filled dynamically -->
                             </div>
                         </div>
                     </div>
@@ -350,30 +350,30 @@
             <!-- Interact Tab -->
             <div id="interact" class="tab-content">
                 <div class="card">
-                    <h3>⚡ Métodos de Interacción</h3>
+                    <h3>⚡ Interaction Methods</h3>
                     <div class="method-grid">
                         <div class="method-button" onclick="selectMethod('transfer')">
-                            <h4>💸 Transferir</h4>
-                            <p>Enviar tokens</p>
+                            <h4>💸 Transfer</h4>
+                            <p>Send tokens</p>
                         </div>
                         <div class="method-button" onclick="selectMethod('mint')" id="mintMethod">
                             <h4>⚡ Mint</h4>
-                            <p>Crear tokens</p>
+                            <p>Create tokens</p>
                         </div>
                         <div class="method-button" onclick="selectMethod('burn')" id="burnMethod">
                             <h4>🔥 Burn</h4>
-                            <p>Quemar tokens</p>
+                            <p>Burn tokens</p>
                         </div>
                         <div class="method-button" onclick="selectMethod('stake')" id="stakeMethod">
                             <h4>🥩 Stake</h4>
-                            <p>Hacer staking</p>
+                            <p>Stake tokens</p>
                         </div>
                         <div class="method-button" onclick="selectMethod('unstake')" id="unstakeMethod">
                             <h4>📤 Unstake</h4>
-                            <p>Retirar staking</p>
+                            <p>Unstake tokens</p>
                         </div>
                         <div class="method-button" onclick="selectMethod('vote')" id="voteMethod">
-                            <h4>🗳️ Votar</h4>
+                            <h4>🗳️ Vote</h4>
                             <p>Governance</p>
                         </div>
                     </div>
@@ -382,27 +382,27 @@
                     <div id="methodForm">
                         <!-- Transfer Form -->
                         <div id="transferForm" class="hidden">
-                            <h4>💸 Transferir Tokens</h4>
+                            <h4>💸 Transfer Tokens</h4>
                             <div class="form-group">
-                                <label>Destinatario</label>
+                                <label>Recipient</label>
                                 <input type="text" id="transferTo" placeholder="G..." />
                             </div>
                             <div class="form-group">
-                                <label>Cantidad</label>
+                                <label>Amount</label>
                                 <input type="number" id="transferAmount" placeholder="100" />
                             </div>
-                            <button class="btn" onclick="executeMethod('transfer')">💸 Transferir</button>
+                            <button class="btn" onclick="executeMethod('transfer')">💸 Transfer</button>
                         </div>
 
                         <!-- Mint Form -->
                         <div id="mintForm" class="hidden">
                             <h4>⚡ Mint Tokens</h4>
                             <div class="form-group">
-                                <label>Destinatario</label>
+                                <label>Recipient</label>
                                 <input type="text" id="mintTo" placeholder="G..." />
                             </div>
                             <div class="form-group">
-                                <label>Cantidad</label>
+                                <label>Amount</label>
                                 <input type="number" id="mintAmount" placeholder="100" />
                             </div>
                             <button class="btn" onclick="executeMethod('mint')">⚡ Mint</button>
@@ -412,7 +412,7 @@
                         <div id="burnForm" class="hidden">
                             <h4>🔥 Burn Tokens</h4>
                             <div class="form-group">
-                                <label>Cantidad</label>
+                                <label>Amount</label>
                                 <input type="number" id="burnAmount" placeholder="100" />
                             </div>
                             <button class="btn danger" onclick="executeMethod('burn')">🔥 Burn</button>
@@ -420,42 +420,42 @@
 
                         <!-- Stake Form -->
                         <div id="stakeForm" class="hidden">
-                            <h4>🥩 Hacer Staking</h4>
+                            <h4>🥩 Stake</h4>
                             <div class="form-group">
-                                <label>Cantidad</label>
+                                <label>Amount</label>
                                 <input type="number" id="stakeAmount" placeholder="100" />
                             </div>
-                            <p style="color: #6b7280; margin-bottom: 1rem;">Recompensa anual: <span
+                            <p style="color: #6b7280; margin-bottom: 1rem;">Annual reward: <span
                                     id="stakingReward">5%</span></p>
                             <button class="btn" onclick="executeMethod('stake')">🥩 Stake</button>
                         </div>
 
                         <!-- Unstake Form -->
                         <div id="unstakeForm" class="hidden">
-                            <h4>📤 Retirar Staking</h4>
+                            <h4>📤 Unstake</h4>
                             <div class="form-group">
-                                <label>Cantidad</label>
+                                <label>Amount</label>
                                 <input type="number" id="unstakeAmount" placeholder="100" />
                             </div>
-                            <p>Balance en staking: <span id="stakingBalance">0</span></p>
+                            <p>Staked balance: <span id="stakingBalance">0</span></p>
                             <button class="btn" onclick="executeMethod('unstake')">📤 Unstake</button>
                         </div>
 
                         <!-- Vote Form -->
                         <div id="voteForm" class="hidden">
-                            <h4>🗳️ Votar en Governance</h4>
+                            <h4>🗳️ Vote in Governance</h4>
                             <div class="form-group">
-                                <label>ID de Propuesta</label>
+                                <label>Proposal ID</label>
                                 <input type="number" id="proposalId" placeholder="1" />
                             </div>
                             <div class="form-group">
-                                <label>Voto</label>
+                                <label>Vote</label>
                                 <select id="voteSupport">
-                                    <option value="true">✅ A favor</option>
-                                    <option value="false">❌ En contra</option>
+                                    <option value="true">✅ For</option>
+                                    <option value="false">❌ Against</option>
                                 </select>
                             </div>
-                            <button class="btn" onclick="executeMethod('vote')">🗳️ Votar</button>
+                            <button class="btn" onclick="executeMethod('vote')">🗳️ Vote</button>
                         </div>
                     </div>
                 </div>
@@ -464,37 +464,37 @@
             <!-- Admin Tab -->
             <div id="admin" class="tab-content">
                 <div class="card">
-                    <h3>🔐 Funciones de Administrador</h3>
+                    <h3>🔐 Admin Functions</h3>
                     <div class="grid">
                         <div>
-                            <h4>⏸️ Control de Pausa</h4>
-                            <p>Estado: <span id="pauseStatus">Activo</span></p>
-                            <button class="btn" onclick="pauseContract()">⏸️ Pausar</button>
-                            <button class="btn success" onclick="unpauseContract()">▶️ Despausar</button>
+                            <h4>⏸️ Pause Control</h4>
+                            <p>Status: <span id="pauseStatus">Active</span></p>
+                            <button class="btn" onclick="pauseContract()">⏸️ Pause</button>
+                            <button class="btn success" onclick="unpauseContract()">▶️ Unpause</button>
                         </div>
 
                         <div>
-                            <h4>🧊 Control de Congelación</h4>
+                            <h4>🧊 Freeze Control</h4>
                             <div class="form-group">
-                                <input type="text" id="freezeAddress" placeholder="Dirección a congelar" />
+                                <input type="text" id="freezeAddress" placeholder="Address to freeze" />
                             </div>
-                            <button class="btn" onclick="freezeAccount()">🧊 Congelar</button>
-                            <button class="btn success" onclick="unfreezeAccount()">🔥 Descongelar</button>
+                            <button class="btn" onclick="freezeAccount()">🧊 Freeze</button>
+                            <button class="btn success" onclick="unfreezeAccount()">🔥 Unfreeze</button>
                         </div>
 
                         <div>
                             <h4>📋 Whitelist</h4>
                             <div class="form-group">
-                                <input type="text" id="whitelistAddress" placeholder="Dirección para whitelist" />
+                                <input type="text" id="whitelistAddress" placeholder="Address to whitelist" />
                             </div>
-                            <button class="btn" onclick="addToWhitelist()">➕ Agregar</button>
-                            <button class="btn danger" onclick="removeFromWhitelist()">➖ Remover</button>
+                            <button class="btn" onclick="addToWhitelist()">➕ Add</button>
+                            <button class="btn danger" onclick="removeFromWhitelist()">➖ Remove</button>
                         </div>
 
                         <div>
-                            <h4>🔑 Gestión de Roles</h4>
+                            <h4>🔑 Role Management</h4>
                             <div class="form-group">
-                                <input type="text" id="roleAddress" placeholder="Dirección" />
+                                <input type="text" id="roleAddress" placeholder="Address" />
                             </div>
                             <div class="form-group">
                                 <select id="roleType">
@@ -503,7 +503,7 @@
                                     <option value="3">Pauser</option>
                                 </select>
                             </div>
-                            <button class="btn" onclick="grantRole()">✅ Otorgar Rol</button>
+                            <button class="btn" onclick="grantRole()">✅ Grant Role</button>
                         </div>
                     </div>
                 </div>
@@ -512,10 +512,10 @@
             <!-- History Tab -->
             <div id="history" class="tab-content">
                 <div class="card">
-                    <h3>📜 Historial de Transacciones</h3>
-                    <button class="btn" onclick="loadHistory()">🔄 Cargar Historial</button>
+                    <h3>📜 Transaction History</h3>
+                    <button class="btn" onclick="loadHistory()">🔄 Load History</button>
                     <div id="transactionHistory" class="transaction-list">
-                        <div class="loading">Carga el historial para ver las transacciones...</div>
+                        <div class="loading">Load the history to see the transactions...</div>
                     </div>
                 </div>
             </div>
@@ -539,7 +539,7 @@
             console.error('❌ Stellar SDK failed to load');
         }
 
-        // Estado global
+        // Global state
         const state = {
             contractAddress: null,
             walletAddress: null,
@@ -547,7 +547,7 @@
             connected: false
         };
 
-        // Funciones de utilidad
+        // Utility functions
         function showStatus(message, type = 'info') {
             const statusArea = document.getElementById('statusArea');
             statusArea.innerHTML = `<div class="${type}">${message}</div>`;
@@ -557,47 +557,47 @@
         }
 
         function switchTab(tabName) {
-            // Ocultar todos los contenidos
+            // Hide all content
             document.querySelectorAll('.tab-content').forEach(content => {
                 content.classList.remove('active');
             });
 
-            // Remover clase activa de todas las pestañas
+            // Remove active class from all tabs
             document.querySelectorAll('.tab').forEach(tab => {
                 tab.classList.remove('active');
             });
 
-            // Mostrar el contenido seleccionado
+            // Show selected content
             document.getElementById(tabName).classList.add('active');
 
-            // Marcar la pestaña como activa
+            // Mark the tab as active
             event.target.classList.add('active');
         }
 
-        // Conectar wallet
+        // Connect wallet
         async function connectWallet() {
             try {
                 if (!window.freighterApi) {
-                    throw new Error('Freighter no está instalado');
+                    throw new Error('Freighter is not installed');
                 }
 
                 const publicKey = await window.freighterApi.getPublicKey();
                 state.walletAddress = publicKey;
                 document.getElementById('walletAddress').value = publicKey;
 
-                showStatus('✅ Wallet conectada exitosamente', 'success');
+                showStatus('✅ Wallet connected successfully', 'success');
             } catch (error) {
-                showStatus(`❌ Error conectando wallet: ${error.message}`, 'error');
+                showStatus(`❌ Error connecting wallet: ${error.message}`, 'error');
             }
         }
 
-        // Conectar contrato
+        // Connect contract
         async function connectContract() {
             const contractAddress = document.getElementById('contractAddress').value;
             const walletAddress = document.getElementById('walletAddress').value;
 
             if (!contractAddress || !walletAddress) {
-                showStatus('❌ Completa todos los campos', 'error');
+                showStatus('❌ Fill in all fields', 'error');
                 return;
             }
 
@@ -606,22 +606,22 @@
                 state.walletAddress = walletAddress;
                 state.connected = true;
 
-                // Cargar información del contrato
+                // Load contract information
                 await loadContractInfo();
                 await refreshBalance();
 
-                showStatus('✅ Contrato conectado exitosamente', 'success');
+                showStatus('✅ Contract connected successfully', 'success');
             } catch (error) {
-                showStatus(`❌ Error conectando contrato: ${error.message}`, 'error');
+                showStatus(`❌ Error connecting contract: ${error.message}`, 'error');
             }
         }
 
-        // Cargar información del contrato
+        // Load contract information
         async function loadContractInfo() {
             try {
-                // Simular datos del contrato (en una implementación real se obtendrían del backend)
+                // Simulate contract data (in a real implementation, this would be fetched from the backend)
                 const contractInfo = {
-                    name: "Mi Token Avanzado",
+                    name: "My Advanced Token",
                     symbol: "MTA",
                     decimals: 2,
                     totalSupply: "1000000",
@@ -637,14 +637,14 @@
 
                 state.contractInfo = contractInfo;
 
-                // Actualizar UI
+                // Update UI
                 document.getElementById('tokenName').textContent = contractInfo.name;
                 document.getElementById('tokenSymbol').textContent = contractInfo.symbol;
                 document.getElementById('tokenDecimals').textContent = contractInfo.decimals;
                 document.getElementById('totalSupply').textContent = parseInt(contractInfo.totalSupply).toLocaleString();
                 document.getElementById('adminAddress').textContent = contractInfo.admin.substring(0, 8) + '...';
 
-                // Mostrar características
+                // Show features
                 const featuresList = document.getElementById('features-list');
                 featuresList.innerHTML = '';
 
@@ -674,16 +674,16 @@
                 }
 
             } catch (error) {
-                console.error('Error cargando información del contrato:', error);
+                console.error('Error loading contract information:', error);
             }
         }
 
-        // Actualizar balance del usuario
+        // Refresh user balance
         async function refreshBalance() {
             if (!state.connected) return;
 
             try {
-                // En implementación real, obtener del backend
+                // In a real implementation, get from the backend
                 const response = await fetch(`/api/user-balance/${state.walletAddress}/${state.contractInfo.symbol}/${state.contractAddress}`);
                 const data = await response.json();
 
@@ -693,34 +693,34 @@
                     document.getElementById('balanceAmount').textContent = '0';
                 }
             } catch (error) {
-                console.error('Error obteniendo balance:', error);
+                console.error('Error getting balance:', error);
                 document.getElementById('balanceAmount').textContent = 'Error';
             }
         }
 
-        // Seleccionar método de interacción
+        // Select interaction method
         function selectMethod(method) {
-            // Ocultar todos los formularios
+            // Hide all forms
             document.querySelectorAll('#methodForm > div').forEach(form => {
                 form.classList.add('hidden');
             });
 
-            // Remover selección de todos los botones
+            // Remove selection from all buttons
             document.querySelectorAll('.method-button').forEach(btn => {
                 btn.classList.remove('selected');
             });
 
-            // Mostrar formulario seleccionado
+            // Show selected form
             document.getElementById(method + 'Form').classList.remove('hidden');
 
-            // Marcar botón como seleccionado
+            // Mark button as selected
             event.target.closest('.method-button').classList.add('selected');
         }
 
-        // Ejecutar método del contrato
+        // Execute contract method
         async function executeMethod(method) {
             if (!state.connected) {
-                showStatus('❌ Conecta el contrato primero', 'error');
+                showStatus('❌ Connect the contract first', 'error');
                 return;
             }
 
@@ -762,9 +762,9 @@
                         break;
                 }
 
-                showStatus(`🔄 Ejecutando ${method}...`, 'info');
+                showStatus(`🔄 Executing ${method}...`, 'info');
 
-                // Construir transacción
+                // Build transaction
                 const response = await fetch('/api/interact-contract', {
                     method: 'POST',
                     headers: { 'Content-Type': 'application/json' },
@@ -782,7 +782,7 @@
                     throw new Error(result.details);
                 }
 
-                // Firmar transacción con Freighter
+                // Sign transaction with Freighter
                 const signedXDR = await window.freighterApi.signTransaction(
                     result.interactionTransactionXDR,
                     {
@@ -791,22 +791,22 @@
                     }
                 );
 
-                // Enviar transacción
+                // Send transaction
                 const server = new StellarSdk.Horizon.Server('https://horizon-testnet.stellar.org');
                 const transaction = StellarSdk.TransactionBuilder.fromXDR(signedXDR, StellarSdk.Networks.TESTNET);
                 const submitResult = await server.submitTransaction(transaction);
 
-                showStatus(`✅ ${method} ejecutado exitosamente: ${submitResult.hash}`, 'success');
+                showStatus(`✅ ${method} executed successfully: ${submitResult.hash}`, 'success');
 
-                // Actualizar balance
+                // Update balance
                 await refreshBalance();
 
             } catch (error) {
-                showStatus(`❌ Error ejecutando ${method}: ${error.message}`, 'error');
+                showStatus(`❌ Error executing ${method}: ${error.message}`, 'error');
             }
         }
 
-        // Funciones de administrador
+        // Admin functions
         async function pauseContract() {
             await executeMethod('pause');
         }
@@ -818,53 +818,53 @@
         async function freezeAccount() {
             const address = document.getElementById('freezeAddress').value;
             if (!address) {
-                showStatus('❌ Ingresa una dirección', 'error');
+                showStatus('❌ Enter an address', 'error');
                 return;
             }
-            // Implementar freeze_account
+            // Implement freeze_account
         }
 
         async function unfreezeAccount() {
             const address = document.getElementById('freezeAddress').value;
             if (!address) {
-                showStatus('❌ Ingresa una dirección', 'error');
+                showStatus('❌ Enter an address', 'error');
                 return;
             }
-            // Implementar unfreeze_account
+            // Implement unfreeze_account
         }
 
         async function addToWhitelist() {
             const address = document.getElementById('whitelistAddress').value;
             if (!address) {
-                showStatus('❌ Ingresa una dirección', 'error');
+                showStatus('❌ Enter an address', 'error');
                 return;
             }
-            // Implementar add_to_whitelist
+            // Implement add_to_whitelist
         }
 
         async function removeFromWhitelist() {
             const address = document.getElementById('whitelistAddress').value;
             if (!address) {
-                showStatus('❌ Ingresa una dirección', 'error');
+                showStatus('❌ Enter an address', 'error');
                 return;
             }
-            // Implementar remove_from_whitelist
+            // Implement remove_from_whitelist
         }
 
         async function grantRole() {
             const address = document.getElementById('roleAddress').value;
             const role = document.getElementById('roleType').value;
             if (!address) {
-                showStatus('❌ Ingresa una dirección', 'error');
+                showStatus('❌ Enter an address', 'error');
                 return;
             }
-            // Implementar grant_role
+            // Implement grant_role
         }
 
-        // Cargar historial de transacciones
+        // Load transaction history
         async function loadHistory() {
             if (!state.connected) {
-                showStatus('❌ Conecta el contrato primero', 'error');
+                showStatus('❌ Connect the contract first', 'error');
                 return;
             }
 
@@ -899,21 +899,21 @@
                         historyDiv.appendChild(txItem);
                     });
                 } else {
-                    historyDiv.innerHTML = '<div class="loading">No se encontraron transacciones</div>';
+                    historyDiv.innerHTML = '<div class="loading">No transactions found</div>';
                 }
 
             } catch (error) {
                 document.getElementById('transactionHistory').innerHTML =
-                    '<div class="error">Error cargando historial</div>';
+                    '<div class="error">Error loading history</div>';
             }
         }
 
-        // Inicialización
+        // Initialization
         document.addEventListener('DOMContentLoaded', () => {
-            // Intentar conectar wallet automáticamente
+            // Try to connect wallet automatically
             if (window.freighterApi) {
                 connectWallet().catch(() => {
-                    console.log('Wallet no conectada automáticamente');
+                    console.log('Wallet not connected automatically');
                 });
             }
         });

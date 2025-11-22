@@ -29,26 +29,26 @@ document.addEventListener("DOMContentLoaded", () => {
     // --- 2. Block Definitions (Generic) ---
     Blockly.Blocks['contract_settings'] = {
         init: function () {
-            this.appendDummyInput().appendField("🔮 Mi Smart Contract");
+            this.appendDummyInput().appendField("🔮 My Smart Contract");
             this.appendStatementInput("SETTINGS").setCheck(null);
             this.setStyle('start_blocks');
         }
     };
     Blockly.Blocks['contract_name'] = {
         init: function () {
-            this.appendDummyInput().appendField("Nombre del Contrato").appendField(new Blockly.FieldTextInput("MiContrato"), "NAME");
+            this.appendDummyInput().appendField("Contract Name").appendField(new Blockly.FieldTextInput("MyContract"), "NAME");
             this.setPreviousStatement(true, null); this.setNextStatement(true, null); this.setStyle('property_blocks');
         }
     };
     Blockly.Blocks['contract_version'] = {
         init: function () {
-            this.appendDummyInput().appendField("Versión").appendField(new Blockly.FieldTextInput("0.1.0"), "VERSION");
+            this.appendDummyInput().appendField("Version").appendField(new Blockly.FieldTextInput("0.1.0"), "VERSION");
             this.setPreviousStatement(true, null); this.setNextStatement(true, null); this.setStyle('property_blocks');
         }
     };
     Blockly.Blocks['admin_address'] = {
         init: function () {
-            this.appendDummyInput().appendField("🔑 Administrador (Address)").appendField(new Blockly.FieldTextInput('G...'), "ADDRESS");
+            this.appendDummyInput().appendField("🔑 Administrator (Address)").appendField(new Blockly.FieldTextInput('G...'), "ADDRESS");
             this.setPreviousStatement(true, null); this.setNextStatement(true, null); this.setStyle('rules_blocks');
         }
     };
@@ -57,19 +57,19 @@ document.addEventListener("DOMContentLoaded", () => {
     const toolboxes = {
         basic: `
             <xml id="toolbox" style="display: none">
-                <category name="🚀 Empezar" categorystyle="start_category">
+                <category name="🚀 Start" categorystyle="start_category">
                     <block type="contract_settings"></block>
                 </category>
-                <category name="💰 Propiedades del Token" categorystyle="property_category">
+                <category name="💰 Token Properties" categorystyle="property_category">
                     <block type="token_properties"></block>
                     <block type="token_decimals"></block>
                     <block type="token_supply"></block>
                 </category>
-                <category name="👤 Administración" categorystyle="property_category">
+                <category name="👤 Administration" categorystyle="property_category">
                     <block type="admin_config"></block>
                     <block type="admin_address"></block>
                 </category>
-                <category name="💸 Funciones Básicas" categorystyle="advanced_category">
+                <category name="💸 Basic Functions" categorystyle="advanced_category">
                     <block type="transfer_function"></block>
                     <block type="balance_function"></block>
                 </category>
@@ -77,25 +77,25 @@ document.addEventListener("DOMContentLoaded", () => {
         `,
         rwa: `
             <xml id="toolbox" style="display: none">
-                <category name="🚀 Empezar" categorystyle="start_category">
+                <category name="🚀 Start" categorystyle="start_category">
                     <block type="contract_settings"></block>
                     <block type="contract_name"></block>
                     <block type="contract_version"></block>
                 </category>
-                <category name="🏢 Activos Reales" categorystyle="rwa_category">
+                <category name="🏢 Real World Assets" categorystyle="rwa_category">
                     <block type="rwa_asset"></block>
                     <block type="rwa_custody"></block>
                     <block type="rwa_redemption"></block>
                 </category>
-                <category name="📋 Liquidación &amp; Cumplimiento" categorystyle="rwa_category">
+                <category name="📋 Settlement &amp; Compliance" categorystyle="rwa_category">
                     <block type="rwa_settlement"></block>
                     <block type="rwa_compliance"></block>
                 </category>
-                <category name="🔐 Administración" categorystyle="property_category">
+                <category name="🔐 Administration" categorystyle="property_category">
                     <block type="admin_address"></block>
                     <block type="admin_config"></block>
                 </category>
-                <category name="⚖️ Verificación" categorystyle="advanced_category">
+                <category name="⚖️ Verification" categorystyle="advanced_category">
                     <block type="require_condition"></block>
                     <block type="access_control"></block>
                 </category>
@@ -103,27 +103,27 @@ document.addEventListener("DOMContentLoaded", () => {
         `,
         defi: `
             <xml id="toolbox" style="display: none">
-                <category name="🚀 Empezar" categorystyle="start_category">
+                <category name="🚀 Start" categorystyle="start_category">
                     <block type="contract_settings"></block>
                 </category>
-                <category name="💰 Configuración del Token" categorystyle="property_category">
+                <category name="💰 Token Configuration" categorystyle="property_category">
                     <block type="token_properties"></block>
                     <block type="token_decimals"></block>
                     <block type="token_supply"></block>
                 </category>
-                <category name="✨ Características Avanzadas" categorystyle="powers_category">
+                <category name="✨ Advanced Features" categorystyle="powers_category">
                     <block type="feature_mintable"></block>
                     <block type="feature_burnable"></block>
                     <block type="feature_pausable"></block>
                 </category>
-                <category name="⚙️ Funciones DeFi" categorystyle="advanced_category">
+                <category name="⚙️ DeFi Functions" categorystyle="advanced_category">
                     <block type="transfer_function"></block>
                     <block type="balance_function"></block>
                     <block type="mint_function"></block>
                     <block type="burn_function"></block>
                     <block type="pause_function"></block>
                 </category>
-                <category name="🔐 Control de Acceso" categorystyle="advanced_category">
+                <category name="🔐 Access Control" categorystyle="advanced_category">
                     <block type="access_control"></block>
                     <block type="role_based_check"></block>
                     <block type="require_condition"></block>
@@ -433,7 +433,7 @@ document.addEventListener("DOMContentLoaded", () => {
 
         const contractBlock = blocklyWorkspace.getBlocksByType('contract_settings', false)[0];
         if (!contractBlock) {
-            errors.push('❌ Missing main "Mi Smart Contract" block');
+            errors.push('❌ Missing main "My Smart Contract" block');
             return { errors, warnings, isValid: false };
         }
 

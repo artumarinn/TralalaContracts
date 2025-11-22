@@ -9,6 +9,7 @@ class RustGenerator {
         this.imports = new Set();
         this.declarations = [];
         this.code = [];
+        this.currentFunctionReturnType = null;
     }
 
     indent(text) {
@@ -177,7 +178,7 @@ class RustGenerator {
         const retType = block.getFieldValue('RET_TYPE');
 
         const typeMap = {
-            'VOID': '()',
+            'VOID': '',  // Empty string - we'll handle this specially
             'I32': 'i32',
             'I128': 'i128',
             'BOOL': 'bool',
@@ -188,6 +189,8 @@ class RustGenerator {
         };
 
         const rustRetType = typeMap[retType] || retType;
+        // Store current return type for use in return statements
+        this.currentFunctionReturnType = retType;
 
         // Procesar parámetros
         let params = ['env: Env'];
@@ -225,7 +228,9 @@ class RustGenerator {
         }
 
         const paramList = params.join(', ');
-        return `pub fn ${fnName}(${paramList}) -> ${rustRetType} {\n${bodyCode}\n    }`;
+        // For VOID functions, don't add return type (Rust defaults to ())
+        const returnTypePart = rustRetType ? ` -> ${rustRetType}` : '';
+        return `pub fn ${fnName}(${paramList})${returnTypePart} {\n${bodyCode}\n    }`;
     }
 
     block_function_parameter(block) {
@@ -266,12 +271,31 @@ class RustGenerator {
 
     block_function_return(block) {
         const input = block.getInputTargetBlock('VALUE');
-        let value = '';
 
+        // If we're in a VOID function, just return without a value
+        if (this.currentFunctionReturnType === 'VOID') {
+            return 'return;';
+        }
+
+        let value = '';
         if (input) {
             value = this.fromBlock(input);
+
+            // If returning a string literal in a STRING function, convert to Soroban String
+            if (this.currentFunctionReturnType === 'STRING' && input.type === 'string_literal') {
+                const strValue = input.getFieldValue('VALUE');
+                value = `String::from_str(&env, "${strValue}")`;
+            }
         } else {
-            value = 'None';
+            // Default values based on expected return type
+            const defaults = {
+                'I32': '0',
+                'I128': '0i128',
+                'BOOL': 'false',
+                'STRING': 'String::from_str(&env, "")',
+                'ADDRESS': 'panic!("No address")'
+            };
+            value = defaults[this.currentFunctionReturnType] || '()';
         }
 
         return `return ${value};`;
@@ -905,11 +929,16 @@ env.storage().persistent().set(&(&${toCode}, &balance_key), &(current + ${amount
         if (allCode.includes('Vec<') || allCode.includes('Vec::<')) {
             this.addImport('use soroban_sdk::Vec;');
         }
-        if (allCode.includes('String::')) {
+        // Check for String type usage (as return type "-> String" or method call "String::")
+        if (allCode.includes('String::') || allCode.includes('-> String') || allCode.match(/:\s*String[,\s\)]/)) {
             this.addImport('use soroban_sdk::String;');
         }
-        if (allCode.includes('Bytes::') || allCode.includes('Bytes>')) {
+        if (allCode.includes('Bytes::') || allCode.includes('Bytes>') || allCode.includes('-> Bytes') || allCode.match(/:\s*Bytes[,\s\)]/)) {
             this.addImport('use soroban_sdk::Bytes;');
+        }
+        // Check for i128 usage (for token amounts)
+        if (allCode.includes('i128')) {
+            // i128 is a primitive, no import needed
         }
 
         // Deduplicar y ordenar imports
@@ -958,6 +987,7 @@ env.storage().persistent().set(&(&${toCode}, &balance_key), &(current + ${amount
         this.imports.clear();
         this.declarations = [];
         this.code = [];
+        this.currentFunctionReturnType = null;
     }
 }
 
