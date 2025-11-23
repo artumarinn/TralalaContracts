@@ -5,7 +5,11 @@ members = [
     "contracts/counter",
     "contracts/token_template_basic",
     "contracts/token_template_advanced",
-    "dynamic-contracts/mtk_*"
+]
+# Exclude dynamic compilation directories from workspace
+exclude = [
+    "temp-contracts/*",
+    "dynamic-contracts/*",
 ]
 
 [workspace.dependencies]

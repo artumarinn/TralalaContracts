@@ -163,16 +163,18 @@ app.post('/api/compile-custom-contract', async (req, res) => {
         }
 
         const { execSync } = require('child_process');
-        const tempDir = path.join(__dirname, 'temp-contracts', `compile-${uuidv4()}`);
+        const os = require('os');
+        // Use system temp directory to avoid workspace inheritance from parent Cargo.toml
+        const tempDir = path.join(os.tmpdir(), 'tralalero-compile', `compile-${uuidv4()}`);
         const startTime = Date.now();
 
         try {
-            // Create temporary directory structure
-            console.log(`📁 Creating temp directory: ${tempDir}`);
+            // Create temporary directory structure (isolated from backend workspace)
+            console.log(`📁 Creating isolated temp directory: ${tempDir}`);
             await fse.ensureDir(tempDir);
             await fse.ensureDir(path.join(tempDir, 'src'));
 
-            // Create Cargo.toml
+            // Create Cargo.toml (standalone, not part of any workspace)
             const cargoToml = `[package]
 name = "${contractName || 'custom-contract'}"
 version = "0.1.0"
@@ -188,6 +190,9 @@ soroban-sdk = "23.0.1"
 opt-level = 2
 lto = true
 strip = true
+
+# Prevent workspace inheritance
+[workspace]
 `;
 
             await fs.writeFile(path.join(tempDir, 'Cargo.toml'), cargoToml);
